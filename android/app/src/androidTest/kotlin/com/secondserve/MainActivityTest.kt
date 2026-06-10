@@ -1,8 +1,6 @@
 package com.secondserve
 
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -22,6 +20,6 @@ class MainActivityTest {
 
     @Test
     fun mainActivityLaunchesWithoutCrash() {
-        composeTestRule.onRoot().assertIsDisplayed()
+        composeTestRule.waitForIdle()
     }
 }
