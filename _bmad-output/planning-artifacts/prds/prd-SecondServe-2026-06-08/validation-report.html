@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PRD Validation: SecondServe</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+
+    --grade-exc: #16a34a;
+    --grade-good: #65a30d;
+    --grade-fair: #d97706;
+    --grade-poor: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .grade {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .grade-excellent { background: var(--grade-exc); }
+  .grade-good { background: var(--grade-good); }
+  .grade-fair { background: var(--grade-fair); }
+  .grade-poor { background: var(--grade-poor); }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="report-header">
+      <div class="title">
+        <h1>SecondServe — Rapport de validation PRD</h1>
+        <div class="subtitle">_bmad-output/planning-artifacts/prds/prd-SecondServe-2026-06-08/prd.md</div>
+      </div>
+      <div class="grade grade-good">Good</div>
+    </header>
+
+    <div class="synthesis">
+      <p>Le PRD SecondServe est solide et prêt pour la chaîne en aval (architecture → épics → stories). La vision est précise et différenciée, les FRs sont presque tous accompagnés de conséquences testables spécifiques, et la cohérence stratégique est forte du début à la fin. Les dimensions critiques — clarté du "done", honnêteté du scope, utilisabilité aval — sont à niveau <strong>adequate</strong> avec des gaps ciblés et corrigibles avant la première session architecture.</p>
+      <p>Aucune dimension n'est cassée, aucun finding critique ou élevé. Le principal effort avant handoff : combler les conséquences testables manquantes sur le chemin de fallback statique (FR-4), clarifier la définition de "générique" dans FR-4, et renommer FR-10b pour restaurer la continuité des IDs.</p>
+    </div>
+
+    <div class="dimension-summary">
+      <div class="dim-card">
+        <div class="dim-name">Decision-readiness</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Substance over theater</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Strategic coherence</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Done-ness clarity</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">Adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Scope honesty</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">Adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Downstream usability</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">Adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Shape fit</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+    </div>
+
+    <!-- Decision-readiness -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Decision-readiness</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Le PRD formule les décisions comme des décisions, pas comme des "considérations". Les choix structurants sont explicites et tracés : Bluetooth-seul pour la Watch (OQ-6 fermé), Gemini Nano primaire avec deux niveaux de fallback (NFR §4.1), 3 axes maximum (FR-11), heuristique V1 pour le Style inféré (FR-14), saisie manuelle FFT (§5 Non-Goals). La table OQ (§8) ferme les six questions ouvertes avec une référence directe à la décision atterrissée. L'Index des Assumptions (§9) est cohérent avec les balises inline — roundtrip propre (7/7).</p>
+            <p>Les trade-offs sont nommés honnêtement. L'addendum documente ce qui a été éliminé (coaching vocal, suivi jeux-seulement) avec la raison. Un seul point d'amélioration : la limite à 3 Axes de travail (FR-11) est taguée <code>[ASSUMPTION]</code> avec un rationale court alors que la décision est actée — une note décisionnelle serait plus juste.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Limite 3 axes taguée ASSUMPTION alors que la décision est prise</h3>
+              <span class="finding-location">§4.3 FR-11</span>
+            </header>
+            <div class="finding-note"><code>[ASSUMPTION : limite à 3 pour éviter la dilution du coaching]</code> devrait être une décision documentée plutôt qu'une hypothèse non confirmée.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Supprimer la balise ASSUMPTION et l'entrée de §9 correspondante. Remplacer par un commentaire décisionnel court dans FR-11 ou le decision-log.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- Substance over theater -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Substance over theater</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>La Vision (§1) est non-générique : les trois fronts de différenciation (coaching temps réel en match, intégration FFT, mono-utilisateur radical) sont ancrés dans des contraintes produit réelles. Les UJs utilisent Benny comme protagoniste réel avec circonstances précises. Les NFRs portent des seuils produit-spécifiques (≤ 3s Gemini Nano, ≤ 500ms Watch, ≥ 20 conseils fallback statique, ≤ 10s Mistral API) — zéro boilerplate.</p>
+            <p>Seul risque de théâtre : la section "Ton &amp; Personnalité du Coach IA" en fin de document. Les cinq attributs (chaleureux, jamais générique, court, jamais condescendant, mémoriel) sont bien définis mais aucun FR ni aucune conséquence testable ne les mesure.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">Medium</span>
+              <h3 class="finding-title">Section Ton &amp; Personnalité sans testabilité</h3>
+              <span class="finding-location">§ Ton &amp; Personnalité du Coach IA</span>
+            </header>
+            <div class="finding-note">Cinq attributs de voix coaching sont décrits sans critère mesurable ni référence à un FR existant. Les story authors n'ont aucun bar vérifiable.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Ajouter 1-2 conséquences testables proxy dans FR-4 ou FR-10 — ex : "chaque Conseil généré nomme au moins l'un des éléments suivants : score actuel, surface, Axe de travail actif, ou résultat de session récente" — couvrant les attributs "jamais générique" et "mémoriel". Ou déplacer la section dans l'addendum comme guide de prompt design.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- Strategic coherence -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Strategic coherence</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>La thèse est claire et tenue d'un bout à l'autre : fermer le vide entre les séances avec un coach humain en apportant une intelligence de match en temps réel et une mémoire de session, ancré dans l'écosystème FFT. Chaque feature trace à cette thèse : Mode Match (coaching temps réel), Historique (mémoire), Conseils IA hors match (analyse de période), Profil joueur (personnalisation).</p>
+            <p>Les Success Metrics valident la thèse au bon niveau (SM-1 adoption en match, SM-2 engagement hors match, SM-3 qualité perçue). Les contre-métriques (SM-C1, SM-C2) nomment les risques d'over-optimisation corrects. Un léger bruit dans §6.2 : des évaluations d'implémentation inline ("travail non trivial, non bloquant pour V1") appartiennent à l'addendum.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Notes techniques mélangées dans §6.2 Out of Scope</h3>
+              <span class="finding-location">§6.2</span>
+            </header>
+            <div class="finding-note">Des jugements d'implémentation ("algorithme de simulation points FFT — travail non trivial, non bloquant pour V1") sont inclus dans des déclarations de scope PRD.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Déplacer vers addendum § Options considérées — non retenues.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- Done-ness clarity -->
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>Done-ness clarity</h2>
+          <span class="verdict-pill verdict-adequate">Adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>La grande majorité des FRs portent des "Conséquences testables" avec des conditions mesurables — FR-2 (logique de score point par point), FR-8 (seuil ≥ 3 matchs pour les stats par surface), FR-13 (liste exhaustive des séries FFT valides) sont exemplaires. La structure est cohérente.</p>
+            <p>Deux gaps à corriger avant la session architecture : (1) le chemin de fallback statique (bibliothèque ≥ 20 conseils, spécifiée dans le NFR de FR-4) n'a aucune conséquence testable couvrant son déclenchement ou son contenu. (2) "Le Conseil fait référence à au moins un élément spécifique" dans FR-4 laisse "générique" à l'interprétation — une définition concrète des éléments éligibles rendrait ce critère non-ambigu.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">Medium</span>
+              <h3 class="finding-title">Chemin de fallback statique non testé</h3>
+              <span class="finding-location">§4.1 FR-4 NFR</span>
+            </header>
+            <div class="finding-note">Le NFR "bibliothèque locale pré-définie (≥ 20 conseils)" est spécifié mais aucune conséquence testable ne couvre (a) le déploiement correct de la bibliothèque, (b) le déclenchement du fallback quand AICore est indisponible, (c) que le message retourné est bien issu de la bibliothèque statique.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Ajouter à FR-4 Conséquences testables : "Avec Android AICore simulé indisponible et sans réseau, le Conseil affiché est tiré de la bibliothèque locale statique (vérifiable : le contenu correspond à l'un des messages prédéfinis de la bibliothèque)."</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">Medium</span>
+              <h3 class="finding-title">"Générique" non défini dans FR-4 testable consequences</h3>
+              <span class="finding-location">§4.1 FR-4</span>
+            </header>
+            <div class="finding-note">"Le Conseil fait référence à au moins un élément spécifique au match en cours ou au Profil joueur (pas de message générique)" laisse "générique" ouvert à interprétation du reviewer.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Préciser : "au moins l'un des éléments suivants est nommé dans le texte du Conseil : score de jeux actuel, surface, Axe de travail actif, ou résultat d'une Session récente."</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">NFRs sans identifiants</h3>
+              <span class="finding-location">§ NFRs Transversaux</span>
+            </header>
+            <div class="finding-note">Les NFRs de performance, offline, sync, UX et plateforme sont organisés sans identifiants (ex. NFR-P1, NFR-UX1). Les stories ne pourront pas croiser-référencer un NFR précis par ID.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Ajouter une colonne ID aux tables NFR.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- Scope honesty -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Scope honesty</h2>
+          <span class="verdict-pill verdict-adequate">Adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>La section Non-Goals (§5) est explicite, spécifique et alignée avec §6.2. Les balises <code>[ASSUMPTION]</code> inline sont présentes et indexées au §9 sans gap de roundtrip (7/7). La table OQ ferme les 6 questions avec références directes. L'absence de callouts <code>[NOTE FOR PM]</code> est acceptable dans un produit solo où PM = développeur = utilisateur.</p>
+            <p>Un risque de scope silencieusement effacé : OQ-6 est résolu en "Bluetooth-seul, téléphone &lt; 10m" mais le scénario d'un court de tournoi exigeant de déposer le téléphone dans un vestiaire à plus de 10m n'est pas nommé comme risque résiduel dans le PRD.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Contrainte portée Bluetooth non nommée dans le PRD</h3>
+              <span class="finding-location">§4.1 FR-2, addendum OQ-6</span>
+            </header>
+            <div class="finding-note">La résolution de OQ-6 suppose "téléphone dans le sac, distance &lt; 5m" mais le scénario vestiaire &gt; 10m est une inférence implicite du lecteur, pas une déclaration de scope.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Ajouter en §5 Non-Goals ou en note FR-2 : "Le Mode Match suppose le téléphone à portée Bluetooth (&lt; 10m) ; les tournois imposant un vestiaire hors portée sont hors V1."</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- Downstream usability -->
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>Downstream usability</h2>
+          <span class="verdict-pill verdict-adequate">Adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Le Glossaire (§3) définit 12 termes et est utilisé de façon cohérente. La traçabilité UJ → Feature ("Réalise UJ-1") sur chaque bloc feature est une aide précieuse pour l'extraction en stories. Les IDs FR, UJ, SM sont présents et les références croisées résolvent.</p>
+            <p>Deux problèmes affectent l'extraction au niveau story : FR-10b utilise un suffixe "b" non-standard qui casse la continuité de séquence. Et le NFR UX "toute action en match accessible en ≤ 1 tap" n'est référencé dans aucune conséquence testable de FR-2 ou FR-3.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">Medium</span>
+              <h3 class="finding-title">FR-10b casse la séquence d'IDs</h3>
+              <span class="finding-location">§4.3</span>
+            </header>
+            <div class="finding-note">Un suffixe "b" crée un identifiant non-continu (FR-10 → FR-10b → FR-11 → … → FR-15) qui peut poser problème aux outils et à la relecture manuelle.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Renommer en FR-11 (synthèse multi-matchs) et décaler FR-11 → FR-12 à FR-15 → FR-16. Mettre à jour §6.1 et les références croisées.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">NFR "1 tap" non ancré dans les conséquences testables</h3>
+              <span class="finding-location">NFRs UX en match, §4.1 FR-2/FR-3</span>
+            </header>
+            <div class="finding-note">"Toute action en match accessible en ≤ 1 tap" est déclarée en NFR mais aucune conséquence testable de FR-2 ou FR-3 ne la couvre explicitement.</div>
+            <div class="finding-fix"><strong>Fix :</strong> Ajouter à FR-2 ou FR-3 Conséquences testables : "Chaque action de saisie de score et de déclenchement du Conseil est accessible depuis l'écran actif en exactement 1 tap, sans navigation préalable."</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <!-- Shape fit -->
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Shape fit</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Le PRD applique correctement la forme consumer/personal-product avec protagonist nommé portant le contexte inline dans chaque UJ. Les trois UJs couvrent les boucles primaires sans surcharge (coaching match, analyse inter-match, mise à jour classement). La rigueur est calibrée pour un PRD de tête de chaîne (chain-top) qui alimente architecture → épics → stories : le niveau de spécificité des FRs et des conséquences testables est approprié à ce handoff.</p>
+            <p>Note de calibration : le niveau de rigueur dépasse le "hobby/solo" même si le déploiement est personnel — c'est le bon choix car ce PRD alimente une chaîne BMad complète.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <div class="mechanical">
+      <h3>Notes mécaniques</h3>
+      <ul>
+        <li><strong>Roundtrip Assumptions :</strong> §9 liste 7 entrées ; 7 balises <code>[ASSUMPTION]</code> inline. Roundtrip propre. À noter : les assumptions FR-11 (limite 3 axes) et FR-14 (heuristique Style) méritent d'être converties en décisions actées.</li>
+        <li><strong>Protagoniste UJ :</strong> Les trois UJs nomment "Benny" avec contexte spécifique. Propre.</li>
+        <li><strong>Glossaire :</strong> Aucune dérive de casse ou de synonyme détectée. "Session", "Mode Match", "Axe de travail", "Conseil", "Sync" capitalisés de façon cohérente partout.</li>
+        <li><strong>Sections requises :</strong> Toutes les sections attendues pour un PRD consumer chain-top sont présentes (Vision, UJs, Glossaire, Features + FRs + conséquences testables, Non-Goals, Scope MVP, Success Metrics + contre-métriques, Open Questions, Index Assumptions, NFRs).</li>
+        <li><strong>Numérotation :</strong> FR-10b est le seul gap de continuité détecté — traité dans Downstream usability.</li>
+      </ul>
+    </div>
+
+    <footer class="report-footer">
+      <div class="meta">
+        <span>PRD : _bmad-output/planning-artifacts/prds/prd-SecondServe-2026-06-08/prd.md</span>
+        <span>Rubric : .claude/skills/bmad-prd/assets/prd-validation-checklist.md</span>
+        <span>Généré : 2026-06-08T00:00:00Z</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# ─── Android ──────────────────────────────────────────────────────────────────
+android/.gradle/
+android/build/
+android/**/build/
+!android/gradle/wrapper/gradle-wrapper.jar
+android/local.properties
+android/captures/
+
+# ─── Backend (Python / FastAPI) ───────────────────────────────────────────────
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# ─── IDE ──────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
