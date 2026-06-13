@@ -24,18 +24,6 @@ def do_run_migrations(connection):
         context.run_migrations()
 
 
-async def run_async_migrations():
-    config.set_main_option("sqlalchemy.url", settings.database_url)
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-    await connectable.dispose()
-
-
 def run_migrations_offline():
     url = settings.database_url
     context.configure(
@@ -46,6 +34,18 @@ def run_migrations_offline():
     )
     with context.begin_transaction():
         context.run_migrations()
+
+
+async def run_async_migrations():
+    config.set_main_option("sqlalchemy.url", settings.database_url)
+    connectable = async_engine_from_config(
+        config.get_section(config.config_ini_section),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
 
 
 def run_migrations_online():

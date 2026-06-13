@@ -1,5 +1,6 @@
 import os
 
+# Doit être défini avant tout import de l'app pour que Settings() valide correctement
 os.environ.setdefault("JWT_SECRET", "test-only-secret-do-not-use-in-production")
 
 import pytest
