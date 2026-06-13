@@ -465,6 +465,27 @@ claude-sonnet-4-6
 
 ### File List
 
+### Review Findings
+
+#### Patch (à corriger)
+- [ ] [Review][Patch] [CRITICAL] JWT secret weak default "changeme-in-production" sans validation startup [backend/app/core/config.py]
+- [ ] [Review][Patch] [HIGH] `SecondServeException` non enregistrée comme exception handler FastAPI — devient un 500 silencieux [backend/app/shared/exceptions.py + backend/app/main.py]
+- [ ] [Review][Patch] [HIGH] `get_db` ne commit ni ne rollback — écritures DB silencieusement perdues si pas de commit explicite [backend/app/core/database.py]
+- [ ] [Review][Patch] [HIGH] `alembic/env.py` appelle `run_migrations_online()` au niveau module sans garde `if not context.is_offline_mode()` — incompatible avec asyncio déjà running [backend/alembic/env.py]
+- [ ] [Review][Patch] [MEDIUM] `alembic/env.py` n'importe pas les modules modèles — `Base.metadata` vide, migrations `--autogenerate` ne détecteront aucune table [backend/alembic/env.py]
+- [ ] [Review][Patch] [MEDIUM] `conftest.py` SQLite `:memory:` avec aiosqlite nécessite `StaticPool` + `connect_args={"check_same_thread": False}` pour isolation garantie [backend/tests/conftest.py]
+- [ ] [Review][Patch] [MEDIUM] `conftest.py` `app.dependency_overrides.clear()` efface tous les overrides au lieu de sauvegarder/restaurer l'état précédent [backend/tests/conftest.py]
+- [ ] [Review][Patch] [LOW] `main.py` `openapi_url` et `redoc_url` pas supprimés en production (seulement `docs_url`) [backend/app/main.py]
+- [ ] [Review][Patch] [LOW] CI artifact uploads `.pytest_cache/` au lieu d'un rapport JUnit XML [.github/workflows/ci-backend.yml]
+- [ ] [Review][Patch] [LOW] CI pas de `rm -f secondserve.db` avant la step `alembic upgrade head` [.github/workflows/ci-backend.yml]
+
+#### Defer (pré-existant ou hors scope)
+- [x] [Review][Defer] [MEDIUM] Service systemd sans hardening (NoNewPrivileges, ProtectSystem, PrivateTmp) [backend/secondserve-backend.service] — deferred, hardening infra hors scope story 1.2
+- [x] [Review][Defer] [LOW] Pas de CORSMiddleware — non requis pour mobile direct, à ajouter si frontend web [backend/app/main.py] — deferred, pas de frontend web pour l'instant
+- [x] [Review][Defer] [LOW] anyio backend non épinglé dans config pytest — risque de flakiness future [backend/pyproject.toml] — deferred, acceptable à ce stade
+- [x] [Review][Defer] [LOW] `engine` et `AsyncSessionLocal` singletons module-level — code contournant `get_db` utiliserait la DB prod en test [backend/app/core/database.py] — deferred, pattern SQLAlchemy standard
+- [x] [Review][Defer] [LOW] `mistral_api_key` vide par défaut — normal, Epic 5 non encore implémentée [backend/app/core/config.py] — deferred, intentionnel
+
 ## Change Log
 
 - 2026-06-12 : Création de la story 1.2 — Setup FastAPI backend (contexte complet généré par create-story)
