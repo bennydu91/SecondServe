@@ -4,7 +4,7 @@ baseline_commit: f094aae07f306854a6ba29e98ee6ed5e09b600c4
 
 # Story 1.1: Setup Android Multi-Module Gradle
 
-Status: review
+Status: done
 
 ## Story
 
@@ -464,3 +464,19 @@ claude-sonnet-4-6
 ## Change Log
 
 - 2026-06-10 : Implémentation Story 1.1 — Setup projet Android multi-module Gradle (Kotlin DSL). 10 modules créés, Hilt configuré dans :app et :wear, :domain validé pur Kotlin (tests JVM passent). Ajout de `junit-platform-launcher` pour compatibilité JUnit 5.12.x / Gradle 8.11.1.
+
+### Review Findings
+
+- [x] [Review][Patch] `standalone = true` → `false` sur le manifest Wear — l'IA coaching transite par le téléphone, l'app Wear n'est pas autonome [android/wear/src/main/AndroidManifest.xml:14]
+- [x] [Review][Patch] `domain.Result` renommée en `AppResult` — évite le shadow de `kotlin.Result` [android/domain/src/main/kotlin/com/secondserve/domain/AppResult.kt]
+- [x] [Review][Patch] `HiltAndroidRule.inject()` ajouté dans `@Before setUp()` [android/app/src/androidTest/kotlin/com/secondserve/MainActivityTest.kt]
+- [x] [Review][Patch] Versions inline déplacées dans `[versions]` du catalog TOML (`activityCompose`, `wearComposeNavigation`, `junitPlatformLauncher`, `playServicesWearable`) [android/gradle/libs.versions.toml]
+- [x] [Review][Patch] `windowSoftInputMode="adjustResize"` supprimé du manifest phone [android/app/src/main/AndroidManifest.xml]
+
+- [x] [Review][Defer] Existence d'orbit `9.0.0` à vérifier sur Maven Central — version au-delà du knowledge cutoff du reviewer [android/gradle/libs.versions.toml:10] — deferred, pre-existing
+- [x] [Review][Defer] Compatibilité `hilt-navigation-compose:1.2.0` avec Navigation Compose `2.9.0` à vérifier — versions mandatées par spec mais à confirmer [android/gradle/libs.versions.toml:8,17] — deferred, pre-existing
+- [x] [Review][Defer] `domain.Result` n'a pas de variante `Loading` — ViewModels Orbit devront inventer leur propre état de chargement [android/domain/src/main/kotlin/com/secondserve/domain/Result.kt] — deferred, pre-existing
+- [x] [Review][Defer] Alignement versions Wear Compose foundation (1.5.0) / material3 (1.6.2) — vérifier compatibilité dans les release notes [android/gradle/libs.versions.toml:13-14] — deferred, pre-existing
+- [x] [Review][Defer] `allowBackup="true"` sans règles de backup — risque vie privée quand Room sera ajouté [android/app/src/main/AndroidManifest.xml:7] — deferred, pre-existing
+- [x] [Review][Defer] `AppModule` vide / `InferenceEngine` sans binding Hilt — compile error dès qu'un module l'injecte — à adresser en Story 3.1 [android/app/src/main/kotlin/com/secondserve/di/AppModule.kt] — deferred, pre-existing
+- [x] [Review][Defer] Permissions manquantes pour capteurs Wear (BODY_SENSORS, ACTIVITY_RECOGNITION) — à ajouter dans les stories concernées [android/wear/src/main/AndroidManifest.xml] — deferred, pre-existing

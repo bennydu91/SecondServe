@@ -17,6 +17,10 @@ junit5 = "5.12.2"
 navigationCompose = "2.9.0"
 androidxTestRunner = "1.6.2"
 androidxTestExtJunit = "1.2.1"
+activityCompose = "1.10.1"
+wearComposeNavigation = "1.4.0"
+junitPlatformLauncher = "1.12.2"
+playServicesWearable = "18.2.0"
 
 [libraries]
 # Compose
@@ -25,7 +29,7 @@ compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.10.1" }
+activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 # Hilt
@@ -50,18 +54,18 @@ orbit-compose = { group = "org.orbit-mvi", name = "orbit-compose", version.ref =
 # Wear OS
 wear-compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "wearComposeMaterial3" }
 wear-compose-foundation = { group = "androidx.wear.compose", name = "compose-foundation", version.ref = "wearComposeFoundation" }
-wear-compose-navigation = { group = "androidx.wear.compose", name = "compose-navigation", version = "1.4.0" }
+wear-compose-navigation = { group = "androidx.wear.compose", name = "compose-navigation", version.ref = "wearComposeNavigation" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 # Wearable DataLayer
-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version = "18.2.0" }
+wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
 
 # Tests JVM (:domain)
 junit5-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit5" }
 junit5-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit5" }
-junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version = "1.12.2" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatformLauncher" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }

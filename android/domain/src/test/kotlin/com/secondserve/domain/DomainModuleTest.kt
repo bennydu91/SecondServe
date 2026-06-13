@@ -7,17 +7,17 @@ import org.junit.jupiter.api.Test
 class DomainModuleTest {
 
     @Test
-    fun `Result Success wraps data correctly`() {
-        val result: Result<String> = Result.Success("ok")
-        assertTrue(result is Result.Success)
-        assertEquals("ok", (result as Result.Success).data)
+    fun `AppResult Success wraps data correctly`() {
+        val result: AppResult<String> = AppResult.Success("ok")
+        assertTrue(result is AppResult.Success)
+        assertEquals("ok", (result as AppResult.Success).data)
     }
 
     @Test
-    fun `Result Error wraps exception correctly`() {
+    fun `AppResult Error wraps exception correctly`() {
         val ex = RuntimeException("fail")
-        val result: Result<String> = Result.Error(ex)
-        assertTrue(result is Result.Error)
-        assertEquals("fail", (result as Result.Error).exception.message)
+        val result: AppResult<String> = AppResult.Error(ex)
+        assertTrue(result is AppResult.Error)
+        assertEquals("fail", (result as AppResult.Error).exception.message)
     }
 }

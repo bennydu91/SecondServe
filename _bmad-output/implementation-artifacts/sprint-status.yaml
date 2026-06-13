@@ -1,5 +1,5 @@
 # generated: 2026-06-10
-# last_updated: 2026-06-10
+# last_updated: 2026-06-12
 # project: SecondServe
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-10
+last_updated: 2026-06-12
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -44,8 +44,8 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
   # ─── Epic 1: Fondation & Profil joueur ───────────────────────────────────────
   epic-1: in-progress
-  1-1-setup-android-multi-module-gradle: review
-  1-2-setup-fastapi-backend: backlog
+  1-1-setup-android-multi-module-gradle: done
+  1-2-setup-fastapi-backend: ready-for-dev
   1-3-jwt-authentication-android-vps: backlog
   1-4-classement-fft-saisie-et-historique: backlog
   1-5-profil-joueur-style-de-jeu-donnees-complementaires: backlog

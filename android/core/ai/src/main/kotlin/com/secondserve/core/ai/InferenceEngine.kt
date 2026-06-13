@@ -1,7 +1,7 @@
 package com.secondserve.core.ai
 
-import com.secondserve.domain.Result
+import com.secondserve.domain.AppResult
 
 interface InferenceEngine {
-    suspend fun generate(prompt: String): Result<String>
+    suspend fun generate(prompt: String): AppResult<String>
 }
