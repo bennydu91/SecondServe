@@ -554,8 +554,28 @@ Aucun blocage majeur. `uv` gère les dépendances async SQLite via `aiosqlite` (
 - [x] [Review][Defer] [LOW] Singletons module-level engine/AsyncSessionLocal — deferred, pattern SQLAlchemy standard
 - [x] [Review][Defer] [LOW] `mistral_api_key` vide — deferred, Epic 5 non encore implémentée
 
+### Review Findings (2026-06-13 — code-review 2)
+
+#### Patch (appliqués)
+- [x] [Review][Patch] [HIGH] Override `get_db` avec lambda invalide → `async def override_get_db(): yield db_session` [backend/tests/conftest.py]
+- [x] [Review][Patch] [MEDIUM] `db_session` fixture sans try/finally → teardown garanti même si le test lève une exception [backend/tests/conftest.py]
+- [x] [Review][Patch] [LOW] `detail: None` hardcodé → champ `detail` optionnel ajouté à `SecondServeException`, propagé dans le handler [backend/app/shared/exceptions.py + backend/app/main.py]
+- [x] [Review][Patch] [LOW] JWT_SECRET validation incomplète → vérification `len(jwt_secret) < 32` ajoutée [backend/app/core/config.py]
+- [x] [Review][Patch] [LOW] Systemd sans limite de redémarrages → `StartLimitBurst=5` + `StartLimitIntervalSec=60` ajoutés [backend/secondserve-backend.service]
+
+#### Defer (pré-existant ou hors scope)
+- [x] [Review][Defer] `os.environ.setdefault` fragile avec imports anticipés — deferred, fonctionnel en usage pytest standard
+- [x] [Review][Defer] Commit automatique dans `get_db` pour 4xx sans exception — deferred, pattern FastAPI standard, à réévaluer sur de vraies routes
+- [x] [Review][Defer] `Base.metadata` vide sans imports de modèles dans `env.py` — deferred, par design, à compléter story par story
+- [x] [Review][Defer] `settings = Settings()` singleton module-level — deferred, pattern pydantic-settings standard
+- [x] [Review][Defer] `mistral_api_key` sans validation startup — deferred, Epic 5 non implémentée
+- [x] [Review][Defer] `asyncio.run()` dans `run_migrations_online` incompatible event loop active — deferred, outil CLI uniquement
+- [x] [Review][Defer] CI sans test `alembic downgrade` — deferred, migration initiale vide (pass)
+- [x] [Review][Defer] `/health` sans DB check — deferred, scaffold acceptable
+
 ## Change Log
 
 - 2026-06-12 : Création de la story 1.2 — Setup FastAPI backend (contexte complet généré par create-story)
 - 2026-06-13 : Implémentation complète — projet uv init, structure feature-based, FastAPI + health endpoint, Alembic async, systemd + Nginx, tests (1 passed). Statut → review.
-- 2026-06-13 : Code review — 10 patches appliqués (1 critical, 3 high, 3 medium, 3 low), 5 deferred. Statut → done.
+- 2026-06-13 : Code review (round 1) — 10 patches appliqués (1 critical, 3 high, 3 medium, 3 low), 5 deferred. Statut → done.
+- 2026-06-13 : Code review (round 2) — 5 patches appliqués (1 high, 1 medium, 3 low), 8 deferred, 4 dismissed. Statut → done.

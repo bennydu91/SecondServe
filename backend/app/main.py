@@ -25,7 +25,7 @@ app = FastAPI(
 async def secondserve_exception_handler(request: Request, exc: SecondServeException) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
-        content={"error_code": exc.error_code, "message": exc.message, "detail": None},
+        content={"error_code": exc.error_code, "message": exc.message, "detail": exc.detail},
     )
 
 
