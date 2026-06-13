@@ -1,10 +1,10 @@
 ---
-baseline_commit: ""
+baseline_commit: "f93d368caf3fef140d5274206dac4ce030f00c91"
 ---
 
 # Story 1.2: Setup FastAPI Backend
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -33,54 +33,54 @@ so that the Android app has a secure endpoint to communicate with.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Initialiser le projet uv dans `backend/` (AC: 4, 6)
-  - [ ] Supprimer le `.gitkeep` et initialiser `uv init` dans `backend/` avec `project.name = "secondserve-backend"`
-  - [ ] Ajouter les dépendances production : `fastapi[standard]`, `sqlalchemy[asyncio]`, `alembic`, `pydantic-settings`
-  - [ ] Ajouter les dépendances dev : `pytest`, `pytest-asyncio`, `httpx`, `anyio`
-  - [ ] Vérifier que `pyproject.toml` cible Python `>=3.12`
-  - [ ] Créer `backend/.env.example` avec `JWT_SECRET=`, `MISTRAL_API_KEY=`, `DATABASE_URL=sqlite+aiosqlite:///./secondserve.db`
-  - [ ] Créer `backend/.gitignore` excluant `.env`, `*.db`, `.venv/`, `__pycache__/`, `.pytest_cache/`
+- [x] Task 1 — Initialiser le projet uv dans `backend/` (AC: 4, 6)
+  - [x] Supprimer le `.gitkeep` et initialiser `uv init` dans `backend/` avec `project.name = "secondserve-backend"`
+  - [x] Ajouter les dépendances production : `fastapi[standard]`, `sqlalchemy[asyncio]`, `alembic`, `pydantic-settings`
+  - [x] Ajouter les dépendances dev : `pytest`, `pytest-asyncio`, `httpx`, `anyio`
+  - [x] Vérifier que `pyproject.toml` cible Python `>=3.12`
+  - [x] Créer `backend/.env.example` avec `JWT_SECRET=`, `MISTRAL_API_KEY=`, `DATABASE_URL=sqlite+aiosqlite:///./secondserve.db`
+  - [x] Créer `backend/.gitignore` excluant `.env`, `*.db`, `.venv/`, `__pycache__/`, `.pytest_cache/`
 
-- [ ] Task 2 — Créer la structure de répertoires complète (AC: 4)
-  - [ ] `backend/app/__init__.py`
-  - [ ] `backend/app/api/__init__.py` + `backend/app/api/v1/__init__.py`
-  - [ ] Créer `backend/app/api/v1/router.py` (APIRouter principal qui inclut les sous-routers)
-  - [ ] Créer stubs `backend/app/api/v1/auth.py`, `sessions.py`, `profile.py`, `coaching.py`, `sync.py`, `notifications.py` (chaque fichier avec un `APIRouter` vide + un commentaire indiquant la story qui l'implémentera)
-  - [ ] `backend/app/core/__init__.py`
-  - [ ] `backend/app/features/__init__.py`
-  - [ ] Créer `backend/app/features/auth/__init__.py` + `service.py` (stub vide)
-  - [ ] Créer `backend/app/features/sessions/__init__.py` + `models.py`, `schemas.py`, `repository.py`, `service.py` (stubs vides)
-  - [ ] Créer `backend/app/features/profile/__init__.py` + `models.py`, `schemas.py`, `repository.py`, `service.py` (stubs vides)
-  - [ ] Créer `backend/app/features/coaching/__init__.py` + `models.py`, `schemas.py`, `repository.py`, `service.py`, `mistral_client.py` (stubs vides)
-  - [ ] Créer `backend/app/features/sync/__init__.py` + `schemas.py`, `service.py` (stubs vides)
-  - [ ] Créer `backend/app/features/notifications/__init__.py` + `models.py`, `schemas.py`, `scheduler.py` (stubs vides)
-  - [ ] Créer `backend/app/shared/__init__.py` + `exceptions.py`
-  - [ ] `backend/tests/__init__.py` + `backend/tests/unit/__init__.py` + `backend/tests/integration/__init__.py`
+- [x] Task 2 — Créer la structure de répertoires complète (AC: 4)
+  - [x] `backend/app/__init__.py`
+  - [x] `backend/app/api/__init__.py` + `backend/app/api/v1/__init__.py`
+  - [x] Créer `backend/app/api/v1/router.py` (APIRouter principal qui inclut les sous-routers)
+  - [x] Créer stubs `backend/app/api/v1/auth.py`, `sessions.py`, `profile.py`, `coaching.py`, `sync.py`, `notifications.py` (chaque fichier avec un `APIRouter` vide + un commentaire indiquant la story qui l'implémentera)
+  - [x] `backend/app/core/__init__.py`
+  - [x] `backend/app/features/__init__.py`
+  - [x] Créer `backend/app/features/auth/__init__.py` + `service.py` (stub vide)
+  - [x] Créer `backend/app/features/sessions/__init__.py` + `models.py`, `schemas.py`, `repository.py`, `service.py` (stubs vides)
+  - [x] Créer `backend/app/features/profile/__init__.py` + `models.py`, `schemas.py`, `repository.py`, `service.py` (stubs vides)
+  - [x] Créer `backend/app/features/coaching/__init__.py` + `models.py`, `schemas.py`, `repository.py`, `service.py`, `mistral_client.py` (stubs vides)
+  - [x] Créer `backend/app/features/sync/__init__.py` + `schemas.py`, `service.py` (stubs vides)
+  - [x] Créer `backend/app/features/notifications/__init__.py` + `models.py`, `schemas.py`, `scheduler.py` (stubs vides)
+  - [x] Créer `backend/app/shared/__init__.py` + `exceptions.py`
+  - [x] `backend/tests/__init__.py` + `backend/tests/unit/__init__.py` + `backend/tests/integration/__init__.py`
 
-- [ ] Task 3 — Implémenter app FastAPI + endpoint health (AC: 2)
-  - [ ] Créer `backend/app/core/config.py` — classe `Settings` (pydantic-settings) avec `jwt_secret`, `mistral_api_key`, `database_url`, `debug=False`; instance singleton `settings = Settings()`
-  - [ ] Créer `backend/app/core/database.py` — `create_async_engine`, `async_sessionmaker`, `AsyncSession`, dependency `get_db`
-  - [ ] Créer `backend/app/main.py` avec `FastAPI` app, titre `"SecondServe Backend"`, montage du router v1
-  - [ ] Ajouter `GET /api/v1/health` dans `backend/app/api/v1/router.py` retournant `{"status": "ok"}` HTTP 200
-  - [ ] Configurer le logging dans `main.py` : `logging.basicConfig` avec `LOG_LEVEL` depuis settings (INFO prod, DEBUG dev)
+- [x] Task 3 — Implémenter app FastAPI + endpoint health (AC: 2)
+  - [x] Créer `backend/app/core/config.py` — classe `Settings` (pydantic-settings) avec `jwt_secret`, `mistral_api_key`, `database_url`, `debug=False`; instance singleton `settings = Settings()`
+  - [x] Créer `backend/app/core/database.py` — `create_async_engine`, `async_sessionmaker`, `AsyncSession`, dependency `get_db`
+  - [x] Créer `backend/app/main.py` avec `FastAPI` app, titre `"SecondServe Backend"`, montage du router v1
+  - [x] Ajouter `GET /api/v1/health` dans `backend/app/api/v1/router.py` retournant `{"status": "ok"}` HTTP 200
+  - [x] Configurer le logging dans `main.py` : `logging.basicConfig` avec `LOG_LEVEL` depuis settings (INFO prod, DEBUG dev)
 
-- [ ] Task 4 — Configurer Alembic (AC: 5)
-  - [ ] Exécuter `uv run alembic init alembic` dans `backend/` pour générer `alembic.ini` et `alembic/env.py`
-  - [ ] Modifier `alembic.ini` : `sqlalchemy.url = %(DATABASE_URL)s` (variable d'environnement, pas de valeur hardcodée)
-  - [ ] Modifier `alembic/env.py` pour support async (utiliser `run_async_migrations`, `AsyncEngine.connect()`) et charger les modèles SQLAlchemy
-  - [ ] Créer la première migration vide (`alembic/versions/`) avec `uv run alembic revision --autogenerate -m "initial"` — doit générer un fichier de migration sans erreur (même si aucun modèle n'est encore défini)
-  - [ ] Vérifier que `uv run alembic upgrade head` s'exécute sans erreur sur la base SQLite locale
+- [x] Task 4 — Configurer Alembic (AC: 5)
+  - [x] Exécuter `uv run alembic init alembic` dans `backend/` pour générer `alembic.ini` et `alembic/env.py`
+  - [x] Modifier `alembic.ini` : `sqlalchemy.url = %(DATABASE_URL)s` (variable d'environnement, pas de valeur hardcodée)
+  - [x] Modifier `alembic/env.py` pour support async (utiliser `run_async_migrations`, `AsyncEngine.connect()`) et charger les modèles SQLAlchemy
+  - [x] Créer la première migration vide (`alembic/versions/`) avec `uv run alembic revision --autogenerate -m "initial"` — doit générer un fichier de migration sans erreur (même si aucun modèle n'est encore défini)
+  - [x] Vérifier que `uv run alembic upgrade head` s'exécute sans erreur sur la base SQLite locale
 
-- [ ] Task 5 — Créer le fichier systemd et la config Nginx (AC: 1, 3)
-  - [ ] Créer `backend/secondserve-backend.service` (voir section Dev Notes — Systemd)
-  - [ ] Créer `backend/nginx-secondserve.conf` (voir section Dev Notes — Nginx)
-  - [ ] Créer `backend/DEPLOY.md` avec les instructions de déploiement sur le VPS (copie des fichiers, certbot, activation service)
+- [x] Task 5 — Créer le fichier systemd et la config Nginx (AC: 1, 3)
+  - [x] Créer `backend/secondserve-backend.service` (voir section Dev Notes — Systemd)
+  - [x] Créer `backend/nginx-secondserve.conf` (voir section Dev Notes — Nginx)
+  - [x] Créer `backend/DEPLOY.md` avec les instructions de déploiement sur le VPS (copie des fichiers, certbot, activation service)
 
-- [ ] Task 6 — Écrire les tests (AC: 2)
-  - [ ] Créer `backend/tests/conftest.py` avec `AsyncClient` httpx et override de la dépendance `get_db` pour tests en mémoire
-  - [ ] Créer `backend/tests/integration/test_health_api.py` — test `GET /api/v1/health` → 200 + `{"status": "ok"}`
-  - [ ] Créer `backend/pytest.ini` ou section `[tool.pytest.ini_options]` dans `pyproject.toml` : `asyncio_mode = "auto"`, `testpaths = ["tests"]`
-  - [ ] Vérifier que `uv run pytest` passe avec le test health
+- [x] Task 6 — Écrire les tests (AC: 2)
+  - [x] Créer `backend/tests/conftest.py` avec `AsyncClient` httpx et override de la dépendance `get_db` pour tests en mémoire
+  - [x] Créer `backend/tests/integration/test_health_api.py` — test `GET /api/v1/health` → 200 + `{"status": "ok"}`
+  - [x] Créer `backend/pytest.ini` ou section `[tool.pytest.ini_options]` dans `pyproject.toml` : `asyncio_mode = "auto"`, `testpaths = ["tests"]`
+  - [x] Vérifier que `uv run pytest` passe avec le test health
 
 ## Dev Notes
 
@@ -461,10 +461,79 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+Aucun blocage majeur. `uv` gère les dépendances async SQLite via `aiosqlite` (ajouté explicitement comme noté dans les Dev Notes). La migration Alembic async fonctionne sans mode offline.
+
 ### Completion Notes List
 
+- Task 1 : Projet uv initialisé avec `secondserve-backend`, Python >=3.12, toutes les dépendances prod/dev, `.env.example` et `.gitignore` créés.
+- Task 2 : Structure feature-based complète créée avec stubs pour chaque feature (`auth`, `sessions`, `profile`, `coaching`, `sync`, `notifications`) et leurs sous-modules.
+- Task 3 : `FastAPI` app avec endpoint `GET /api/v1/health` → `{"status": "ok"}`, `Settings` via pydantic-settings, engine SQLAlchemy async, logging configuré.
+- Task 4 : Alembic configuré en mode async avec `alembic/env.py` reécrit, migration initiale générée et appliquée avec succès (`alembic upgrade head`).
+- Task 5 : Fichier systemd `secondserve-backend.service`, config Nginx avec redirection HTTPS, et `DEPLOY.md` complet créés.
+- Task 6 : `conftest.py` avec SQLite in-memory et override `get_db`, test d'intégration `test_health_returns_ok` — 1 passed en 0.03s.
+
 ### File List
+
+- backend/pyproject.toml
+- backend/.env.example
+- backend/.gitignore
+- backend/alembic.ini
+- backend/alembic/env.py
+- backend/alembic/versions/93050bf04cdd_initial.py
+- backend/app/__init__.py
+- backend/app/main.py
+- backend/app/api/__init__.py
+- backend/app/api/v1/__init__.py
+- backend/app/api/v1/router.py
+- backend/app/api/v1/auth.py
+- backend/app/api/v1/sessions.py
+- backend/app/api/v1/profile.py
+- backend/app/api/v1/coaching.py
+- backend/app/api/v1/sync.py
+- backend/app/api/v1/notifications.py
+- backend/app/core/__init__.py
+- backend/app/core/config.py
+- backend/app/core/database.py
+- backend/app/features/__init__.py
+- backend/app/features/auth/__init__.py
+- backend/app/features/auth/service.py
+- backend/app/features/sessions/__init__.py
+- backend/app/features/sessions/models.py
+- backend/app/features/sessions/schemas.py
+- backend/app/features/sessions/repository.py
+- backend/app/features/sessions/service.py
+- backend/app/features/profile/__init__.py
+- backend/app/features/profile/models.py
+- backend/app/features/profile/schemas.py
+- backend/app/features/profile/repository.py
+- backend/app/features/profile/service.py
+- backend/app/features/coaching/__init__.py
+- backend/app/features/coaching/models.py
+- backend/app/features/coaching/schemas.py
+- backend/app/features/coaching/repository.py
+- backend/app/features/coaching/service.py
+- backend/app/features/coaching/mistral_client.py
+- backend/app/features/sync/__init__.py
+- backend/app/features/sync/schemas.py
+- backend/app/features/sync/service.py
+- backend/app/features/notifications/__init__.py
+- backend/app/features/notifications/models.py
+- backend/app/features/notifications/schemas.py
+- backend/app/features/notifications/scheduler.py
+- backend/app/shared/__init__.py
+- backend/app/shared/exceptions.py
+- backend/tests/__init__.py
+- backend/tests/unit/__init__.py
+- backend/tests/integration/__init__.py
+- backend/tests/conftest.py
+- backend/tests/integration/test_health_api.py
+- backend/secondserve-backend.service
+- backend/nginx-secondserve.conf
+- backend/DEPLOY.md
+- _bmad-output/implementation-artifacts/1-2-setup-fastapi-backend.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ## Change Log
 
 - 2026-06-12 : Création de la story 1.2 — Setup FastAPI backend (contexte complet généré par create-story)
+- 2026-06-13 : Implémentation complète — projet uv init, structure feature-based, FastAPI + health endpoint, Alembic async, systemd + Nginx, tests (1 passed). Statut → review.
