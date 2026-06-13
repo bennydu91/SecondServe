@@ -4,7 +4,7 @@ baseline_commit: "f93d368caf3fef140d5274206dac4ce030f00c91"
 
 # Story 1.2: Setup FastAPI Backend
 
-Status: review
+Status: done
 
 ## Story
 
@@ -533,7 +533,29 @@ Aucun blocage majeur. `uv` gère les dépendances async SQLite via `aiosqlite` (
 - _bmad-output/implementation-artifacts/1-2-setup-fastapi-backend.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 
+### Review Findings
+
+#### Patch (appliqués)
+- [x] [Review][Patch] [CRITICAL] JWT secret weak default sans validation startup → `model_validator` ajouté [backend/app/core/config.py]
+- [x] [Review][Patch] [HIGH] `SecondServeException` non enregistrée → handler ajouté dans main.py, import HTTPException inutile supprimé [backend/app/main.py + exceptions.py]
+- [x] [Review][Patch] [HIGH] `get_db` sans commit/rollback → pattern try/yield/except ajouté [backend/app/core/database.py]
+- [x] [Review][Patch] [HIGH] `alembic/env.py` appel module-level → `if context.is_offline_mode()` + mode offline ajouté [backend/alembic/env.py]
+- [x] [Review][Patch] [MEDIUM] Modèles non importés dans env.py → bloc commenté avec instructions ajouté [backend/alembic/env.py]
+- [x] [Review][Patch] [MEDIUM] SQLite :memory: sans StaticPool → `StaticPool` + `connect_args` + drop_all au teardown [backend/tests/conftest.py]
+- [x] [Review][Patch] [MEDIUM] `dependency_overrides.clear()` → sauvegarde/restauration de l'état [backend/tests/conftest.py]
+- [x] [Review][Patch] [LOW] `openapi_url` et `redoc_url` exposés en prod → supprimés si `debug=False` [backend/app/main.py]
+- [x] [Review][Patch] [LOW] CI artifact `.pytest_cache/` → `--junitxml=test-report.xml` ajouté [.github/workflows/ci-backend.yml]
+- [x] [Review][Patch] [LOW] Pas de `rm -f secondserve.db` avant migration CI → step nettoyage ajoutée [.github/workflows/ci-backend.yml]
+
+#### Defer (pré-existant ou hors scope)
+- [x] [Review][Defer] [MEDIUM] Systemd sans hardening — deferred, infra hors scope story 1.2
+- [x] [Review][Defer] [LOW] Pas de CORSMiddleware — deferred, pas de frontend web
+- [x] [Review][Defer] [LOW] anyio backend non épinglé — deferred, acceptable à ce stade
+- [x] [Review][Defer] [LOW] Singletons module-level engine/AsyncSessionLocal — deferred, pattern SQLAlchemy standard
+- [x] [Review][Defer] [LOW] `mistral_api_key` vide — deferred, Epic 5 non encore implémentée
+
 ## Change Log
 
 - 2026-06-12 : Création de la story 1.2 — Setup FastAPI backend (contexte complet généré par create-story)
 - 2026-06-13 : Implémentation complète — projet uv init, structure feature-based, FastAPI + health endpoint, Alembic async, systemd + Nginx, tests (1 passed). Statut → review.
+- 2026-06-13 : Code review — 10 patches appliqués (1 critical, 3 high, 3 medium, 3 low), 5 deferred. Statut → done.
