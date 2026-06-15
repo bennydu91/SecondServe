@@ -17,6 +17,7 @@ import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.auth.AuthService
 import com.secondserve.data.remote.auth.AuthRepository
 import com.secondserve.data.remote.auth.AuthRepositoryImpl
+import com.secondserve.BuildConfig
 import com.secondserve.data.remote.security.JwtTokenStore
 import com.secondserve.data.remote.security.TokenStore
 
@@ -57,7 +58,7 @@ object AuthModule {
     @Singleton
     fun provideVpsApiService(okHttpClient: OkHttpClient, moshi: Moshi): VpsApiService {
         return Retrofit.Builder()
-            .baseUrl("https://secondserve.example.com/")
+            .baseUrl(BuildConfig.VPS_BASE_URL)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .client(okHttpClient)
             .build()

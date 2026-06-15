@@ -17,6 +17,16 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "com.secondserve.HiltTestRunner"
+        buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
+    }
+
+    buildTypes {
+        release {
+            buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
+        }
+        debug {
+            buildConfigField("String", "VPS_BASE_URL", "\"http://10.0.2.2:8000/\"")
+        }
     }
 
     compileOptions {
