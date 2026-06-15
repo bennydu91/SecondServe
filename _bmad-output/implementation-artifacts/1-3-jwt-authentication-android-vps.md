@@ -272,7 +272,7 @@ backend/
 **EncryptedSharedPreferences Setup:**
 ```kotlin
 // JwtTokenStore.kt
-private val encryptedSharedPreferences: EncryptedSharedPreferences by lazy {
+private val encryptedSharedPreferences: SharedPreferences by lazy {
     val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
