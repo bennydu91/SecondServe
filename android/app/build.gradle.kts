@@ -58,6 +58,14 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.timber)
 
+    // HTTP & JSON (for AuthModule)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.moshi)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
+
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 
