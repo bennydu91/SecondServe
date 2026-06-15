@@ -34,4 +34,23 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.coroutines.android)
+
+    // HTTP & JSON
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.moshi)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
+
+    // Security
+    implementation(libs.security.crypto)
+
+    // Tests
+    testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(kotlin("test"))
 }

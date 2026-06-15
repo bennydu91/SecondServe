@@ -17,6 +17,16 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "com.secondserve.HiltTestRunner"
+        buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
+    }
+
+    buildTypes {
+        release {
+            buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
+        }
+        debug {
+            buildConfigField("String", "VPS_BASE_URL", "\"http://10.0.2.2:8000/\"")
+        }
     }
 
     compileOptions {
@@ -57,6 +67,14 @@ dependencies {
 
     implementation(libs.coroutines.android)
     implementation(libs.timber)
+
+    // HTTP & JSON (for AuthModule)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.moshi)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
