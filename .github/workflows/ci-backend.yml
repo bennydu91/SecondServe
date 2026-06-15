@@ -1,0 +1,60 @@
+name: CI — Backend
+
+on:
+  push:
+    branches: [master, main]
+    paths: ['backend/**']
+  pull_request:
+    branches: [master, main]
+    paths: ['backend/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Job 1 : Tests + migrations ──────────────────────────────────────────────
+  test-and-migrate:
+    name: Tests & Migrations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'backend/uv.lock'
+
+      - name: Installer les dépendances
+        working-directory: backend
+        run: uv sync --dev
+
+      - name: Vérifier les migrations Alembic
+        working-directory: backend
+        env:
+          JWT_SECRET: ci-test-secret-not-for-production
+        run: |
+          rm -f secondserve.db
+          uv run alembic upgrade head
+
+      - name: Tests unitaires et intégration
+        working-directory: backend
+        env:
+          JWT_SECRET: ci-test-secret-not-for-production
+        run: uv run pytest -v --junitxml=test-report.xml
+
+      - name: Upload rapports de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: 'backend/test-report.xml'
+          retention-days: 7

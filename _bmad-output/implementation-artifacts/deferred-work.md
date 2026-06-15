@@ -1,5 +1,16 @@
 # Deferred Work
 
+## Deferred from: code review of 1-2-setup-fastapi-backend (2026-06-13)
+
+- **`os.environ.setdefault` fragile avec imports anticipés** — Fonctionnel en usage pytest standard ; à surveiller si pytest-xdist est adopté. [`backend/tests/conftest.py`]
+- **Commit automatique dans `get_db` pour 4xx sans exception** — Pattern FastAPI standard acceptable pour le scaffold ; à réévaluer quand de vraies routes avec logique métier partielle seront implémentées. [`backend/app/core/database.py`]
+- **`Base.metadata` vide sans imports de modèles dans `alembic/env.py`** — Par design, commentaire explicite dans le code ; à compléter story par story au fur et à mesure des modèles SQLAlchemy. [`backend/alembic/env.py`]
+- **`settings = Settings()` singleton module-level** — Pattern pydantic-settings standard ; à refactoriser en `@lru_cache` si des besoins de test multi-config émergent. [`backend/app/core/config.py`]
+- **`mistral_api_key` vide sans validation au démarrage** — Validation intentionnellement absente car Epic 5 (MistralEngine) non encore implémentée. [`backend/app/core/config.py`]
+- **`asyncio.run()` dans `run_migrations_online` incompatible event loop active** — Alembic est un outil CLI ; ne pas appeler programmatiquement depuis un contexte async. [`backend/alembic/env.py`]
+- **CI sans test `alembic downgrade`** — Migration initiale vide (pass) ; à ajouter dans la CI quand les premières vraies migrations seront créées. [`.github/workflows/ci-backend.yml`]
+- **`/health` sans DB check** — Scaffold acceptable ; à améliorer en ajoutant `SELECT 1` sur la DB quand des services persistants seront actifs. [`backend/app/api/v1/router.py`]
+
 ## Deferred from: code review of 1-1-setup-android-multi-module-gradle (2026-06-12)
 
 - **Orbit 9.0.0 existence** — Vérifier que `org.orbit-mvi:orbit-core:9.0.0` est disponible sur Maven Central (version au-delà du knowledge cutoff du reviewer). [`android/gradle/libs.versions.toml:10`]

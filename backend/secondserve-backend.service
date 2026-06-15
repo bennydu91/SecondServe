@@ -1,0 +1,18 @@
+[Unit]
+Description=SecondServe FastAPI Backend
+After=network.target
+
+[Service]
+Type=exec
+User=www-data
+WorkingDirectory=/opt/secondserve-backend
+ExecStart=/opt/secondserve-backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/opt/secondserve-backend/.env
+
+[Install]
+WantedBy=multi-user.target
