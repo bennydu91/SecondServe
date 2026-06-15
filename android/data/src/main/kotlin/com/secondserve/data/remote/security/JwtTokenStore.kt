@@ -1,6 +1,7 @@
 package com.secondserve.data.remote.security
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
@@ -13,7 +14,7 @@ interface TokenStore {
 
 class JwtTokenStore(private val context: Context) : TokenStore {
 
-    private val encryptedSharedPreferences: EncryptedSharedPreferences by lazy {
+    private val encryptedSharedPreferences: SharedPreferences by lazy {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
