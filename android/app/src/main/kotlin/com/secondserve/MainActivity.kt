@@ -29,9 +29,12 @@ class MainActivity : ComponentActivity() {
             SecondServeTheme {
                 var authReady by remember { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
-                    authRepository.initAuthIfNeeded()
-                        .onFailure { Timber.e(it, "Failed to initialize auth") }
-                    authReady = true
+                    try {
+                        authRepository.initAuthIfNeeded()
+                            .onFailure { Timber.e(it, "Failed to initialize auth") }
+                    } finally {
+                        authReady = true
+                    }
                 }
                 if (authReady) {
                     AppNavGraph()
