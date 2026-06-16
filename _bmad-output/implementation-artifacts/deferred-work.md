@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 1-5-profil-joueur-style-de-jeu-donnees-complementaires (2026-06-16)
+
+- **Race read-modify-write dans `saveRanking()`/`saveProfileDetails()`** — Les deux méthodes font un `getProfile()` puis `upsertProfile()` sans transaction englobante. En cas d'appels concurrents, la deuxième écriture peut écraser la première. Pattern identique au `saveRanking()` de Story 1.4, à corriger via un DAO `UPDATE SET` ciblé ou un Mutex au niveau repository. [`android/data/.../repository/PlayerProfileRepositoryImpl.kt`]
+- **`loadProfile()` lit Room uniquement — divergence fresh-install** — `getProfile()` ne consulte jamais le VPS. Après réinstallation, les données profil (style de jeu, surfaces, consignes) sauvegardées sur le serveur ne sont pas récupérées jusqu'à la prochaine saisie utilisateur. Architecture offline-first intentionnelle depuis Story 1.4 — à reconsidérer si un "sync on install" est ajouté. [`android/data/.../repository/PlayerProfileRepositoryImpl.kt`]
+- **`PlayStyleConstants` dupliqué Android (Kotlin) / backend (Python)** — Aucune source de vérité partagée. Si un style est ajouté d'un côté, l'autre peut rester désynchronisé sans erreur de compilation. À adresser avec une génération OpenAPI ou un contrat partagé. [`android/.../model/PlayStyleConstants.kt`, `backend/app/features/profile/schemas.py`]
+- **Race concurrent PUT /profile/details backend** — `update_profile_details()` fait un SELECT puis un UPDATE en mémoire sans verrouillage ligne. Deux requêtes simultanées peuvent s'écraser mutuellement (last-writer-wins). Requiert `SELECT FOR UPDATE` ou UPSERT atomique. Pré-existant dans Story 1.4. [`backend/app/features/profile/repository.py`]
+- **`apply()` async dans `saveFftLicense()`** — Cohérent avec `JwtTokenStore.kt`. Risque : si le process est tué juste après `reduce {}`, le state reflète la nouvelle licence mais l'écriture chiffée peut ne pas être commitée. Acceptable pour MVP. [`android/feature/profile/.../ProfileViewModel.kt`]
+
 ## Deferred from: code review of 1-4-classement-fft-saisie-et-historique — Passe 2 (2026-06-16)
 
 - **Skew de timestamp backend dans `ProfileRepository`** — `upsert_profile_ranking` et `insert_ranking_history` capturent chacun `now = int(time.time() * 1000)` indépendamment. Skew de quelques ms possible entre `PlayerProfile.updated_at` et `RankingHistory.recorded_at`. Cosmétique, pas de correction prioritaire. [`backend/app/features/profile/repository.py`]

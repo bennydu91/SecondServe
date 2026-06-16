@@ -91,7 +91,7 @@ class ProfileViewModel @Inject constructor(
         coachInstruction2: String?,
         coachInstruction3: String?
     ) = intent {
-        reduce { state.copy(isSaving = true) }
+        reduce { state.copy(isDetailsSaving = true) }
         when (val result = profileRepository.saveProfileDetails(
             playStyle, preferredSurfaces,
             coachInstruction1, coachInstruction2, coachInstruction3
@@ -99,7 +99,7 @@ class ProfileViewModel @Inject constructor(
             is AppResult.Success -> {
                 reduce {
                     state.copy(
-                        isSaving = false,
+                        isDetailsSaving = false,
                         playStyle = playStyle,
                         preferredSurfaces = preferredSurfaces,
                         coachInstruction1 = coachInstruction1,
@@ -110,7 +110,7 @@ class ProfileViewModel @Inject constructor(
                 postSideEffect(ProfileSideEffect.ProfileDetailsSaved)
             }
             is AppResult.Error -> {
-                reduce { state.copy(isSaving = false) }
+                reduce { state.copy(isDetailsSaving = false) }
                 postSideEffect(ProfileSideEffect.ShowError("Erreur lors de la sauvegarde"))
             }
             AppResult.Loading -> {}
@@ -131,6 +131,7 @@ class ProfileViewModel @Inject constructor(
 data class ProfileUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
+    val isDetailsSaving: Boolean = false,
     val currentSeries: String? = null,
     val currentPoints: Int? = null,
     val rankingHistory: List<RankingEntry> = emptyList(),

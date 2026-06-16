@@ -44,8 +44,7 @@ object DataModule {
     @Singleton
     fun providePlayerProfileRepository(
         dao: PlayerProfileDao,
-        vpsApiService: VpsApiService,
-        playerDataStore: PlayerDataStore
+        vpsApiService: VpsApiService
     ): PlayerProfileRepository =
-        PlayerProfileRepositoryImpl(dao, vpsApiService, playerDataStore)
+        PlayerProfileRepositoryImpl(dao, vpsApiService)
 }

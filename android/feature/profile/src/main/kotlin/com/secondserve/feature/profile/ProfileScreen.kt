@@ -111,7 +111,7 @@ fun ProfileScreen(
                     PlayStyleSection(
                         matchSessionCount = state.matchSessionCount,
                         currentPlayStyle = state.playStyle,
-                        isSaving = state.isSaving,
+                        isSaving = state.isDetailsSaving,
                         currentSurfaces = state.preferredSurfaces,
                         coachInstruction1 = state.coachInstruction1,
                         coachInstruction2 = state.coachInstruction2,
@@ -273,6 +273,15 @@ private fun PlayStyleSection(
     }
     LaunchedEffect(currentPlayStyle) {
         selectedStyle = currentPlayStyle
+    }
+    LaunchedEffect(coachInstruction1) {
+        instruction1 = coachInstruction1 ?: ""
+    }
+    LaunchedEffect(coachInstruction2) {
+        instruction2 = coachInstruction2 ?: ""
+    }
+    LaunchedEffect(coachInstruction3) {
+        instruction3 = coachInstruction3 ?: ""
     }
 
     Card(modifier = Modifier.fillMaxWidth()) {

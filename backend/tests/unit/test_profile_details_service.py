@@ -45,3 +45,39 @@ def test_coach_instructions_stored_independently():
     assert req.coach_instruction_1 == "Améliorer le service"
     assert req.coach_instruction_2 == "Travailler le revers"
     assert req.coach_instruction_3 is None
+
+
+def test_valid_surfaces_accepted():
+    req = ProfileDetailsRequest(preferred_surfaces="CLAY,HARD")
+    assert req.preferred_surfaces == "CLAY,HARD"
+
+
+def test_all_surfaces_accepted():
+    for surface in ["CLAY", "GRASS", "HARD", "CARPET"]:
+        req = ProfileDetailsRequest(preferred_surfaces=surface)
+        assert req.preferred_surfaces == surface
+
+
+def test_invalid_surface_rejected():
+    with pytest.raises(ValidationError):
+        ProfileDetailsRequest(preferred_surfaces="CLAY,INVALID")
+
+
+def test_preferred_surfaces_normalized_trims_spaces():
+    req = ProfileDetailsRequest(preferred_surfaces="CLAY, HARD")
+    assert req.preferred_surfaces == "CLAY,HARD"
+
+
+def test_null_surfaces_accepted():
+    req = ProfileDetailsRequest(preferred_surfaces=None)
+    assert req.preferred_surfaces is None
+
+
+def test_coach_instruction_max_length_enforced():
+    with pytest.raises(ValidationError):
+        ProfileDetailsRequest(coach_instruction_1="x" * 501)
+
+
+def test_coach_instruction_at_max_length_accepted():
+    req = ProfileDetailsRequest(coach_instruction_1="x" * 500)
+    assert len(req.coach_instruction_1) == 500

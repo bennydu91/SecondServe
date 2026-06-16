@@ -1,7 +1,6 @@
 package com.secondserve.data.repository
 
 import app.cash.turbine.test
-import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
@@ -26,15 +25,13 @@ class PlayerProfileRepositoryImplTest {
 
     private lateinit var dao: PlayerProfileDao
     private lateinit var vpsApiService: VpsApiService
-    private lateinit var playerDataStore: PlayerDataStore
     private lateinit var repository: PlayerProfileRepositoryImpl
 
     @BeforeEach
     fun setup() {
         dao = mockk()
         vpsApiService = mockk()
-        playerDataStore = mockk()
-        repository = PlayerProfileRepositoryImpl(dao, vpsApiService, playerDataStore)
+        repository = PlayerProfileRepositoryImpl(dao, vpsApiService)
     }
 
     private fun profileEntity(
@@ -182,6 +179,15 @@ class PlayerProfileRepositoryImplTest {
         )
 
         assertIs<AppResult.Success<Unit>>(result)
+    }
+
+    @Test
+    fun `buildMatchContextProfile trims whitespace from preferred surfaces`() = runTest {
+        coEvery { dao.getProfile() } returns profileEntity(preferredSurfaces = "CLAY, HARD")
+
+        val context = repository.buildMatchContextProfile()
+
+        assertEquals(listOf("CLAY", "HARD"), context.preferredSurfaces)
     }
 
     @Test

@@ -1,10 +1,10 @@
 package com.secondserve.data.repository
 
-import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
 import com.secondserve.data.local.db.entity.toDomain
+import com.secondserve.data.local.db.entity.toPreferredSurfacesList
 import com.secondserve.data.local.db.entity.toPreferredSurfacesString
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.api.dto.ProfileDetailsRequest
@@ -21,8 +21,7 @@ import timber.log.Timber
 
 class PlayerProfileRepositoryImpl(
     private val dao: PlayerProfileDao,
-    private val vpsApiService: VpsApiService,
-    private val playerDataStore: PlayerDataStore
+    private val vpsApiService: VpsApiService
 ) : PlayerProfileRepository {
 
     override suspend fun getProfile(): AppResult<PlayerProfile?> = try {
@@ -67,8 +66,7 @@ class PlayerProfileRepositoryImpl(
         return MatchContextProfile(
             fftSeries = profile?.currentSeries,
             playStyle = profile?.playStyle,
-            preferredSurfaces = profile?.preferredSurfaces
-                ?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+            preferredSurfaces = profile?.preferredSurfaces.toPreferredSurfacesList(),
             coachInstructions = listOfNotNull(
                 profile?.coachInstruction1?.takeIf { it.isNotBlank() },
                 profile?.coachInstruction2?.takeIf { it.isNotBlank() },

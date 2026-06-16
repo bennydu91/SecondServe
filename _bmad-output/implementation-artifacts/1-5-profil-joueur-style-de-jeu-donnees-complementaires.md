@@ -5,7 +5,7 @@ status: "review"
 
 # Story 1.5 : Profil joueur — Style de jeu & données complémentaires
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -1070,6 +1070,22 @@ backend/tests/unit/test_profile_details_service.py (NEW)
 _bmad-output/implementation-artifacts/1-5-profil-joueur-style-de-jeu-donnees-complementaires.md (UPDATE)
 _bmad-output/implementation-artifacts/sprint-status.yaml (UPDATE)
 
+### Review Findings
+
+- [x] [Review][Patch] Coach instruction `LaunchedEffect` manquant — champs instruction1/2/3 toujours vides au rechargement [ProfileScreen.kt:PlayStyleSection]
+- [x] [Review][Patch] `PlayerDataStore` non utilisé dans `PlayerProfileRepositoryImpl` — injection inutile créant une surface de risque PII [PlayerProfileRepositoryImpl.kt, DataModule.kt]
+- [x] [Review][Patch] `PlayerDataStore.prefs` sans try/catch sur `EncryptedSharedPreferences.create()` — diverge du pattern `JwtTokenStore` [PlayerDataStore.kt]
+- [x] [Review][Patch] CSV `preferred_surfaces` sans validation côté backend — valeurs arbitraires stockées et envoyées au LLM [schemas.py]
+- [x] [Review][Patch] Duplication du parsing CSV `split/filter` sans `.trim()` → corruption silencieuse sur round-trip [Mappers.kt, PlayerProfileRepositoryImpl.kt]
+- [x] [Review][Patch] Consignes coach sans limite de longueur — injection de prompt illimitée [schemas.py]
+- [x] [Review][Patch] `isSaving` partagé entre `saveRanking()` et `saveProfileDetails()` — bloque les sections UI indépendantes [ProfileViewModel.kt, ProfileScreen.kt]
+- [x] [Review][Defer] Race read-modify-write dans `saveRanking()`/`saveProfileDetails()` [PlayerProfileRepositoryImpl.kt] — deferred, pattern pré-existant Story 1.4
+- [x] [Review][Defer] `loadProfile()` lit Room uniquement (divergence fresh-install) [PlayerProfileRepositoryImpl.kt] — deferred, offline-first by design depuis Story 1.4
+- [x] [Review][Defer] `PlayStyleConstants` dupliqué Android/backend — peut diverger — deferred, concerne multi-repo, hors scope story
+- [x] [Review][Defer] `apply()` async dans `saveFftLicense()` — pattern cohérent avec `JwtTokenStore` — deferred, acceptable
+- [x] [Review][Defer] Race concurrent PUT /profile/details backend — `SELECT FOR UPDATE` manquant — deferred, pré-existant, refactoring majeur
+
 ## Change Log
 
 - 2026-06-16 : Implémentation story 1.5 complète — style de jeu, surfaces, consignes coach, licence FFT, migration Room 1→2, migration Alembic, PUT /profile/details, 35 tests backend passent
+- 2026-06-16 : Code review — 7 patches appliqués, 5 défauts différés
