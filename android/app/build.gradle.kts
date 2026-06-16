@@ -76,6 +76,9 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
 
+    // Room (for DataModule)
+    implementation(libs.room.runtime)
+
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 

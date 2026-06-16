@@ -30,11 +30,14 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":data"))
     implementation(project(":core:ui"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -43,4 +46,15 @@ dependencies {
     implementation(libs.orbit.core)
     implementation(libs.orbit.viewmodel)
     implementation(libs.orbit.compose)
+
+    implementation(libs.coroutines.android)
+    implementation(libs.timber)
+
+    testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(kotlin("test"))
 }

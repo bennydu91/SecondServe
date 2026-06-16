@@ -1,5 +1,9 @@
 package com.secondserve.data.remote.api
 
+import com.secondserve.data.remote.api.dto.ProfileSummaryDto
+import com.secondserve.data.remote.api.dto.RankingEntryDto
+import com.secondserve.data.remote.api.dto.RankingRequest
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 
@@ -9,4 +13,10 @@ interface VpsApiService {
 
     @GET("api/v1/health")
     suspend fun health(): HealthResponse
+
+    @GET("api/v1/profile")
+    suspend fun getProfile(): ProfileSummaryDto
+
+    @POST("api/v1/profile/ranking")
+    suspend fun saveRanking(@Body request: RankingRequest): RankingEntryDto
 }

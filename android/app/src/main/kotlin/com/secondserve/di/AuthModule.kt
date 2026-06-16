@@ -14,6 +14,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.secondserve.BuildConfig
 import com.secondserve.data.remote.api.JwtInterceptor
 import com.secondserve.data.remote.api.TokenAuthenticator
@@ -47,7 +48,9 @@ object AuthModule {
     @Provides
     @Singleton
     fun provideMoshi(): Moshi {
-        return Moshi.Builder().build()
+        return Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
     }
 
     @Provides

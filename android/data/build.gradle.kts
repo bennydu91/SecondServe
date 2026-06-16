@@ -23,6 +23,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":domain"))
 
@@ -53,4 +57,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
     testImplementation(kotlin("test"))
+    testImplementation(libs.turbine)
+    implementation(libs.timber)
 }

@@ -1,5 +1,16 @@
 # Deferred Work
 
+## Deferred from: code review of 1-4-classement-fft-saisie-et-historique — Passe 2 (2026-06-16)
+
+- **Skew de timestamp backend dans `ProfileRepository`** — `upsert_profile_ranking` et `insert_ranking_history` capturent chacun `now = int(time.time() * 1000)` indépendamment. Skew de quelques ms possible entre `PlayerProfile.updated_at` et `RankingHistory.recorded_at`. Cosmétique, pas de correction prioritaire. [`backend/app/features/profile/repository.py`]
+
+## Deferred from: code review of 1-4-classement-fft-saisie-et-historique (2026-06-16)
+
+- **`runBlocking` dans `TokenAuthenticator` + race condition `reauthenticate()` non mutex** — Pré-existant Story 1.3. Deadlock potentiel si le pool OkHttp est saturé par plusieurs 401 simultanés. À corriger avec `Mutex` dans Story 1.3 ou au moment d'un audit sécurité. [`android/data/.../api/TokenAuthenticator.kt`, `android/data/.../auth/AuthRepository.kt`]
+- **`saveToken()` utilise `apply()` async** — Pré-existant Story 1.3. Token peut ne pas être persisté avant la prochaine lecture sur device lent. À remplacer par `commit()` avec gestion d'erreur. [`android/data/.../security/JwtTokenStore.kt`]
+- **Room schema JSON version 1 non committé** — Nécessite un build Android pour générer `android/data/schemas/com.secondserve.data.local.db.SecondServeDatabase/1.json`. À committer après le premier build réussi pour permettre les tests de migration CI futurs.
+- **`navController.popBackStack()` sur la seule destination** — Navigation provisoire Story 1.4. La destination "profile" est la seule dans `NavHost` ; `popBackStack()` est un no-op silencieux. À corriger quand l'AppNavGraph sera complété avec les routes de l'Epic 2+. [`android/app/.../navigation/AppNavGraph.kt`]
+
 ## Deferred from: patch review of 1-3-jwt-authentication-android-vps (2026-06-16)
 
 - **`reauthenticate()` non protégée par mutex → ré-auth concurrente** — Plusieurs 401 simultanés peuvent déclencher plusieurs `POST /auth/init` et des races sur `saveToken()`. Risque négligeable pour MVP mono-utilisateur. [`android/data/src/main/kotlin/com/secondserve/data/remote/auth/AuthRepository.kt`]
