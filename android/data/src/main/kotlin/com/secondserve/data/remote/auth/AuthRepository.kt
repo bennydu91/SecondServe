@@ -1,6 +1,8 @@
 package com.secondserve.data.remote.auth
 
 import com.secondserve.data.remote.security.TokenStore
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 interface AuthRepository {
     suspend fun initAuthIfNeeded(): Result<Unit>
@@ -11,9 +13,12 @@ class AuthRepositoryImpl(
     private val authService: AuthService,
     private val tokenStore: TokenStore
 ) : AuthRepository {
-    override suspend fun initAuthIfNeeded(): Result<Unit> {
-        if (tokenStore.hasToken()) return Result.success(Unit)
-        return authService.initAuth().map { }
+
+    private val mutex = Mutex()
+
+    override suspend fun initAuthIfNeeded(): Result<Unit> = mutex.withLock {
+        if (tokenStore.hasToken()) return@withLock Result.success(Unit)
+        authService.initAuth().map { }
     }
 
     override suspend fun reauthenticate(): Result<Unit> =

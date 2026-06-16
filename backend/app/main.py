@@ -30,3 +30,9 @@ async def secondserve_exception_handler(request: Request, exc: SecondServeExcept
 
 
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.on_event("startup")
+async def startup_validation() -> None:
+    from app.core.security import JWTManager
+    JWTManager(settings.jwt_secret)

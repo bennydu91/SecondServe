@@ -832,7 +832,50 @@ All acceptance criteria satisfied:
 
 ## Status
 
-**Current:** review
+**Current:** done
 
-Story 1.3 (JWT Authentication Android ↔ VPS) is complete and ready for code review. All acceptance criteria satisfied, all tests passing (backend), and all tasks completed.
+Story 1.3 (JWT Authentication Android ↔ VPS) — code review effectuée le 2026-06-15. Tous les patches appliqués le 2026-06-16.
+
+## Tasks / Subtasks
+
+### Review Findings
+
+#### Decision Needed
+
+- [x] [Review][Decision] **`/verify` expose le payload JWT complet aux clients** — `auth.py:verify_auth` retourne `{"payload": token_payload}` verbatim. Si les claims évoluent (user ID, rôles), c'est une fuite d'information. Intentionnel pour debug/test ou à restreindre en production ? [backend/app/api/v1/auth.py]
+- [x] [Review][Decision] **`AppNavGraph` rend avant que l'auth soit terminée (race condition)** — `LaunchedEffect` est fire-and-forget : `AppNavGraph()` est rendu immédiatement. Si une route navigue vers une API dès le lancement, elle peut émettre des requêtes sans token. Faut-il un écran de chargement / état `authReady` ? [android/app/src/main/kotlin/com/secondserve/MainActivity.kt]
+
+#### Patches
+
+- [x] [Review][Patch] **AC5 non implémenté : JwtInterceptor ne détecte pas les 401** — `intercept()` ajoute le header mais n'inspecte jamais `response.code`. `reauthenticate()` existe mais n'est jamais appelé. La ré-authentification silencieuse est absente. [android/data/src/main/kotlin/com/secondserve/data/remote/api/JwtInterceptor.kt]
+- [x] [Review][Patch] **`addHeader` au lieu de `header` → doublon Authorization possible** — Utiliser `.header("Authorization", "Bearer $token")` pour remplacer au lieu d'ajouter. [android/data/src/main/kotlin/com/secondserve/data/remote/api/JwtInterceptor.kt]
+- [x] [Review][Patch] **AC6 non garanti : routes `/api/v1/**` non protégées globalement** — Aucun middleware global ni `Depends(verify_jwt)` au niveau router dans `main.py`/`router.py`. Seul `/auth/verify` est protégé explicitement. Les routes stubs (sessions, profile, etc.) sont actuellement non protégées. [backend/app/api/v1/]
+- [x] [Review][Patch] **`exp`/`iat` stockés en float (doit être int) + double appel `datetime.now()`** — `expire.timestamp()` retourne un float ; PyJWT attend un int. Extraire `now = datetime.now(timezone.utc)` pour éviter le skew entre `exp` et `iat`. [backend/app/core/security.py]
+- [x] [Review][Patch] **JWT_SECRET validé par requête, pas au démarrage** — `JWTManager.__init__` est instancié à chaque appel request. Ajouter un événement `@app.on_event("startup")` ou valider dans `Settings` au boot. [backend/app/core/security.py + backend/app/main.py]
+- [x] [Review][Patch] **Token vide après split Bearer non vérifié** — `token = auth_header.split(" ", 1)[1]` peut produire une chaîne vide si le header est `"Bearer "`. Ajouter `if not token: raise HTTPException(401, "Missing token")`. [backend/app/core/security.py:verify_jwt]
+- [x] [Review][Patch] **Exceptions non-JWT dans `verify_token` non gérées** — Si `jwt.decode` lève autre chose que `ExpiredSignatureError`/`InvalidTokenError`, l'exception propage un 500 brut. Ajouter un `except Exception` catch-all. [backend/app/core/security.py:verify_token]
+- [x] [Review][Patch] **HttpLoggingInterceptor.Level.BASIC activé dans tous les builds (tokens en logcat prod)** — Conditionner sur `BuildConfig.DEBUG` : `if (BuildConfig.DEBUG) Level.BASIC else Level.NONE`. [android/app/src/main/kotlin/com/secondserve/di/AuthModule.kt]
+- [x] [Review][Patch] **Aucun timeout configuré sur OkHttpClient** — Spec exige 5 s. Ajouter `.connectTimeout(5, TimeUnit.SECONDS).readTimeout(5, TimeUnit.SECONDS).writeTimeout(5, TimeUnit.SECONDS)`. [android/app/src/main/kotlin/com/secondserve/di/AuthModule.kt]
+- [x] [Review][Patch] **Race condition : double appel `initAuth()` si deux coroutines concurrentes** — `initAuthIfNeeded` lit `hasToken()` sans verrouillage. Ajouter un `Mutex` pour sérialiser les appels. [android/data/src/main/kotlin/com/secondserve/data/remote/auth/AuthRepository.kt]
+- [x] [Review][Patch] **Token vide/blank retourné par le VPS sauvegardé sans validation** — Ajouter `if (token.isBlank()) return Result.failure(...)` avant `tokenStore.saveToken(token)`. [android/data/src/main/kotlin/com/secondserve/data/remote/auth/AuthService.kt]
+- [x] [Review][Patch] **`EncryptedSharedPreferences.create()` peut lever une exception sans recovery** — La lazy init peut crasher l'app (corruption de keystore, erreur OS). Wrapper dans un try/catch avec fallback ou message clair. [android/data/src/main/kotlin/com/secondserve/data/remote/security/JwtTokenStore.kt]
+- [x] [Review][Patch] **`hasToken()` appelle `getString()` au lieu de `contains()` (double déchiffrement)** — Utiliser `encryptedSharedPreferences.contains(JWT_TOKEN_KEY)` pour éviter une décryption inutile. [android/data/src/main/kotlin/com/secondserve/data/remote/security/JwtTokenStore.kt]
+- [x] [Review][Patch] **Test flaky : `test_init_auth_multiple_calls_return_different_tokens` peut produire des tokens identiques** — Si deux appels tombent dans la même seconde, `iat` identique → token identique. Le test doit vérifier la validité de chaque token, pas leur inégalité. [backend/tests/integration/test_auth_api.py]
+
+#### Deferred
+
+- [x] [Review][Defer] **`JWTManager` instancié à chaque requête (pas de singleton)** — Impact performance négligeable pour MVP mono-utilisateur. À refactoriser si le volume augmente. [backend/app/core/security.py] — deferred, pre-existing design acceptable pour MVP
+- [x] [Review][Defer] **`VpsApiServiceTest` teste la réflexion plutôt que le comportement Retrofit** — Tests smoke sans valeur réelle. À remplacer par des tests MockWebServer. [android/data/src/test/.../VpsApiServiceTest.kt] — deferred, qualité de tests à améliorer
+
+### Patch Review Findings (2026-06-16)
+
+#### Patches
+
+- [x] [Review][Patch] **`runBlocking` dans `TokenAuthenticator.authenticate()` bloque un thread OkHttp → risque de deadlock** — Introduit `@AuthClient` OkHttpClient dédié (sans `TokenAuthenticator`) pour les appels d'auth. `AuthService` injecte désormais `@AuthClient VpsApiService`, `TokenAuthenticator` prend `AuthService` directement (plus de `Provider`). Graphe Hilt acyclique. [android/app/src/main/kotlin/com/secondserve/di/AuthModule.kt, android/data/src/main/kotlin/com/secondserve/data/remote/api/TokenAuthenticator.kt]
+- [x] [Review][Patch] **`authReady` reste `false` si `initAuthIfNeeded()` lève une exception (écran blanc permanent)** — `LaunchedEffect` wrappé dans `try/finally { authReady = true }` pour garantir que `AppNavGraph` s'affiche même en cas d'exception. [android/app/src/main/kotlin/com/secondserve/MainActivity.kt]
+
+#### Deferred
+
+- [x] [Review][Defer] **`reauthenticate()` non protégée par le mutex → ré-auth concurrente possible** — Le `Mutex` de `AuthRepositoryImpl` protège `initAuthIfNeeded()` mais pas `reauthenticate()`. `TokenAuthenticator` appelle directement `AuthService.reauthenticate()` sans protection. Plusieurs 401 simultanés peuvent déclencher plusieurs `POST /auth/init` concurrents et des races sur `saveToken()`. Négligeable pour MVP mono-utilisateur. [android/data/src/main/kotlin/com/secondserve/data/remote/auth/AuthRepository.kt] — deferred, risque négligeable pour MVP mono-utilisateur
+- [x] [Review][Defer] **`@app.on_event("startup")` deprecated dans FastAPI** — Fonctionnel dans la version actuelle mais deprecated ; à migrer vers le `lifespan` context manager. [backend/app/main.py] — deferred, migration à effectuer lors du prochain upgrade FastAPI
 

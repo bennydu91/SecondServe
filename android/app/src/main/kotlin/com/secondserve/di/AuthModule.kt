@@ -6,20 +6,27 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.TimeUnit
+import javax.inject.Qualifier
 import javax.inject.Singleton
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import com.squareup.moshi.Moshi
+import com.secondserve.BuildConfig
 import com.secondserve.data.remote.api.JwtInterceptor
+import com.secondserve.data.remote.api.TokenAuthenticator
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.auth.AuthService
 import com.secondserve.data.remote.auth.AuthRepository
 import com.secondserve.data.remote.auth.AuthRepositoryImpl
-import com.secondserve.BuildConfig
 import com.secondserve.data.remote.security.JwtTokenStore
 import com.secondserve.data.remote.security.TokenStore
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AuthClient
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -45,12 +52,63 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(jwtInterceptor: JwtInterceptor): OkHttpClient {
-        val logging = HttpLoggingInterceptor()
-            .apply { level = HttpLoggingInterceptor.Level.BASIC }
+    @AuthClient
+    fun provideAuthOkHttpClient(): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+        }
         return OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @AuthClient
+    fun provideAuthVpsApiService(@AuthClient okHttpClient: OkHttpClient, moshi: Moshi): VpsApiService {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.VPS_BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(okHttpClient)
+            .build()
+            .create(VpsApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthService(
+        @AuthClient vpsApiService: VpsApiService,
+        tokenStore: TokenStore
+    ): AuthService {
+        return AuthService(vpsApiService, tokenStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTokenAuthenticator(
+        tokenStore: TokenStore,
+        authService: AuthService
+    ): TokenAuthenticator = TokenAuthenticator(tokenStore, authService)
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        jwtInterceptor: JwtInterceptor,
+        tokenAuthenticator: TokenAuthenticator
+    ): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+        }
+        return OkHttpClient.Builder()
+            .authenticator(tokenAuthenticator)
             .addInterceptor(jwtInterceptor)
             .addInterceptor(logging)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.SECONDS)
             .build()
     }
 
@@ -63,15 +121,6 @@ object AuthModule {
             .client(okHttpClient)
             .build()
             .create(VpsApiService::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAuthService(
-        vpsApiService: VpsApiService,
-        tokenStore: TokenStore
-    ): AuthService {
-        return AuthService(vpsApiService, tokenStore)
     }
 
     @Provides

@@ -15,16 +15,20 @@ interface TokenStore {
 class JwtTokenStore(private val context: Context) : TokenStore {
 
     private val encryptedSharedPreferences: SharedPreferences by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            "jwt_store",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            EncryptedSharedPreferences.create(
+                context,
+                "jwt_store",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to initialize secure token storage", e)
+        }
     }
 
     override fun saveToken(token: String) {
@@ -33,7 +37,7 @@ class JwtTokenStore(private val context: Context) : TokenStore {
 
     override fun getToken(): String? = encryptedSharedPreferences.getString(JWT_TOKEN_KEY, null)
 
-    override fun hasToken(): Boolean = encryptedSharedPreferences.getString(JWT_TOKEN_KEY, null) != null
+    override fun hasToken(): Boolean = encryptedSharedPreferences.contains(JWT_TOKEN_KEY)
 
     override fun clearToken() {
         encryptedSharedPreferences.edit().remove(JWT_TOKEN_KEY).apply()

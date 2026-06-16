@@ -5,7 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.secondserve.core.ui.theme.SecondServeTheme
 import com.secondserve.navigation.AppNavGraph
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,13 +27,18 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SecondServeTheme {
+                var authReady by remember { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
-                    authRepository.initAuthIfNeeded()
-                        .onFailure {
-                            Timber.e(it, "Failed to initialize auth")
-                        }
+                    try {
+                        authRepository.initAuthIfNeeded()
+                            .onFailure { Timber.e(it, "Failed to initialize auth") }
+                    } finally {
+                        authReady = true
+                    }
                 }
-                AppNavGraph()
+                if (authReady) {
+                    AppNavGraph()
+                }
             }
         }
     }

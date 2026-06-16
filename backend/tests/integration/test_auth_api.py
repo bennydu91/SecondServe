@@ -27,22 +27,17 @@ async def test_init_auth_token_is_valid_jwt(client):
 
 
 @pytest.mark.asyncio
-async def test_init_auth_multiple_calls_return_different_tokens(client):
-    """Test that multiple calls to /init return different tokens (due to iat timestamp)"""
+async def test_init_auth_multiple_calls_each_return_valid_tokens(client):
+    """Test that multiple calls to /init each return independently valid tokens"""
     response1 = await client.post("/api/v1/auth/init")
     response2 = await client.post("/api/v1/auth/init")
 
-    token1 = response1.json()["token"]
-    token2 = response2.json()["token"]
-
-    # Tokens should be different (due to iat timestamp)
-    assert token1 != token2
-
-    # Both should be valid
-    decoded1 = jwt.decode(token1, settings.jwt_secret, algorithms=["HS256"])
-    decoded2 = jwt.decode(token2, settings.jwt_secret, algorithms=["HS256"])
-    assert "exp" in decoded1
-    assert "exp" in decoded2
+    for response in [response1, response2]:
+        data = response.json()
+        assert "token" in data
+        decoded = jwt.decode(data["token"], settings.jwt_secret, algorithms=["HS256"])
+        assert "exp" in decoded
+        assert "iat" in decoded
 
 
 @pytest.mark.asyncio
@@ -79,4 +74,4 @@ async def test_valid_token_returns_200(client):
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Token is valid"
-    assert "payload" in data
+    assert "payload" not in data

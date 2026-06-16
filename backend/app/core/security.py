@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import jwt
-from fastapi import Depends, HTTPException, Request
+from fastapi import HTTPException, Request
 from app.core.config import settings
 
 
@@ -16,10 +16,10 @@ class JWTManager:
         if expires_delta is None:
             expires_delta = timedelta(days=30)
 
-        expire = datetime.now(timezone.utc) + expires_delta
+        now = datetime.now(timezone.utc)
         payload = {
-            "exp": expire.timestamp(),
-            "iat": datetime.now(timezone.utc).timestamp(),
+            "exp": int((now + expires_delta).timestamp()),
+            "iat": int(now.timestamp()),
         }
         return jwt.encode(payload, self.secret, algorithm=self.ALGORITHM)
 
@@ -30,6 +30,8 @@ class JWTManager:
             raise HTTPException(status_code=401, detail="Token expired")
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Invalid token")
+        except Exception:
+            raise HTTPException(status_code=500, detail="Token verification error")
 
 
 async def verify_jwt(request: Request) -> dict:
@@ -39,5 +41,8 @@ async def verify_jwt(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Missing Authorization header")
 
     token = auth_header.split(" ", 1)[1]
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+
     manager = JWTManager(settings.jwt_secret)
     return manager.verify_token(token)

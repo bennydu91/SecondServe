@@ -10,8 +10,12 @@ class AuthService(
     suspend fun initAuth(): Result<String> = try {
         val response = vpsApiService.initAuth()
         val token = response.token
-        tokenStore.saveToken(token)
-        Result.success(token)
+        if (token.isBlank()) {
+            Result.failure(IllegalStateException("Received blank token from server"))
+        } else {
+            tokenStore.saveToken(token)
+            Result.success(token)
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
