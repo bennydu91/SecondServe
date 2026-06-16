@@ -81,3 +81,23 @@ def test_coach_instruction_max_length_enforced():
 def test_coach_instruction_at_max_length_accepted():
     req = ProfileDetailsRequest(coach_instruction_1="x" * 500)
     assert len(req.coach_instruction_1) == 500
+
+
+def test_empty_string_preferred_surfaces_normalized_to_none():
+    req = ProfileDetailsRequest(preferred_surfaces="")
+    assert req.preferred_surfaces is None
+
+
+def test_whitespace_only_preferred_surfaces_normalized_to_none():
+    req = ProfileDetailsRequest(preferred_surfaces="  ,  , ")
+    assert req.preferred_surfaces is None
+
+
+def test_duplicate_surfaces_deduplicated():
+    req = ProfileDetailsRequest(preferred_surfaces="CLAY,CLAY,HARD")
+    assert req.preferred_surfaces == "CLAY,HARD"
+
+
+def test_duplicate_surfaces_with_spaces_deduplicated():
+    req = ProfileDetailsRequest(preferred_surfaces="CLAY, CLAY, HARD")
+    assert req.preferred_surfaces == "CLAY,HARD"

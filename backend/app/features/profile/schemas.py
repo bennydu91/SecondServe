@@ -58,7 +58,9 @@ class ProfileDetailsRequest(BaseModel):
     def validate_preferred_surfaces(cls, v: str | None) -> str | None:
         if v is None:
             return v
-        surfaces = [s.strip() for s in v.split(",") if s.strip()]
+        surfaces = list(dict.fromkeys(s.strip() for s in v.split(",") if s.strip()))
+        if not surfaces:
+            return None
         invalid = [s for s in surfaces if s not in VALID_SURFACES]
         if invalid:
             raise ValueError(

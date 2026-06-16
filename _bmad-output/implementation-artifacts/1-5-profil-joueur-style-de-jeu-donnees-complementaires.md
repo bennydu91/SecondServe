@@ -1087,10 +1087,10 @@ _bmad-output/implementation-artifacts/sprint-status.yaml (UPDATE)
 
 ### Review Findings — Passe 2 (2026-06-16)
 
-- [ ] [Review][Decision] AC-1 : message "Données insuffisantes" conditionnel à `selectedStyle == null` — masqué dès qu'un style est sélectionné même si `matchSessionCount < 10` ; AC-1 implique affichage incondititionnel quand sessions < 10 [ProfileScreen.kt:PlayStyleSection]
-- [ ] [Review][Patch] Backend : `validate_preferred_surfaces` retourne `""` au lieu de `None` pour une chaîne vide (`"".split(",")` → liste vide → `",".join([])` = `""`) — stocke `""` en DB au lieu de `NULL` [backend/app/features/profile/schemas.py]
-- [ ] [Review][Patch] Backend : surfaces dupliquées dans le CSV non déduplicées — `"CLAY,CLAY,HARD"` passe la validation et est stocké tel quel ; round-trip Android normalise via `toSet()` mais la DB reste incohérente [backend/app/features/profile/schemas.py]
-- [ ] [Review][Patch] Android : champs consignes coach sans contrainte de longueur — backend impose `max_length=500` mais `OutlinedTextField` accepte une saisie illimitée ; dépasse 500 → VPS renvoie 422, save local OK → désynchronisation silencieuse [ProfileScreen.kt:PlayStyleSection]
+- [x] [Review][Decision] AC-1 : message "Données insuffisantes" conditionnel à `selectedStyle == null` — choix UX intentionnel conservé : message affiché seulement quand aucun style n'est défini (option 2) [ProfileScreen.kt:PlayStyleSection]
+- [x] [Review][Patch] Backend : `validate_preferred_surfaces` retourne `""` au lieu de `None` pour une chaîne vide — normalisé : `if not surfaces: return None` + déduplication via `dict.fromkeys()` [backend/app/features/profile/schemas.py]
+- [x] [Review][Patch] Backend : surfaces dupliquées dans le CSV non déduplicées — corrigé avec `list(dict.fromkeys(...))` (préserve l'ordre) [backend/app/features/profile/schemas.py]
+- [x] [Review][Patch] Android : champs consignes coach sans contrainte de longueur — `if (it.length <= 500)` dans `onValueChange` + compteur `"${instructionX.length}/500"` [ProfileScreen.kt:PlayStyleSection]
 - [x] [Review][Defer] Ordre non déterministe `selectedSurfaces.toList()` — `toSet()` sur une `List<String>` produit un `LinkedHashSet` (ordre d'insertion stable en session), mais les toggles via `SnapshotStateSet` peuvent modifier l'ordre entre sessions [ProfileScreen.kt] — deferred, cosmétique, pas d'impact fonctionnel
 - [x] [Review][Defer] `LaunchedEffect` écrase les éditions en cours si `loadProfile()` se termine pendant la saisie — champs surfaces/style/instructions réinitialisés silencieusement [ProfileScreen.kt:PlayStyleSection] — deferred, refactoring "dirty state" hors scope
 - [x] [Review][Defer] Save hors-ligne peut écraser play_style/preferred_surfaces sur le backend — `saveProfileDetails` envoie tous les champs depuis l'état UI (potentiellement null si le chargement a échoué) ; `saveRanking` lit depuis DAO pour préserver — deferred, pattern offline-first pré-existant
@@ -1100,4 +1100,4 @@ _bmad-output/implementation-artifacts/sprint-status.yaml (UPDATE)
 
 - 2026-06-16 : Implémentation story 1.5 complète — style de jeu, surfaces, consignes coach, licence FFT, migration Room 1→2, migration Alembic, PUT /profile/details, 35 tests backend passent
 - 2026-06-16 : Code review passe 1 — 7 patches appliqués, 5 défauts différés
-- 2026-06-16 : Code review passe 2 — 1 décision nécessaire, 3 patches identifiés, 4 défauts différés
+- 2026-06-16 : Code review passe 2 — 1 décision (UX conservée), 3 patches appliqués, 4 défauts différés

@@ -358,24 +358,27 @@ private fun PlayStyleSection(
 
             OutlinedTextField(
                 value = instruction1,
-                onValueChange = { instruction1 = it },
+                onValueChange = { if (it.length <= 500) instruction1 = it },
                 label = { Text("Axe principal du coach") },
+                supportingText = { Text("${instruction1.length}/500") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = instruction2,
-                onValueChange = { instruction2 = it },
+                onValueChange = { if (it.length <= 500) instruction2 = it },
                 label = { Text("Axe secondaire du coach") },
+                supportingText = { Text("${instruction2.length}/500") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = instruction3,
-                onValueChange = { instruction3 = it },
+                onValueChange = { if (it.length <= 500) instruction3 = it },
                 label = { Text("Mauvaises habitudes à corriger") },
+                supportingText = { Text("${instruction3.length}/500") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
