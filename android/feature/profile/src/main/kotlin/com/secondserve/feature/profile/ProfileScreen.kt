@@ -52,6 +52,7 @@ fun ProfileScreen(
     val state by viewModel.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val dateFormat = remember { java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.FRENCH) }
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
@@ -94,7 +95,6 @@ fun ProfileScreen(
                     )
                     HorizontalDivider()
                 }
-                val dateFormat = remember { java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.FRENCH) }
                 items(state.rankingHistory) { entry ->
                     RankingHistoryItem(entry = entry, dateFormat = dateFormat)
                 }
@@ -191,7 +191,7 @@ private fun RankingInputSection(
                     val points = pointsText.toIntOrNull() ?: 0
                     onSave(selectedSeries, points)
                 },
-                enabled = !isSaving && pointsText.isNotEmpty(),
+                enabled = !isSaving && pointsText.toIntOrNull() != null,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isSaving) {

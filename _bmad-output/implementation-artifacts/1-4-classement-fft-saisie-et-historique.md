@@ -1179,3 +1179,12 @@ claude-sonnet-4-6
 - [x] [Review][Defer] Room schema JSON version 1 non committé — peut casser CI migration future [`android/data/schemas/`] — deferred, nécessite build Android pour générer
 - [x] [Review][Defer] `navController.popBackStack()` sur seule destination — no-op silencieux — navigation provisoire Story 1.4 [`android/app/.../navigation/AppNavGraph.kt`] — deferred, pre-existing
 
+### Review Findings — Passe 2 (2026-06-16)
+
+- [x] [Review][Patch] `remember {}` appelé dans `LazyListScope` hors bloc `item {}` — erreur de compilation Compose (`remember` est `@Composable`, `LazyListScope.() -> Unit` ne l'est pas) — déplacé dans le corps de `ProfileScreen` avant `LazyColumn` [`android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileScreen.kt`]
+- [x] [Review][Patch] `toIntOrNull() ?: 0` dans le `onClick` du bouton — overflow Int (ex. "99999999999") retourne `null`, fallback `0` déclenche "Le nombre de points doit être positif" au lieu de "valeur trop grande" — `enabled` conditionné sur `toIntOrNull() != null` [`android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileScreen.kt`]
+- [x] [Review][Patch] `error` state de `loadProfile()` jamais affiché dans l'UI — `ProfileUiState.error` est set sur `AppResult.Error` mais aucun composant ne le rend — ajout `postSideEffect(ShowError(...))` dans le branch `AppResult.Error` de `loadProfile()` [`android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileViewModel.kt`]
+- [x] [Review][Patch] `providePlayerProfileDao` sans `@Singleton` dans `DataModule` — ajout `@Singleton` [`android/app/src/main/kotlin/com/secondserve/di/DataModule.kt`]
+- [x] [Review][Patch] `ProfileSummaryResponse.ranking_history` sans valeur par défaut `= []` — ajout défaut [`backend/app/features/profile/schemas.py`]
+- [x] [Review][Defer] Skew de timestamp backend — `upsert_profile_ranking` et `insert_ranking_history` capturent chacun `now = int(time.time() * 1000)` séparément — skew de quelques ms, cosmétique [`backend/app/features/profile/repository.py`] — deferred, cosmetic
+

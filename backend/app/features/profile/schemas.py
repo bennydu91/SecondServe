@@ -39,6 +39,6 @@ class RankingResponse(BaseModel):
 class ProfileSummaryResponse(BaseModel):
     current_series: Optional[str] = None
     current_points: Optional[int] = None
-    ranking_history: list[RankingResponse]
+    ranking_history: list[RankingResponse] = []
 
     model_config = {"from_attributes": True}

@@ -28,6 +28,7 @@ object DataModule {
         ).build()
 
     @Provides
+    @Singleton
     fun providePlayerProfileDao(db: SecondServeDatabase): PlayerProfileDao =
         db.playerProfileDao()
 

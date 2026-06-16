@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of 1-4-classement-fft-saisie-et-historique — Passe 2 (2026-06-16)
+
+- **Skew de timestamp backend dans `ProfileRepository`** — `upsert_profile_ranking` et `insert_ranking_history` capturent chacun `now = int(time.time() * 1000)` indépendamment. Skew de quelques ms possible entre `PlayerProfile.updated_at` et `RankingHistory.recorded_at`. Cosmétique, pas de correction prioritaire. [`backend/app/features/profile/repository.py`]
+
 ## Deferred from: code review of 1-4-classement-fft-saisie-et-historique (2026-06-16)
 
 - **`runBlocking` dans `TokenAuthenticator` + race condition `reauthenticate()` non mutex** — Pré-existant Story 1.3. Deadlock potentiel si le pool OkHttp est saturé par plusieurs 401 simultanés. À corriger avec `Mutex` dans Story 1.3 ou au moment d'un audit sécurité. [`android/data/.../api/TokenAuthenticator.kt`, `android/data/.../auth/AuthRepository.kt`]

@@ -33,8 +33,9 @@ class ProfileViewModel @Inject constructor(
                     currentPoints = result.data?.currentPoints
                 )
             }
-            is AppResult.Error -> reduce {
-                state.copy(isLoading = false, error = "Impossible de charger le profil")
+            is AppResult.Error -> {
+                reduce { state.copy(isLoading = false, error = "Impossible de charger le profil") }
+                postSideEffect(ProfileSideEffect.ShowError("Impossible de charger le profil"))
             }
             AppResult.Loading -> {}
         }
