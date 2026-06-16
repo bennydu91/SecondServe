@@ -7,9 +7,7 @@ from app.core.database import Base
 from app.core.config import settings
 
 # Import all model modules here so Base.metadata is populated for --autogenerate.
-# Add each new module as stories implement them, e.g.:
-# from app.features.sessions import models  # noqa: F401
-# from app.features.profile import models  # noqa: F401
+from app.features.profile import models as profile_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

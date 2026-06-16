@@ -1,11 +1,11 @@
 ---
-baseline_commit: "edab44b"
-status: "ready-for-dev"
+baseline_commit: "bff7022"
+status: "review"
 ---
 
 # Story 1.4: Classement FFT — Saisie et historique
 
-**Status:** ready-for-dev
+**Status:** review
 
 ## Story
 
@@ -1026,51 +1026,51 @@ def test_invalid_series_rejected():
 
 ### Domaine Android
 
-- [ ] **Task D-1** — Ajouter `AppResult.Loading` dans `AppResult.kt` (deferred de Story 1.1)
-- [ ] **Task D-2** — Créer `PlayerProfile.kt`, `RankingEntry.kt`, `MatchContextProfile.kt` dans `:domain/model/`
-- [ ] **Task D-3** — Créer `PlayerProfileRepository.kt` (interface) dans `:domain/repository/`
-- [ ] **Task D-4** — Créer `FftConstants.kt` dans `:domain/constants/`
+- [x] **Task D-1** — Ajouter `AppResult.Loading` dans `AppResult.kt` (deferred de Story 1.1)
+- [x] **Task D-2** — Créer `PlayerProfile.kt`, `RankingEntry.kt`, `MatchContextProfile.kt` dans `:domain/model/`
+- [x] **Task D-3** — Créer `PlayerProfileRepository.kt` (interface) dans `:domain/repository/`
+- [x] **Task D-4** — Créer `FftConstants.kt` dans `:domain/constants/`
 
 ### Room Android
 
-- [ ] **Task R-1** — Créer `PlayerProfileEntity.kt` et `RankingHistoryEntity.kt` dans `:data/local/db/entity/`
-- [ ] **Task R-2** — Créer `Mappers.kt` avec extensions `toDomain()` pour les deux entités
-- [ ] **Task R-3** — Créer `PlayerProfileDao.kt` avec les 4 méthodes (getProfile, upsertProfile, insertRanking, getRankingHistory)
-- [ ] **Task R-4** — Créer `SecondServeDatabase.kt` (version = 1, entities = [PlayerProfileEntity, RankingHistoryEntity])
+- [x] **Task R-1** — Créer `PlayerProfileEntity.kt` et `RankingHistoryEntity.kt` dans `:data/local/db/entity/`
+- [x] **Task R-2** — Créer `Mappers.kt` avec extensions `toDomain()` pour les deux entités
+- [x] **Task R-3** — Créer `PlayerProfileDao.kt` avec les 4 méthodes (getProfile, upsertProfile, insertRanking, getRankingHistory)
+- [x] **Task R-4** — Créer `SecondServeDatabase.kt` (version = 1, entities = [PlayerProfileEntity, RankingHistoryEntity])
 
 ### Data Layer Android
 
-- [ ] **Task DA-1** — Créer `ProfileDto.kt` dans `:data/remote/api/dto/` (RankingRequest, RankingEntryDto, ProfileSummaryDto)
-- [ ] **Task DA-2** — Étendre `VpsApiService.kt` avec `getProfile()` et `saveRanking()`
-- [ ] **Task DA-3** — Créer `PlayerProfileRepositoryImpl.kt`
-- [ ] **Task DA-4** — Créer `DataModule.kt` (Hilt module : `SecondServeDatabase`, `PlayerProfileDao`, `PlayerProfileRepository`)
+- [x] **Task DA-1** — Créer `ProfileDto.kt` dans `:data/remote/api/dto/` (RankingRequest, RankingEntryDto, ProfileSummaryDto)
+- [x] **Task DA-2** — Étendre `VpsApiService.kt` avec `getProfile()` et `saveRanking()`
+- [x] **Task DA-3** — Créer `PlayerProfileRepositoryImpl.kt`
+- [x] **Task DA-4** — Créer `DataModule.kt` (Hilt module : `SecondServeDatabase`, `PlayerProfileDao`, `PlayerProfileRepository`)
 
 ### Feature Profile Android
 
-- [ ] **Task UI-0** — Créer/vérifier `feature/profile/build.gradle.kts` avec dépendances Compose + Orbit + Hilt
-- [ ] **Task UI-1** — Créer `ProfileViewModel.kt` (Orbit MVI, `saveRanking()`, `loadProfile()`)
-- [ ] **Task UI-2** — Créer `ProfileScreen.kt` (résumé classement actuel + section saisie + timeline historique)
-  - [ ] DropdownMenu avec les 16 séries FFT
-  - [ ] Champ numérique pour les points
-  - [ ] `LazyColumn` pour la timeline historique
-- [ ] **Task UI-3** — Mettre à jour `AppNavGraph.kt` pour inclure la route `"profile"` → `ProfileScreen`
+- [x] **Task UI-0** — Créer/vérifier `feature/profile/build.gradle.kts` avec dépendances Compose + Orbit + Hilt
+- [x] **Task UI-1** — Créer `ProfileViewModel.kt` (Orbit MVI, `saveRanking()`, `loadProfile()`)
+- [x] **Task UI-2** — Créer `ProfileScreen.kt` (résumé classement actuel + section saisie + timeline historique)
+  - [x] DropdownMenu avec les 16 séries FFT
+  - [x] Champ numérique pour les points
+  - [x] `LazyColumn` pour la timeline historique
+- [x] **Task UI-3** — Mettre à jour `AppNavGraph.kt` pour inclure la route `"profile"` → `ProfileScreen`
 
 ### Backend VPS
 
-- [ ] **Task VPS-1** — Remplir `features/profile/models.py` (`PlayerProfile`, `RankingHistory`, SQLAlchemy)
-- [ ] **Task VPS-2** — Remplir `features/profile/schemas.py` (`RankingRequest` avec validators, `RankingResponse`, `ProfileSummaryResponse`)
-- [ ] **Task VPS-3** — Remplir `features/profile/repository.py` (`ProfileRepository`)
-- [ ] **Task VPS-4** — Remplir `features/profile/service.py` (`ProfileService`)
-- [ ] **Task VPS-5** — Remplir `api/v1/profile.py` (`GET /profile`, `POST /profile/ranking`, protégés par `verify_jwt`)
-- [ ] **Task VPS-6** — Mettre à jour `api/v1/router.py` pour inclure le profile router
-- [ ] **Task VPS-7** — Mettre à jour `alembic/env.py` (import `ProfileBase`, `target_metadata`)
-- [ ] **Task VPS-8** — Créer la migration Alembic (`player_profiles` + `ranking_history`)
+- [x] **Task VPS-1** — Remplir `features/profile/models.py` (`PlayerProfile`, `RankingHistory`, SQLAlchemy)
+- [x] **Task VPS-2** — Remplir `features/profile/schemas.py` (`RankingRequest` avec validators, `RankingResponse`, `ProfileSummaryResponse`)
+- [x] **Task VPS-3** — Remplir `features/profile/repository.py` (`ProfileRepository`)
+- [x] **Task VPS-4** — Remplir `features/profile/service.py` (`ProfileService`)
+- [x] **Task VPS-5** — Remplir `api/v1/profile.py` (`GET /profile`, `POST /profile/ranking`, protégés par `verify_jwt`)
+- [x] **Task VPS-6** — Mettre à jour `api/v1/router.py` pour inclure le profile router (déjà fait)
+- [x] **Task VPS-7** — Mettre à jour `alembic/env.py` (import modèles profile pour Base.metadata)
+- [x] **Task VPS-8** — Créer la migration Alembic (`player_profiles` + `ranking_history`)
 
 ### Tests
 
-- [ ] **Task T-1** — Tests unitaires Android : `PlayerProfileRepositoryImplTest.kt`, `ProfileViewModelTest.kt`
-- [ ] **Task T-2** — Tests VPS intégration : `tests/integration/test_profile_api.py`
-- [ ] **Task T-3** — Tests VPS unitaires : `tests/unit/test_profile_service.py`
+- [x] **Task T-1** — Tests unitaires Android : `PlayerProfileRepositoryImplTest.kt`, `ProfileViewModelTest.kt`
+- [x] **Task T-2** — Tests VPS intégration : `tests/integration/test_profile_api.py`
+- [x] **Task T-3** — Tests VPS unitaires : `tests/unit/test_profile_service.py`
 
 ---
 
@@ -1115,5 +1115,53 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- Utilisation du `Base` partagé de `app.core.database` pour les modèles SQLAlchemy (au lieu de créer un nouveau `DeclarativeBase` dans models.py)
+- JWT déjà appliqué au niveau du router dans `router.py` — pas de double dépendance dans `profile.py`
+- `feature/profile/build.gradle.kts` complété avec `:data`, timber, tests (junit5, mockk, turbine, coroutines-test)
+- `ksp { arg("room.schemaLocation", ...) }` ajouté dans `data/build.gradle.kts` pour exportSchema
+- `AppNavGraph.kt` mis à jour avec NavHost + composable "profile" (était vide)
+- 22/22 tests backend passent (7 unitaires + 8 intégration profile + 7 auth/health existants), zéro régression
+
 ### File List
+
+**Android — Nouveaux fichiers :**
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/PlayerProfile.kt`
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/RankingEntry.kt`
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/MatchContextProfile.kt`
+- `android/domain/src/main/kotlin/com/secondserve/domain/repository/PlayerProfileRepository.kt`
+- `android/domain/src/main/kotlin/com/secondserve/domain/constants/FftConstants.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/PlayerProfileEntity.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/RankingHistoryEntity.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/dao/PlayerProfileDao.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/SecondServeDatabase.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/remote/api/dto/ProfileDto.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt`
+- `android/app/src/main/kotlin/com/secondserve/di/DataModule.kt`
+- `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileViewModel.kt`
+- `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileScreen.kt`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImplTest.kt`
+- `android/feature/profile/src/test/kotlin/com/secondserve/feature/profile/ProfileViewModelTest.kt`
+
+**Android — Fichiers modifiés :**
+- `android/domain/src/main/kotlin/com/secondserve/domain/AppResult.kt` (ajout Loading)
+- `android/data/src/main/kotlin/com/secondserve/data/remote/api/VpsApiService.kt` (ajout getProfile + saveRanking)
+- `android/data/build.gradle.kts` (ksp schemaLocation + timber + turbine)
+- `android/feature/profile/build.gradle.kts` (ajout :data, timber, tests)
+- `android/app/src/main/kotlin/com/secondserve/navigation/AppNavGraph.kt` (NavHost + route profile)
+
+**Backend VPS — Fichiers remplis/créés :**
+- `backend/app/features/profile/models.py`
+- `backend/app/features/profile/schemas.py`
+- `backend/app/features/profile/repository.py`
+- `backend/app/features/profile/service.py`
+- `backend/app/api/v1/profile.py`
+- `backend/alembic/env.py` (import profile models)
+- `backend/alembic/versions/a1b2c3d4e5f6_add_player_profiles_and_ranking_history.py`
+- `backend/tests/integration/test_profile_api.py`
+- `backend/tests/unit/test_profile_service.py`
+
+### Change Log
+
+- 2026-06-16 : Implémentation complète de la Story 1.4 — classement FFT saisie et historique. Ajout Room DB v1, entités PlayerProfile/RankingHistory, DAO, Repository, DI Hilt, ProfileScreen Compose, ProfileViewModel Orbit MVI, backend FastAPI profile endpoints, migration Alembic, 22 tests passants.
 
