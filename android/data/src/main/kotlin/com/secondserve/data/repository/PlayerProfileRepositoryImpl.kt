@@ -1,10 +1,13 @@
 package com.secondserve.data.repository
 
+import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
 import com.secondserve.data.local.db.entity.toDomain
+import com.secondserve.data.local.db.entity.toPreferredSurfacesString
 import com.secondserve.data.remote.api.VpsApiService
+import com.secondserve.data.remote.api.dto.ProfileDetailsRequest
 import com.secondserve.data.remote.api.dto.RankingRequest
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchContextProfile
@@ -12,12 +15,14 @@ import com.secondserve.domain.model.PlayerProfile
 import com.secondserve.domain.model.RankingEntry
 import com.secondserve.domain.repository.PlayerProfileRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 
 class PlayerProfileRepositoryImpl(
     private val dao: PlayerProfileDao,
-    private val vpsApiService: VpsApiService
+    private val vpsApiService: VpsApiService,
+    private val playerDataStore: PlayerDataStore
 ) : PlayerProfileRepository {
 
     override suspend fun getProfile(): AppResult<PlayerProfile?> = try {
@@ -29,8 +34,19 @@ class PlayerProfileRepositoryImpl(
 
     override suspend fun saveRanking(series: String, points: Int): AppResult<Unit> = try {
         val now = System.currentTimeMillis()
+        val current = dao.getProfile()
         dao.saveProfileAndHistory(
-            PlayerProfileEntity(id = 1, currentSeries = series, currentPoints = points, updatedAt = now),
+            PlayerProfileEntity(
+                id = 1,
+                currentSeries = series,
+                currentPoints = points,
+                playStyle = current?.playStyle,
+                preferredSurfaces = current?.preferredSurfaces,
+                coachInstruction1 = current?.coachInstruction1,
+                coachInstruction2 = current?.coachInstruction2,
+                coachInstruction3 = current?.coachInstruction3,
+                updatedAt = now
+            ),
             RankingHistoryEntity(series = series, points = points, recordedAt = now, updatedAt = now)
         )
         try {
@@ -48,6 +64,59 @@ class PlayerProfileRepositoryImpl(
 
     override suspend fun buildMatchContextProfile(): MatchContextProfile {
         val profile = dao.getProfile()
-        return MatchContextProfile(fftSeries = profile?.currentSeries)
+        return MatchContextProfile(
+            fftSeries = profile?.currentSeries,
+            playStyle = profile?.playStyle,
+            preferredSurfaces = profile?.preferredSurfaces
+                ?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+            coachInstructions = listOfNotNull(
+                profile?.coachInstruction1?.takeIf { it.isNotBlank() },
+                profile?.coachInstruction2?.takeIf { it.isNotBlank() },
+                profile?.coachInstruction3?.takeIf { it.isNotBlank() }
+            )
+        )
     }
+
+    override suspend fun saveProfileDetails(
+        playStyle: String?,
+        preferredSurfaces: List<String>,
+        coachInstruction1: String?,
+        coachInstruction2: String?,
+        coachInstruction3: String?
+    ): AppResult<Unit> = try {
+        val now = System.currentTimeMillis()
+        val current = dao.getProfile()
+        dao.upsertProfile(
+            PlayerProfileEntity(
+                id = 1,
+                currentSeries = current?.currentSeries,
+                currentPoints = current?.currentPoints,
+                playStyle = playStyle,
+                preferredSurfaces = preferredSurfaces.toPreferredSurfacesString(),
+                coachInstruction1 = coachInstruction1?.takeIf { it.isNotBlank() },
+                coachInstruction2 = coachInstruction2?.takeIf { it.isNotBlank() },
+                coachInstruction3 = coachInstruction3?.takeIf { it.isNotBlank() },
+                updatedAt = now
+            )
+        )
+        try {
+            vpsApiService.updateProfileDetails(
+                ProfileDetailsRequest(
+                    playStyle = playStyle,
+                    preferredSurfaces = preferredSurfaces.toPreferredSurfacesString(),
+                    coachInstruction1 = coachInstruction1?.takeIf { it.isNotBlank() },
+                    coachInstruction2 = coachInstruction2?.takeIf { it.isNotBlank() },
+                    coachInstruction3 = coachInstruction3?.takeIf { it.isNotBlank() }
+                )
+            )
+        } catch (e: Exception) {
+            Timber.w(e, "VPS profile details sync failed — local save succeeded")
+        }
+        AppResult.Success(Unit)
+    } catch (e: Exception) {
+        AppResult.Error(e)
+    }
+
+    override fun observeMatchSessionCount(): Flow<Int> = flowOf(0)
+    // TODO(Story 2.3): replace with SessionDao.countMatchSessions() when sessions table exists
 }

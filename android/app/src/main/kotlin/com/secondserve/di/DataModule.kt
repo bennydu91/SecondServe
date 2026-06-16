@@ -2,6 +2,7 @@ package com.secondserve.di
 
 import android.content.Context
 import androidx.room.Room
+import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
@@ -25,7 +26,9 @@ object DataModule {
             context,
             SecondServeDatabase::class.java,
             SecondServeDatabase.DB_NAME
-        ).build()
+        )
+        .addMigrations(SecondServeDatabase.MIGRATION_1_2)
+        .build()
 
     @Provides
     @Singleton
@@ -34,9 +37,15 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun providePlayerDataStore(@ApplicationContext context: Context): PlayerDataStore =
+        PlayerDataStore(context)
+
+    @Provides
+    @Singleton
     fun providePlayerProfileRepository(
         dao: PlayerProfileDao,
-        vpsApiService: VpsApiService
+        vpsApiService: VpsApiService,
+        playerDataStore: PlayerDataStore
     ): PlayerProfileRepository =
-        PlayerProfileRepositoryImpl(dao, vpsApiService)
+        PlayerProfileRepositoryImpl(dao, vpsApiService, playerDataStore)
 }

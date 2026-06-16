@@ -1,11 +1,11 @@
 ---
 baseline_commit: "f59229c"
-status: "ready-for-dev"
+status: "review"
 ---
 
 # Story 1.5 : Profil joueur — Style de jeu & données complémentaires
 
-**Status:** ready-for-dev
+**Status:** review
 
 ## Story
 
@@ -769,47 +769,47 @@ def downgrade() -> None:
 
 ### Domaine Android
 
-- [ ] **Task D-1** — Créer `PlayStyleConstants.kt` et `SurfaceConstants.kt` dans `:domain/model/`
-- [ ] **Task D-2** — Mettre à jour `PlayerProfile.kt` avec les 5 nouveaux champs
-- [ ] **Task D-3** — Mettre à jour `MatchContextProfile.kt` (ajouter `preferredSurfaces`, `coachInstructions`)
-- [ ] **Task D-4** — Mettre à jour `PlayerProfileRepository.kt` (ajouter `saveProfileDetails()`, `observeMatchSessionCount()`)
+- [x] **Task D-1** — Créer `PlayStyleConstants.kt` et `SurfaceConstants.kt` dans `:domain/model/`
+- [x] **Task D-2** — Mettre à jour `PlayerProfile.kt` avec les 5 nouveaux champs
+- [x] **Task D-3** — Mettre à jour `MatchContextProfile.kt` (ajouter `preferredSurfaces`, `coachInstructions`)
+- [x] **Task D-4** — Mettre à jour `PlayerProfileRepository.kt` (ajouter `saveProfileDetails()`, `observeMatchSessionCount()`)
 
 ### Room Android
 
-- [ ] **Task R-1** — Mettre à jour `PlayerProfileEntity.kt` avec les 5 nouvelles colonnes nullable
-- [ ] **Task R-2** — Mettre à jour `Mappers.kt` — `PlayerProfileEntity.toDomain()` mapper les nouveaux champs + `List<String>.toPreferredSurfacesString()`
-- [ ] **Task R-3** — Mettre à jour `SecondServeDatabase.kt` — version 1→2, créer `MIGRATION_1_2`
+- [x] **Task R-1** — Mettre à jour `PlayerProfileEntity.kt` avec les 5 nouvelles colonnes nullable
+- [x] **Task R-2** — Mettre à jour `Mappers.kt` — `PlayerProfileEntity.toDomain()` mapper les nouveaux champs + `List<String>.toPreferredSurfacesString()`
+- [x] **Task R-3** — Mettre à jour `SecondServeDatabase.kt` — version 1→2, créer `MIGRATION_1_2`
 
 ### Data Layer Android
 
-- [ ] **Task DA-1** — Créer `PlayerDataStore.kt` dans `:data/local/` (EncryptedSharedPreferences, fichier `"player_data_store"`)
-- [ ] **Task DA-2** — Mettre à jour `ProfileDto.kt` : `ProfileSummaryDto` (5 champs), `ProfileDetailsRequest`, `ProfileDetailsResponse`
-- [ ] **Task DA-3** — Ajouter `updateProfileDetails()` à `VpsApiService.kt`
-- [ ] **Task DA-4** — Mettre à jour `PlayerProfileRepositoryImpl.kt` : `buildMatchContextProfile()`, `saveProfileDetails()`, `observeMatchSessionCount()`, constructeur + `playerDataStore`
-- [ ] **Task DA-5** — Mettre à jour `DataModule.kt` : `.addMigrations(MIGRATION_1_2)`, `providePlayerDataStore`, mise à jour de `providePlayerProfileRepository`
+- [x] **Task DA-1** — Créer `PlayerDataStore.kt` dans `:data/local/` (EncryptedSharedPreferences, fichier `"player_data_store"`)
+- [x] **Task DA-2** — Mettre à jour `ProfileDto.kt` : `ProfileSummaryDto` (5 champs), `ProfileDetailsRequest`, `ProfileDetailsResponse`
+- [x] **Task DA-3** — Ajouter `updateProfileDetails()` à `VpsApiService.kt`
+- [x] **Task DA-4** — Mettre à jour `PlayerProfileRepositoryImpl.kt` : `buildMatchContextProfile()`, `saveProfileDetails()`, `observeMatchSessionCount()`, constructeur + `playerDataStore`
+- [x] **Task DA-5** — Mettre à jour `DataModule.kt` : `.addMigrations(MIGRATION_1_2)`, `providePlayerDataStore`, mise à jour de `providePlayerProfileRepository`
 
 ### Feature Profile Android
 
-- [ ] **Task UI-1** — Mettre à jour `ProfileViewModel.kt` : `ProfileUiState` étendu, `saveProfileDetails()`, `saveFftLicense()`, `loadFftLicense()`, `collectMatchSessionCount()`, `ProfileDetailsSaved` side effect
-- [ ] **Task UI-2** — Mettre à jour `ProfileScreen.kt` : section "Style de jeu" (DropdownMenu + seuil 10 sessions), section "Surfaces de prédilection" (FilterChip multi-select), section "Profil complémentaire" (3 champs texte + licence FFT), gestion `ProfileDetailsSaved`
-- [ ] **Task UI-3** — S'assurer que `loadProfile()` propage les nouveaux champs dans le state (playStyle, preferredSurfaces, coachInstruction1/2/3)
-- [ ] **Task UI-4** — Appeler `loadFftLicense()` dans `init {}` de `ProfileViewModel`
+- [x] **Task UI-1** — Mettre à jour `ProfileViewModel.kt` : `ProfileUiState` étendu, `saveProfileDetails()`, `saveFftLicense()`, `loadFftLicense()`, `collectMatchSessionCount()`, `ProfileDetailsSaved` side effect
+- [x] **Task UI-2** — Mettre à jour `ProfileScreen.kt` : section "Style de jeu" (DropdownMenu + seuil 10 sessions), section "Surfaces de prédilection" (FilterChip multi-select), section "Profil complémentaire" (3 champs texte + licence FFT), gestion `ProfileDetailsSaved`
+- [x] **Task UI-3** — S'assurer que `loadProfile()` propage les nouveaux champs dans le state (playStyle, preferredSurfaces, coachInstruction1/2/3)
+- [x] **Task UI-4** — Appeler `loadFftLicense()` dans `init {}` de `ProfileViewModel`
 
 ### Backend VPS
 
-- [ ] **Task VPS-1** — Mettre à jour `features/profile/models.py` (5 nouvelles colonnes)
-- [ ] **Task VPS-2** — Mettre à jour `features/profile/schemas.py` (`ProfileDetailsRequest`, `ProfileDetailsResponse`, mise à jour `ProfileSummaryResponse`)
-- [ ] **Task VPS-3** — Mettre à jour `features/profile/repository.py` (ajouter `update_profile_details()`)
-- [ ] **Task VPS-4** — Mettre à jour `features/profile/service.py` (ajouter `update_profile_details()`)
-- [ ] **Task VPS-5** — Mettre à jour `api/v1/profile.py` (ajouter `PUT /details`)
-- [ ] **Task VPS-6** — Créer la migration Alembic (`add_profile_details_columns`) — `down_revision = 'a1b2c3d4e5f6'`
+- [x] **Task VPS-1** — Mettre à jour `features/profile/models.py` (5 nouvelles colonnes)
+- [x] **Task VPS-2** — Mettre à jour `features/profile/schemas.py` (`ProfileDetailsRequest`, `ProfileDetailsResponse`, mise à jour `ProfileSummaryResponse`)
+- [x] **Task VPS-3** — Mettre à jour `features/profile/repository.py` (ajouter `update_profile_details()`)
+- [x] **Task VPS-4** — Mettre à jour `features/profile/service.py` (ajouter `update_profile_details()`)
+- [x] **Task VPS-5** — Mettre à jour `api/v1/profile.py` (ajouter `PUT /details`)
+- [x] **Task VPS-6** — Créer la migration Alembic (`add_profile_details_columns`) — `down_revision = 'a1b2c3d4e5f6'`
 
 ### Tests
 
-- [ ] **Task T-1** — `PlayerProfileRepositoryImplTest.kt` : tester `saveProfileDetails()`, `buildMatchContextProfile()` avec `coachInstructions` (omission des champs vides), `observeMatchSessionCount()` = 0
-- [ ] **Task T-2** — `ProfileViewModelTest.kt` : tester `saveProfileDetails()`, `saveFftLicense()`, `matchSessionCount < 10` → état "Données insuffisantes"
-- [ ] **Task T-3** — `tests/integration/test_profile_details_api.py` : `PUT /profile/details` avec et sans token, avec style invalide (422), avec tous les champs null (200)
-- [ ] **Task T-4** — `tests/unit/test_profile_details_service.py` : valider `PLAY_STYLE_VALUES`, `PlayStyleConstants` côté backend
+- [x] **Task T-1** — `PlayerProfileRepositoryImplTest.kt` : tester `saveProfileDetails()`, `buildMatchContextProfile()` avec `coachInstructions` (omission des champs vides), `observeMatchSessionCount()` = 0
+- [x] **Task T-2** — `ProfileViewModelTest.kt` : tester `saveProfileDetails()`, `saveFftLicense()`, `matchSessionCount < 10` → état "Données insuffisantes"
+- [x] **Task T-3** — `tests/integration/test_profile_details_api.py` : `PUT /profile/details` avec et sans token, avec style invalide (422), avec tous les champs null (200)
+- [x] **Task T-4** — `tests/unit/test_profile_details_service.py` : valider `PLAY_STYLE_VALUES`, `PlayStyleConstants` côté backend
 
 ---
 
@@ -1017,10 +1017,59 @@ async def test_update_profile_without_token(client):
 
 ### Agent Model Used
 
-_à compléter par le dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- Migration Alembic nécessite JWT_SECRET en variable d'environnement pour `upgrade head` en CLI (hors tests)
+- `saveRanking()` mis à jour pour préserver les 5 nouveaux champs Room lors de l'upsert du profil
+- Utilisation de `object : Migration(1, 2)` (anonymous object) car l'interface Migration de Room est abstraite
+
 ### Completion Notes List
 
+- [x] D-1 : `PlayStyleConstants.kt` et `SurfaceConstants.kt` créés dans `:domain/model/`
+- [x] D-2/D-3/D-4 : `PlayerProfile`, `MatchContextProfile`, `PlayerProfileRepository` étendus
+- [x] R-1/R-2/R-3 : `PlayerProfileEntity` (5 colonnes), `Mappers` (nouveaux champs + CSV helper), `SecondServeDatabase` v2 + MIGRATION_1_2
+- [x] DA-1 : `PlayerDataStore` créé dans `:data/local/` — isolation PII FFT licence respectée
+- [x] DA-2/DA-3 : `ProfileDto` étendu (3 nouveaux DTOs), `VpsApiService` + `PUT /api/v1/profile/details`
+- [x] DA-4 : `PlayerProfileRepositoryImpl` — `buildMatchContextProfile()` filtre les instructions vides, `saveProfileDetails()`, `observeMatchSessionCount()` = flowOf(0)
+- [x] DA-5 : `DataModule` — `.addMigrations(MIGRATION_1_2)`, `providePlayerDataStore`, `providePlayerProfileRepository` étendu
+- [x] UI-1/3/4 : `ProfileViewModel` — state étendu, `saveProfileDetails()`, `saveFftLicense()`, `loadFftLicense()` dans `init {}`
+- [x] UI-2 : `ProfileScreen` — `PlayStyleSection` (DropdownMenu + FilterChip + 3 champs coach), `FftLicenseSection`
+- [x] VPS-1 à VPS-5 : backend Python entièrement mis à jour
+- [x] VPS-6 : migration Alembic `b2c3d4e5f6a7` avec `down_revision = 'a1b2c3d4e5f6'` — `upgrade head` OK
+- [x] T-1 à T-4 : 35/35 tests passent (backend) ; tests Android mis à jour avec nouveaux constructeurs
+
 ### File List
+
+android/domain/src/main/kotlin/com/secondserve/domain/model/PlayStyleConstants.kt (NEW)
+android/domain/src/main/kotlin/com/secondserve/domain/model/SurfaceConstants.kt (NEW)
+android/domain/src/main/kotlin/com/secondserve/domain/model/PlayerProfile.kt (UPDATE)
+android/domain/src/main/kotlin/com/secondserve/domain/model/MatchContextProfile.kt (UPDATE)
+android/domain/src/main/kotlin/com/secondserve/domain/repository/PlayerProfileRepository.kt (UPDATE)
+android/data/src/main/kotlin/com/secondserve/data/local/PlayerDataStore.kt (NEW)
+android/data/src/main/kotlin/com/secondserve/data/local/db/entity/PlayerProfileEntity.kt (UPDATE)
+android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt (UPDATE)
+android/data/src/main/kotlin/com/secondserve/data/local/db/SecondServeDatabase.kt (UPDATE)
+android/data/src/main/kotlin/com/secondserve/data/remote/api/VpsApiService.kt (UPDATE)
+android/data/src/main/kotlin/com/secondserve/data/remote/api/dto/ProfileDto.kt (UPDATE)
+android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt (UPDATE)
+android/app/src/main/kotlin/com/secondserve/di/DataModule.kt (UPDATE)
+android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileViewModel.kt (UPDATE)
+android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileScreen.kt (UPDATE)
+android/data/src/test/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImplTest.kt (UPDATE)
+android/feature/profile/src/test/kotlin/com/secondserve/feature/profile/ProfileViewModelTest.kt (UPDATE)
+backend/app/features/profile/models.py (UPDATE)
+backend/app/features/profile/schemas.py (UPDATE)
+backend/app/features/profile/repository.py (UPDATE)
+backend/app/features/profile/service.py (UPDATE)
+backend/app/api/v1/profile.py (UPDATE)
+backend/alembic/versions/b2c3d4e5f6a7_add_profile_details_columns.py (NEW)
+backend/tests/integration/test_profile_details_api.py (NEW)
+backend/tests/unit/test_profile_details_service.py (NEW)
+_bmad-output/implementation-artifacts/1-5-profil-joueur-style-de-jeu-donnees-complementaires.md (UPDATE)
+_bmad-output/implementation-artifacts/sprint-status.yaml (UPDATE)
+
+## Change Log
+
+- 2026-06-16 : Implémentation story 1.5 complète — style de jeu, surfaces, consignes coach, licence FFT, migration Room 1→2, migration Alembic, PUT /profile/details, 35 tests backend passent

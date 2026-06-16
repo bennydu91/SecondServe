@@ -1,7 +1,7 @@
 package com.secondserve.feature.profile
 
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.ViewModel
+import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.constants.FftConstants
 import com.secondserve.domain.model.RankingEntry
@@ -13,7 +13,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val profileRepository: PlayerProfileRepository
+    private val profileRepository: PlayerProfileRepository,
+    private val playerDataStore: PlayerDataStore
 ) : ViewModel(), ContainerHost<ProfileUiState, ProfileSideEffect> {
 
     override val container = container<ProfileUiState, ProfileSideEffect>(ProfileUiState())
@@ -21,6 +22,8 @@ class ProfileViewModel @Inject constructor(
     init {
         loadProfile()
         collectRankingHistory()
+        collectMatchSessionCount()
+        loadFftLicense()
     }
 
     fun loadProfile() = intent {
@@ -30,7 +33,12 @@ class ProfileViewModel @Inject constructor(
                 state.copy(
                     isLoading = false,
                     currentSeries = result.data?.currentSeries,
-                    currentPoints = result.data?.currentPoints
+                    currentPoints = result.data?.currentPoints,
+                    playStyle = result.data?.playStyle,
+                    preferredSurfaces = result.data?.preferredSurfaces ?: emptyList(),
+                    coachInstruction1 = result.data?.coachInstruction1,
+                    coachInstruction2 = result.data?.coachInstruction2,
+                    coachInstruction3 = result.data?.coachInstruction3
                 )
             }
             is AppResult.Error -> {
@@ -44,6 +52,12 @@ class ProfileViewModel @Inject constructor(
     private fun collectRankingHistory() = intent {
         profileRepository.getRankingHistory().collect { history ->
             reduce { state.copy(rankingHistory = history) }
+        }
+    }
+
+    private fun collectMatchSessionCount() = intent {
+        profileRepository.observeMatchSessionCount().collect { count ->
+            reduce { state.copy(matchSessionCount = count) }
         }
     }
 
@@ -69,6 +83,49 @@ class ProfileViewModel @Inject constructor(
             AppResult.Loading -> {}
         }
     }
+
+    fun saveProfileDetails(
+        playStyle: String?,
+        preferredSurfaces: List<String>,
+        coachInstruction1: String?,
+        coachInstruction2: String?,
+        coachInstruction3: String?
+    ) = intent {
+        reduce { state.copy(isSaving = true) }
+        when (val result = profileRepository.saveProfileDetails(
+            playStyle, preferredSurfaces,
+            coachInstruction1, coachInstruction2, coachInstruction3
+        )) {
+            is AppResult.Success -> {
+                reduce {
+                    state.copy(
+                        isSaving = false,
+                        playStyle = playStyle,
+                        preferredSurfaces = preferredSurfaces,
+                        coachInstruction1 = coachInstruction1,
+                        coachInstruction2 = coachInstruction2,
+                        coachInstruction3 = coachInstruction3
+                    )
+                }
+                postSideEffect(ProfileSideEffect.ProfileDetailsSaved)
+            }
+            is AppResult.Error -> {
+                reduce { state.copy(isSaving = false) }
+                postSideEffect(ProfileSideEffect.ShowError("Erreur lors de la sauvegarde"))
+            }
+            AppResult.Loading -> {}
+        }
+    }
+
+    fun saveFftLicense(licenseNumber: String) = intent {
+        playerDataStore.saveFftLicenseNumber(licenseNumber)
+        reduce { state.copy(fftLicenseNumber = licenseNumber) }
+    }
+
+    fun loadFftLicense() = intent {
+        val license = playerDataStore.getFftLicenseNumber()
+        reduce { state.copy(fftLicenseNumber = license) }
+    }
 }
 
 data class ProfileUiState(
@@ -77,10 +134,18 @@ data class ProfileUiState(
     val currentSeries: String? = null,
     val currentPoints: Int? = null,
     val rankingHistory: List<RankingEntry> = emptyList(),
+    val matchSessionCount: Int = 0,
+    val playStyle: String? = null,
+    val preferredSurfaces: List<String> = emptyList(),
+    val coachInstruction1: String? = null,
+    val coachInstruction2: String? = null,
+    val coachInstruction3: String? = null,
+    val fftLicenseNumber: String? = null,
     val error: String? = null
 )
 
 sealed class ProfileSideEffect {
     data object RankingSaved : ProfileSideEffect()
+    data object ProfileDetailsSaved : ProfileSideEffect()
     data class ShowError(val message: String) : ProfileSideEffect()
 }
