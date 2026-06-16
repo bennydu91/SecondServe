@@ -12,9 +12,8 @@ class JwtInterceptor(private val tokenStore: TokenStore) : Interceptor {
         // Skip if no token (e.g., POST /auth/init)
         if (token == null) return chain.proceed(originalRequest)
 
-        // Add Authorization header
         val authorizedRequest = originalRequest.newBuilder()
-            .addHeader("Authorization", "Bearer $token")
+            .header("Authorization", "Bearer $token")
             .build()
 
         return chain.proceed(authorizedRequest)

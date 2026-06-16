@@ -27,4 +27,4 @@ async def verify_auth(token_payload: dict = Depends(verify_jwt)) -> dict:
     """
     Verify JWT token. Protected route for testing JWT validation.
     """
-    return {"message": "Token is valid", "payload": token_payload}
+    return {"message": "Token is valid"}
