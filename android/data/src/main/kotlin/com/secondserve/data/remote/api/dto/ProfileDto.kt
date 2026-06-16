@@ -17,5 +17,22 @@ data class RankingEntryDto(
 data class ProfileSummaryDto(
     @Json(name = "current_series") val currentSeries: String?,
     @Json(name = "current_points") val currentPoints: Int?,
-    @Json(name = "ranking_history") val rankingHistory: List<RankingEntryDto>
+    @Json(name = "ranking_history") val rankingHistory: List<RankingEntryDto>,
+    @Json(name = "play_style") val playStyle: String?,
+    @Json(name = "preferred_surfaces") val preferredSurfaces: String?,
+    @Json(name = "coach_instruction_1") val coachInstruction1: String?,
+    @Json(name = "coach_instruction_2") val coachInstruction2: String?,
+    @Json(name = "coach_instruction_3") val coachInstruction3: String?
+)
+
+data class ProfileDetailsRequest(
+    @Json(name = "play_style") val playStyle: String?,
+    @Json(name = "preferred_surfaces") val preferredSurfaces: String?,
+    @Json(name = "coach_instruction_1") val coachInstruction1: String?,
+    @Json(name = "coach_instruction_2") val coachInstruction2: String?,
+    @Json(name = "coach_instruction_3") val coachInstruction3: String?
+)
+
+data class ProfileDetailsResponse(
+    @Json(name = "updated_at") val updatedAt: Long
 )

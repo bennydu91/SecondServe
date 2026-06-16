@@ -40,3 +40,30 @@ class ProfileRepository:
             select(RankingHistory).order_by(desc(RankingHistory.recorded_at))
         )
         return list(result.scalars().all())
+
+    async def update_profile_details(
+        self,
+        play_style: str | None,
+        preferred_surfaces: str | None,
+        coach_instruction_1: str | None,
+        coach_instruction_2: str | None,
+        coach_instruction_3: str | None
+    ) -> PlayerProfile:
+        now = int(time.time() * 1000)
+        profile = await self.get_profile()
+        if profile:
+            profile.play_style = play_style
+            profile.preferred_surfaces = preferred_surfaces
+            profile.coach_instruction_1 = coach_instruction_1
+            profile.coach_instruction_2 = coach_instruction_2
+            profile.coach_instruction_3 = coach_instruction_3
+            profile.updated_at = now
+        else:
+            profile = PlayerProfile(
+                id=1, play_style=play_style, preferred_surfaces=preferred_surfaces,
+                coach_instruction_1=coach_instruction_1, coach_instruction_2=coach_instruction_2,
+                coach_instruction_3=coach_instruction_3, updated_at=now
+            )
+            self.db.add(profile)
+        await self.db.flush()
+        return profile

@@ -9,6 +9,11 @@ class PlayerProfile(Base):
     current_series = Column(String, nullable=True)
     current_points = Column(Integer, nullable=True)
     updated_at = Column(Integer, nullable=False)
+    play_style = Column(String, nullable=True)
+    preferred_surfaces = Column(String, nullable=True)
+    coach_instruction_1 = Column(String, nullable=True)
+    coach_instruction_2 = Column(String, nullable=True)
+    coach_instruction_3 = Column(String, nullable=True)
 
 
 class RankingHistory(Base):
