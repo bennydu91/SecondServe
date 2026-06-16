@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +54,7 @@ import java.util.Date
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToWorkAxes: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -118,6 +120,16 @@ fun ProfileScreen(
                         coachInstruction3 = state.coachInstruction3,
                         onSaveDetails = viewModel::saveProfileDetails
                     )
+                }
+                item {
+                    OutlinedButton(
+                        onClick = onNavigateToWorkAxes,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Text("Gérer mes axes de travail")
+                    }
                 }
                 item {
                     FftLicenseSection(

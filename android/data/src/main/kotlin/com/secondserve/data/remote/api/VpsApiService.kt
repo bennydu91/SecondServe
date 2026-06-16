@@ -5,10 +5,15 @@ import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
 import com.secondserve.data.remote.api.dto.ProfileSummaryDto
 import com.secondserve.data.remote.api.dto.RankingEntryDto
 import com.secondserve.data.remote.api.dto.RankingRequest
+import com.secondserve.data.remote.api.dto.WorkAxesResponse
+import com.secondserve.data.remote.api.dto.WorkAxisRequest
+import com.secondserve.data.remote.api.dto.WorkAxisResponse
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Path
 
 interface VpsApiService {
     @POST("api/v1/auth/init")
@@ -25,4 +30,16 @@ interface VpsApiService {
 
     @PUT("api/v1/profile/details")
     suspend fun updateProfileDetails(@Body request: ProfileDetailsRequest): ProfileDetailsResponse
+
+    @GET("api/v1/work_axes")
+    suspend fun getWorkAxes(): WorkAxesResponse
+
+    @POST("api/v1/work_axes")
+    suspend fun createWorkAxis(@Body request: WorkAxisRequest): WorkAxisResponse
+
+    @PUT("api/v1/work_axes/{id}")
+    suspend fun updateWorkAxis(@Path("id") id: Long, @Body request: WorkAxisRequest): WorkAxisResponse
+
+    @DELETE("api/v1/work_axes/{id}")
+    suspend fun deleteWorkAxis(@Path("id") id: Long)
 }

@@ -4,10 +4,13 @@ import android.content.Context
 import androidx.room.Room
 import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
+import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.repository.PlayerProfileRepositoryImpl
+import com.secondserve.data.repository.WorkAxisRepositoryImpl
 import com.secondserve.domain.repository.PlayerProfileRepository
+import com.secondserve.domain.repository.WorkAxisRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,7 +30,10 @@ object DataModule {
             SecondServeDatabase::class.java,
             SecondServeDatabase.DB_NAME
         )
-        .addMigrations(SecondServeDatabase.MIGRATION_1_2)
+        .addMigrations(
+            SecondServeDatabase.MIGRATION_1_2,
+            SecondServeDatabase.MIGRATION_2_3
+        )
         .build()
 
     @Provides
@@ -37,14 +43,28 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideWorkAxisDao(db: SecondServeDatabase): WorkAxisDao =
+        db.workAxisDao()
+
+    @Provides
+    @Singleton
     fun providePlayerDataStore(@ApplicationContext context: Context): PlayerDataStore =
         PlayerDataStore(context)
 
     @Provides
     @Singleton
+    fun provideWorkAxisRepository(
+        dao: WorkAxisDao,
+        vpsApiService: VpsApiService
+    ): WorkAxisRepository =
+        WorkAxisRepositoryImpl(dao, vpsApiService)
+
+    @Provides
+    @Singleton
     fun providePlayerProfileRepository(
         dao: PlayerProfileDao,
-        vpsApiService: VpsApiService
+        vpsApiService: VpsApiService,
+        workAxisRepository: WorkAxisRepository
     ): PlayerProfileRepository =
-        PlayerProfileRepositoryImpl(dao, vpsApiService)
+        PlayerProfileRepositoryImpl(dao, vpsApiService, workAxisRepository)
 }

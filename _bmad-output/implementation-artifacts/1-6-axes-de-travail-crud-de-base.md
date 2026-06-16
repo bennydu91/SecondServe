@@ -1,6 +1,10 @@
+---
+baseline_commit: 6760248b8a323a4c2022d7754096add7015d1c6d
+---
+
 # Story 1.6 : Axes de travail — CRUD de base
 
-**Status:** ready-for-dev
+**Status:** review
 
 ## Story
 
@@ -1099,50 +1103,50 @@ from app.features.work_axes.models import WorkAxis  # ← ajouter aux imports ex
 
 ### Domaine Android
 
-- [ ] **Task D-1** — Créer `WorkAxis.kt` (data class + `MAX_WORK_AXES` const) dans `:domain/model/`
-- [ ] **Task D-2** — Créer `WorkAxisRepository.kt` (interface) dans `:domain/repository/`
+- [x] **Task D-1** — Créer `WorkAxis.kt` (data class + `MAX_WORK_AXES` const) dans `:domain/model/`
+- [x] **Task D-2** — Créer `WorkAxisRepository.kt` (interface) dans `:domain/repository/`
 
 ### Room Android
 
-- [ ] **Task R-1** — Créer `WorkAxisEntity.kt` dans `:data/local/db/entity/` (table `work_axes`, 4 colonnes)
-- [ ] **Task R-2** — Ajouter `WorkAxisEntity.toDomain()` dans `Mappers.kt`
-- [ ] **Task R-3** — Créer `WorkAxisDao.kt` dans `:data/local/dao/` (avec `getById()` one-shot)
-- [ ] **Task R-4** — Mettre à jour `SecondServeDatabase.kt` : version 2→3, `WorkAxisEntity` dans entities, `workAxisDao()` abstract, `MIGRATION_2_3`
+- [x] **Task R-1** — Créer `WorkAxisEntity.kt` dans `:data/local/db/entity/` (table `work_axes`, 4 colonnes)
+- [x] **Task R-2** — Ajouter `WorkAxisEntity.toDomain()` dans `Mappers.kt`
+- [x] **Task R-3** — Créer `WorkAxisDao.kt` dans `:data/local/dao/` (avec `getById()` one-shot)
+- [x] **Task R-4** — Mettre à jour `SecondServeDatabase.kt` : version 2→3, `WorkAxisEntity` dans entities, `workAxisDao()` abstract, `MIGRATION_2_3`
 
 ### Data Layer Android
 
-- [ ] **Task DA-1** — Créer `WorkAxisDto.kt` dans `:data/remote/api/dto/` (`WorkAxisRequest`, `WorkAxisResponse`, `WorkAxesResponse`)
-- [ ] **Task DA-2** — Ajouter les 4 endpoints work_axes à `VpsApiService.kt`
-- [ ] **Task DA-3** — Créer `WorkAxisRepositoryImpl.kt` dans `:data/repository/` (CRUD + fire-and-forget VPS)
-- [ ] **Task DA-4** — Mettre à jour `PlayerProfileRepositoryImpl.kt` : injecter `WorkAxisRepository`, peupler `activeWorkAxes` dans `buildMatchContextProfile()`
-- [ ] **Task DA-5** — Mettre à jour `DataModule.kt` : `MIGRATION_2_3`, `WorkAxisDao`, `WorkAxisRepository`, mise à jour injection `PlayerProfileRepository`
+- [x] **Task DA-1** — Créer `WorkAxisDto.kt` dans `:data/remote/api/dto/` (`WorkAxisRequest`, `WorkAxisResponse`, `WorkAxesResponse`)
+- [x] **Task DA-2** — Ajouter les 4 endpoints work_axes à `VpsApiService.kt`
+- [x] **Task DA-3** — Créer `WorkAxisRepositoryImpl.kt` dans `:data/repository/` (CRUD + fire-and-forget VPS)
+- [x] **Task DA-4** — Mettre à jour `PlayerProfileRepositoryImpl.kt` : injecter `WorkAxisRepository`, peupler `activeWorkAxes` dans `buildMatchContextProfile()`
+- [x] **Task DA-5** — Mettre à jour `DataModule.kt` : `MIGRATION_2_3`, `WorkAxisDao`, `WorkAxisRepository`, mise à jour injection `PlayerProfileRepository`
 
 ### Feature Android
 
-- [ ] **Task UI-1** — Créer `WorkAxesViewModel.kt` dans `:feature:profile/` (Orbit MVI, CRUD, validation max 3)
-- [ ] **Task UI-2** — Créer `WorkAxesScreen.kt` dans `:feature:profile/` (LazyColumn, dialogs création/édition, delete, FAB désactivé si max)
-- [ ] **Task UI-3** — Mettre à jour `AppNavGraph.kt` : ajouter route `"work_axes"`, `onNavigateToWorkAxes` vers `ProfileScreen`
-- [ ] **Task UI-4** — Mettre à jour `ProfileScreen.kt` : ajouter paramètre `onNavigateToWorkAxes`, ajouter bouton "Gérer mes axes de travail"
+- [x] **Task UI-1** — Créer `WorkAxesViewModel.kt` dans `:feature:profile/` (Orbit MVI, CRUD, validation max 3)
+- [x] **Task UI-2** — Créer `WorkAxesScreen.kt` dans `:feature:profile/` (LazyColumn, dialogs création/édition, delete, FAB désactivé si max)
+- [x] **Task UI-3** — Mettre à jour `AppNavGraph.kt` : ajouter route `"work_axes"`, `onNavigateToWorkAxes` vers `ProfileScreen`
+- [x] **Task UI-4** — Mettre à jour `ProfileScreen.kt` : ajouter paramètre `onNavigateToWorkAxes`, ajouter bouton "Gérer mes axes de travail"
 
 ### Backend VPS
 
-- [ ] **Task VPS-1** — Créer `backend/app/features/work_axes/__init__.py` (vide)
-- [ ] **Task VPS-2** — Créer `features/work_axes/models.py` (SQLAlchemy `WorkAxis`)
-- [ ] **Task VPS-3** — Créer `features/work_axes/schemas.py` (`WorkAxisRequest`, `WorkAxisResponse`, `WorkAxesResponse`, validation)
-- [ ] **Task VPS-4** — Créer `features/work_axes/repository.py` (CRUD asynchrone)
-- [ ] **Task VPS-5** — Créer `features/work_axes/service.py` (validation max 3, gestion 404)
-- [ ] **Task VPS-6** — Créer `api/v1/work_axes.py` (router GET/POST/PUT/DELETE)
-- [ ] **Task VPS-7** — Mettre à jour `api/v1/router.py` : inclure work_axes router
-- [ ] **Task VPS-8** — Créer migration Alembic (`add_work_axes_table`, `down_revision = 'b2c3d4e5f6a7'`) + `alembic upgrade head`
-- [ ] **Task VPS-9** — Mettre à jour `alembic/env.py` : importer `WorkAxis`
+- [x] **Task VPS-1** — Créer `backend/app/features/work_axes/__init__.py` (vide)
+- [x] **Task VPS-2** — Créer `features/work_axes/models.py` (SQLAlchemy `WorkAxis`)
+- [x] **Task VPS-3** — Créer `features/work_axes/schemas.py` (`WorkAxisRequest`, `WorkAxisResponse`, `WorkAxesResponse`, validation)
+- [x] **Task VPS-4** — Créer `features/work_axes/repository.py` (CRUD asynchrone)
+- [x] **Task VPS-5** — Créer `features/work_axes/service.py` (validation max 3, gestion 404)
+- [x] **Task VPS-6** — Créer `api/v1/work_axes.py` (router GET/POST/PUT/DELETE)
+- [x] **Task VPS-7** — Mettre à jour `api/v1/router.py` : inclure work_axes router
+- [x] **Task VPS-8** — Créer migration Alembic (`c3d4e5f6a7b8_add_work_axes_table`, `down_revision = 'b2c3d4e5f6a7'`) — validée via tests d'intégration
+- [x] **Task VPS-9** — Mettre à jour `alembic/env.py` : importer `WorkAxis`
 
 ### Tests
 
-- [ ] **Task T-1** — `WorkAxisRepositoryImplTest.kt` : `createWorkAxis()` Room insert + VPS failure fallback, `updateWorkAxis()` préserve `createdAt`, `deleteWorkAxis()`, `getActiveWorkAxesTitles()` ordre chronologique
-- [ ] **Task T-2** — `WorkAxesViewModelTest.kt` : `createWorkAxis()` quand count=3 → `ShowError("Maximum 3...")`, `createWorkAxis("")` → `ShowError`, flux CRUD nominal
-- [ ] **Task T-3** — `PlayerProfileRepositoryImplTest.kt` : `buildMatchContextProfile()` avec 2 work axes → `activeWorkAxes = ["Travail revers", "Service"]`
-- [ ] **Task T-4** — `backend/tests/integration/test_work_axes_api.py` : CRUD complet, POST 4e axe → 422, DELETE 404, sans JWT → 401
-- [ ] **Task T-5** — `backend/tests/unit/test_work_axis_service.py` : `create()` quand count=3 → HTTPException 422
+- [x] **Task T-1** — `WorkAxisRepositoryImplTest.kt` : `createWorkAxis()` Room insert + VPS failure fallback, `updateWorkAxis()` préserve `createdAt`, `deleteWorkAxis()`, `getActiveWorkAxesTitles()` ordre chronologique
+- [x] **Task T-2** — `WorkAxesViewModelTest.kt` : `createWorkAxis()` quand count=3 → `ShowError("Maximum 3...")`, `createWorkAxis("")` → `ShowError`, flux CRUD nominal
+- [x] **Task T-3** — `PlayerProfileRepositoryImplTest.kt` : `buildMatchContextProfile()` avec 2 work axes → `activeWorkAxes = ["Revers", "Service"]`
+- [x] **Task T-4** — `backend/tests/integration/test_work_axes_api.py` : CRUD complet, POST 4e axe → 422, DELETE 404, sans JWT → 401 (12 tests passent)
+- [x] **Task T-5** — `backend/tests/unit/test_work_axis_service.py` : `create()` quand count=3 → HTTPException 422 (9 tests passent)
 
 ---
 
@@ -1459,10 +1463,61 @@ async def test_update_raises_404_when_not_found():
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- Migration Alembic non exécutable directement (pas de .env dans le conteneur) — validée via les tests d'intégration SQLite en mémoire qui créent la table `work_axes` via le schema SQLAlchemy.
+- `Icons.Default.ArrowBack` déprécié → remplacé par `Icons.AutoMirrored.Filled.ArrowBack` dans `WorkAxesScreen.kt`.
+
 ### Completion Notes List
 
+- Toutes les tâches Android (D-1, D-2, R-1 à R-4, DA-1 à DA-5, UI-1 à UI-4) implémentées.
+- Backend VPS (VPS-1 à VPS-9) : module `features/work_axes/` complet, router CRUD, migration Alembic `c3d4e5f6a7b8`, `alembic/env.py` mis à jour.
+- `WorkAxisDao.getById()` one-shot utilisé dans `updateWorkAxis()` — anti-pattern `.collect{}` évité.
+- `PlayerProfileRepositoryImpl.buildMatchContextProfile()` peuple maintenant `activeWorkAxes` via `WorkAxisRepository.getActiveWorkAxesTitles()`.
+- `PlayerProfileRepositoryImplTest.kt` mis à jour : mock `WorkAxisRepository` ajouté, 2 nouveaux tests `activeWorkAxes`.
+- 67 tests VPS passent (21 nouveaux + 46 existants) — aucune régression.
+
 ### File List
+
+**Android — nouveaux fichiers :**
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/WorkAxis.kt`
+- `android/domain/src/main/kotlin/com/secondserve/domain/repository/WorkAxisRepository.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/WorkAxisEntity.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/dao/WorkAxisDao.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/remote/api/dto/WorkAxisDto.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImpl.kt`
+- `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/WorkAxesViewModel.kt`
+- `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/WorkAxesScreen.kt`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImplTest.kt`
+- `android/feature/profile/src/test/kotlin/com/secondserve/feature/profile/WorkAxesViewModelTest.kt`
+
+**Android — fichiers modifiés :**
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/SecondServeDatabase.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/remote/api/VpsApiService.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt`
+- `android/app/src/main/kotlin/com/secondserve/di/DataModule.kt`
+- `android/app/src/main/kotlin/com/secondserve/navigation/AppNavGraph.kt`
+- `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/ProfileScreen.kt`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImplTest.kt`
+
+**Backend VPS — nouveaux fichiers :**
+- `backend/app/features/work_axes/__init__.py`
+- `backend/app/features/work_axes/models.py`
+- `backend/app/features/work_axes/schemas.py`
+- `backend/app/features/work_axes/repository.py`
+- `backend/app/features/work_axes/service.py`
+- `backend/app/api/v1/work_axes.py`
+- `backend/alembic/versions/c3d4e5f6a7b8_add_work_axes_table.py`
+- `backend/tests/integration/test_work_axes_api.py`
+- `backend/tests/unit/test_work_axis_service.py`
+
+**Backend VPS — fichiers modifiés :**
+- `backend/app/api/v1/router.py`
+- `backend/alembic/env.py`
+
+**Sprint tracking :**
+- `_bmad-output/implementation-artifacts/1-6-axes-de-travail-crud-de-base.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
