@@ -1,11 +1,11 @@
 ---
 baseline_commit: "bff7022"
-status: "review"
+status: "done"
 ---
 
 # Story 1.4: Classement FFT — Saisie et historique
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -1164,4 +1164,18 @@ claude-sonnet-4-6
 ### Change Log
 
 - 2026-06-16 : Implémentation complète de la Story 1.4 — classement FFT saisie et historique. Ajout Room DB v1, entités PlayerProfile/RankingHistory, DAO, Repository, DI Hilt, ProfileScreen Compose, ProfileViewModel Orbit MVI, backend FastAPI profile endpoints, migration Alembic, 22 tests passants.
+
+### Review Findings
+
+- [x] [Review][Patch] Moshi sans `KotlinJsonAdapterFactory` — toutes les API calls crashent au runtime [`android/app/.../di/AuthModule.kt:49`]
+- [x] [Review][Patch] `saveRanking()` Room non atomique — `upsertProfile` et `insertRanking` pas dans une `@Transaction` [`android/data/.../repository/PlayerProfileRepositoryImpl.kt`]
+- [x] [Review][Patch] `ProfileViewModel.loadProfile()` — `.collect {}` infini bloque l'intent Orbit ; si `loadProfile()` est rappelé, deux collecteurs parallèles s'activent [`android/feature/profile/.../ProfileViewModel.kt`]
+- [x] [Review][Patch] `saveRanking()` succès ne met pas à jour `currentSeries`/`currentPoints` dans l'UI state — `RankingSummaryCard` reste obsolète jusqu'au redémarrage de l'écran (AC6) [`android/feature/profile/.../ProfileViewModel.kt`]
+- [x] [Review][Patch] `SimpleDateFormat` instancié dans chaque item `LazyColumn` via `remember{}` — optimiser en passant le formatter au niveau de l'écran [`android/feature/profile/.../ProfileScreen.kt`]
+- [x] [Review][Patch] `ProfileSummaryResponse` — `Optional[str]` et `Optional[int]` sans valeur par défaut `= None` en Pydantic v2 [`backend/app/features/profile/schemas.py`]
+- [x] [Review][Patch] `menuAnchor()` sans argument déprécié en Material3 1.3+ [`android/feature/profile/.../ProfileScreen.kt`]
+- [x] [Review][Defer] `runBlocking` dans `TokenAuthenticator` + race condition sur `reauthenticate()` — pré-existant Story 1.3 [`android/data/.../api/TokenAuthenticator.kt`] — deferred, pre-existing
+- [x] [Review][Defer] `saveToken()` utilise `apply()` async — token peut être null à la relecture immédiate — pré-existant Story 1.3 [`android/data/.../security/JwtTokenStore.kt`] — deferred, pre-existing
+- [x] [Review][Defer] Room schema JSON version 1 non committé — peut casser CI migration future [`android/data/schemas/`] — deferred, nécessite build Android pour générer
+- [x] [Review][Defer] `navController.popBackStack()` sur seule destination — no-op silencieux — navigation provisoire Story 1.4 [`android/app/.../navigation/AppNavGraph.kt`] — deferred, pre-existing
 

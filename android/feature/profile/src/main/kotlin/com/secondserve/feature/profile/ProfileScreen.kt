@@ -19,6 +19,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -41,9 +42,7 @@ import com.secondserve.domain.model.RankingEntry
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -95,8 +94,9 @@ fun ProfileScreen(
                     )
                     HorizontalDivider()
                 }
+                val dateFormat = remember { java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.FRENCH) }
                 items(state.rankingHistory) { entry ->
-                    RankingHistoryItem(entry = entry)
+                    RankingHistoryItem(entry = entry, dateFormat = dateFormat)
                 }
             }
         }
@@ -156,7 +156,7 @@ private fun RankingInputSection(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -205,8 +205,7 @@ private fun RankingInputSection(
 }
 
 @Composable
-private fun RankingHistoryItem(entry: RankingEntry) {
-    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.FRENCH) }
+private fun RankingHistoryItem(entry: RankingEntry, dateFormat: java.text.SimpleDateFormat) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

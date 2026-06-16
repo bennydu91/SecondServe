@@ -10,7 +10,6 @@ import com.secondserve.data.remote.api.dto.RankingRequest
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchContextProfile
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
@@ -36,11 +35,10 @@ class PlayerProfileRepositoryImplTest {
     }
 
     @Test
-    fun `saveRanking with valid series upserts profile and inserts history`() = runTest {
+    fun `saveRanking with valid series upserts profile and inserts history atomically`() = runTest {
         val profileSlot = slot<PlayerProfileEntity>()
         val historySlot = slot<RankingHistoryEntity>()
-        coEvery { dao.upsertProfile(capture(profileSlot)) } returns Unit
-        coEvery { dao.insertRanking(capture(historySlot)) } returns Unit
+        coEvery { dao.saveProfileAndHistory(capture(profileSlot), capture(historySlot)) } returns Unit
         coEvery { vpsApiService.saveRanking(any()) } returns RankingEntryDto(1, "15/2", 850, 0L)
 
         val result = repository.saveRanking("15/2", 850)
@@ -54,8 +52,7 @@ class PlayerProfileRepositoryImplTest {
 
     @Test
     fun `saveRanking when VPS fails local save still succeeds`() = runTest {
-        coEvery { dao.upsertProfile(any()) } returns Unit
-        coEvery { dao.insertRanking(any()) } returns Unit
+        coEvery { dao.saveProfileAndHistory(any(), any()) } returns Unit
         coEvery { vpsApiService.saveRanking(any()) } throws RuntimeException("network error")
 
         val result = repository.saveRanking("15/2", 850)

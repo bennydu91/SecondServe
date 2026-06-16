@@ -20,6 +20,7 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadProfile()
+        collectRankingHistory()
     }
 
     fun loadProfile() = intent {
@@ -37,6 +38,9 @@ class ProfileViewModel @Inject constructor(
             }
             AppResult.Loading -> {}
         }
+    }
+
+    private fun collectRankingHistory() = intent {
         profileRepository.getRankingHistory().collect { history ->
             reduce { state.copy(rankingHistory = history) }
         }
@@ -54,7 +58,7 @@ class ProfileViewModel @Inject constructor(
         reduce { state.copy(isSaving = true) }
         when (val result = profileRepository.saveRanking(series, points)) {
             is AppResult.Success -> {
-                reduce { state.copy(isSaving = false) }
+                reduce { state.copy(isSaving = false, currentSeries = series, currentPoints = points) }
                 postSideEffect(ProfileSideEffect.RankingSaved)
             }
             is AppResult.Error -> {

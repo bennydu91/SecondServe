@@ -29,21 +29,9 @@ class PlayerProfileRepositoryImpl(
 
     override suspend fun saveRanking(series: String, points: Int): AppResult<Unit> = try {
         val now = System.currentTimeMillis()
-        dao.upsertProfile(
-            PlayerProfileEntity(
-                id = 1,
-                currentSeries = series,
-                currentPoints = points,
-                updatedAt = now
-            )
-        )
-        dao.insertRanking(
-            RankingHistoryEntity(
-                series = series,
-                points = points,
-                recordedAt = now,
-                updatedAt = now
-            )
+        dao.saveProfileAndHistory(
+            PlayerProfileEntity(id = 1, currentSeries = series, currentPoints = points, updatedAt = now),
+            RankingHistoryEntity(series = series, points = points, recordedAt = now, updatedAt = now)
         )
         try {
             vpsApiService.saveRanking(RankingRequest(series = series, points = points))

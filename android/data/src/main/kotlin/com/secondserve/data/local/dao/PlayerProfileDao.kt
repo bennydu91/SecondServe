@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +19,12 @@ interface PlayerProfileDao {
 
     @Insert
     suspend fun insertRanking(ranking: RankingHistoryEntity)
+
+    @Transaction
+    suspend fun saveProfileAndHistory(profile: PlayerProfileEntity, ranking: RankingHistoryEntity) {
+        upsertProfile(profile)
+        insertRanking(ranking)
+    }
 
     @Query("SELECT * FROM ranking_history ORDER BY recorded_at DESC")
     fun getRankingHistory(): Flow<List<RankingHistoryEntity>>
