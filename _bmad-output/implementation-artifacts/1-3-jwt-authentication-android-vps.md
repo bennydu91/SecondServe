@@ -867,3 +867,15 @@ Story 1.3 (JWT Authentication Android ↔ VPS) — code review effectuée le 202
 - [x] [Review][Defer] **`JWTManager` instancié à chaque requête (pas de singleton)** — Impact performance négligeable pour MVP mono-utilisateur. À refactoriser si le volume augmente. [backend/app/core/security.py] — deferred, pre-existing design acceptable pour MVP
 - [x] [Review][Defer] **`VpsApiServiceTest` teste la réflexion plutôt que le comportement Retrofit** — Tests smoke sans valeur réelle. À remplacer par des tests MockWebServer. [android/data/src/test/.../VpsApiServiceTest.kt] — deferred, qualité de tests à améliorer
 
+### Patch Review Findings (2026-06-16)
+
+#### Patches
+
+- [ ] [Review][Patch] **`runBlocking` dans `TokenAuthenticator.authenticate()` bloque un thread OkHttp → risque de deadlock** — `authenticate()` est appelé sur un thread du dispatcher OkHttp. `runBlocking` bloque ce thread pendant toute la durée de `reauthenticate()`, qui lui-même fait un appel HTTP via le même OkHttpClient. Si plusieurs 401 arrivent concurremment, tous les threads disponibles peuvent être bloqués en attente d'un thread libre pour la ré-auth → deadlock potentiel. Fix : utiliser un OkHttpClient dédié (sans `TokenAuthenticator`) pour les appels d'auth, ou restructurer avec un `CoroutineScope` injecté. [android/data/src/main/kotlin/com/secondserve/data/remote/api/TokenAuthenticator.kt]
+- [ ] [Review][Patch] **`authReady` reste `false` si `initAuthIfNeeded()` lève une exception (écran blanc permanent)** — `authReady = true` est placé après `initAuthIfNeeded().onFailure { }`, mais si `initAuthIfNeeded()` *throw* (ex : `JwtTokenStore.encryptedSharedPreferences` lève `IllegalStateException`) plutôt que de retourner `Result.failure()`, la ligne `authReady = true` n'est jamais atteinte → `AppNavGraph()` ne s'affiche jamais → écran blanc définitif sans message d'erreur. Fix : wrapper le corps du `LaunchedEffect` dans un `try/finally { authReady = true }`. [android/app/src/main/kotlin/com/secondserve/MainActivity.kt]
+
+#### Deferred
+
+- [x] [Review][Defer] **`reauthenticate()` non protégée par le mutex → ré-auth concurrente possible** — Le `Mutex` de `AuthRepositoryImpl` protège `initAuthIfNeeded()` mais pas `reauthenticate()`. `TokenAuthenticator` appelle directement `AuthService.reauthenticate()` sans protection. Plusieurs 401 simultanés peuvent déclencher plusieurs `POST /auth/init` concurrents et des races sur `saveToken()`. Négligeable pour MVP mono-utilisateur. [android/data/src/main/kotlin/com/secondserve/data/remote/auth/AuthRepository.kt] — deferred, risque négligeable pour MVP mono-utilisateur
+- [x] [Review][Defer] **`@app.on_event("startup")` deprecated dans FastAPI** — Fonctionnel dans la version actuelle mais deprecated ; à migrer vers le `lifespan` context manager. [backend/app/main.py] — deferred, migration à effectuer lors du prochain upgrade FastAPI
+

@@ -1,5 +1,10 @@
 # Deferred Work
 
+## Deferred from: patch review of 1-3-jwt-authentication-android-vps (2026-06-16)
+
+- **`reauthenticate()` non protégée par mutex → ré-auth concurrente** — Plusieurs 401 simultanés peuvent déclencher plusieurs `POST /auth/init` et des races sur `saveToken()`. Risque négligeable pour MVP mono-utilisateur. [`android/data/src/main/kotlin/com/secondserve/data/remote/auth/AuthRepository.kt`]
+- **`@app.on_event("startup")` deprecated dans FastAPI** — Fonctionnel actuellement ; migrer vers `lifespan` context manager lors du prochain upgrade FastAPI. [`backend/app/main.py`]
+
 ## Deferred from: code review of 1-3-jwt-authentication-android-vps (2026-06-15)
 
 - **`JWTManager` instancié à chaque requête (pas de singleton)** — Impact performance négligeable pour MVP mono-utilisateur. À refactoriser si le volume augmente. [`backend/app/core/security.py`]
