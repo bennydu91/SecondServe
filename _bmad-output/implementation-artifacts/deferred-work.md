@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of 2-1-tennisscoreengine-automate-a-etats-finis (2026-06-17)
+
+- **`MatchOver` ne transporte pas de signal changeover** — Quand un point termine à la fois le set et le match, seul `MatchOver` est émis. Story 2.5 (DataLayer bridge) a besoin du signal changeover pour déclencher `game_over`. Il faudra soit ajouter `changeover: Boolean` à `MatchOver`, soit émettre `SetWon` puis `MatchOver` en séquence. [`TennisScoreEngine.kt:awardSet`]
+- **Changeover au début d'un nouveau set non modélisé** — En tennis ATP/WTA, les joueurs changent de côté au début de chaque set (si nécessaire). L'engine calcule le changeover uniquement sur la parité du total jeux dans le set terminé, pas selon le protocole complet ATP. À traiter dans Story 2.5 ou lors de l'implémentation du changeover Watch. [`TennisScoreEngine.kt:awardSet`]
+- **Combinaison invalide `BEST_OF_1 + SHORT_DECISIVE_SET` non protégée** — `isFinalSet()` retourne toujours `true` pour BEST_OF_1, activant silencieusement les règles SHORT_DECISIVE_SET sur l'unique set. Aucune validation du format à la construction. Latent, non utilisé en pratique. [`TennisScoreEngine.kt:isFinalSet`, `SessionFormat.kt`]
+- **Couplage structurel `winner` dans `awardSet`** — Le match winner est pris du paramètre `winner` (le gagnant du dernier set), pas recalculé depuis `setsWonA/B`. Correct pour tout flux actuel, mais risque de régression si un futur refactoring fait diverger le paramètre de la réalité des sets. [`TennisScoreEngine.kt:awardSet`]
+
 ## Deferred from: code review of 1-6-axes-de-travail-crud-de-base — Passe 2 (2026-06-17)
 
 - **`deleteWorkAxis` retourne `AppResult.Success` pour un id inexistant** — Room `DELETE WHERE id = :id` est un no-op silencieux si aucune ligne ne correspond. Le ViewModel émet `WorkAxisDeleted` pour un axe qui n'existait pas. Aucun test Android ne couvre ce cas (contrairement au backend qui a `test_delete_nonexistent_axis`). Acceptable en usage single-user où le ViewModel expose uniquement des axes existants. [`android/data/.../WorkAxisRepositoryImpl.kt:54`]

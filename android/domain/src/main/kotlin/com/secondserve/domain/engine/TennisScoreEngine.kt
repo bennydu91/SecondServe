@@ -129,7 +129,12 @@ class TennisScoreEngine(val format: SessionFormat) {
             else -> null
         }
         if (winner != null) {
-            state = state.copy(isMatchOver = true, matchWinner = winner)
+            val superTbResult = SetResult(newA, newB)
+            state = state.copy(
+                completedSets = state.completedSets + superTbResult,
+                isMatchOver = true,
+                matchWinner = winner
+            )
             return EngineEvent.MatchOver(state, winner)
         }
         return EngineEvent.PointScored(state)
@@ -174,7 +179,7 @@ class TennisScoreEngine(val format: SessionFormat) {
             tieBreakPointsB = 0
         )
         // Winning the tie-break always wins the set (7-6 or 4-3 in SHORT_DECISIVE_SET)
-        return awardSet(winner, changeover)
+        return awardSet(winner)
     }
 
     private fun startTieBreak(changeover: Boolean, lastGameWinner: Player): EngineEvent {
@@ -211,10 +216,10 @@ class TennisScoreEngine(val format: SessionFormat) {
             return EngineEvent.GameWon(state, winner, gameChangeover)
         }
 
-        return awardSet(setWinner, gameChangeover)
+        return awardSet(setWinner)
     }
 
-    private fun awardSet(winner: Player, gameChangeover: Boolean): EngineEvent {
+    private fun awardSet(winner: Player): EngineEvent {
         val totalGamesInSet = state.currentSetGamesA + state.currentSetGamesB
         val setChangeover = totalGamesInSet % 2 == 1
 

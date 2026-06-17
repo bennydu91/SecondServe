@@ -4,7 +4,7 @@ baseline_commit: 8b7330cb49bf8d5eef9ad9e132c153cc91cd7748
 
 # Story 2.1 : TennisScoreEngine — Automate à états finis
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -876,3 +876,19 @@ claude-sonnet-4-6 (Claude Code remote session)
 - `android/domain/src/main/kotlin/com/secondserve/domain/model/MatchScore.kt` (NEW)
 - `android/domain/src/main/kotlin/com/secondserve/domain/engine/TennisScoreEngine.kt` (NEW)
 - `android/domain/src/test/kotlin/com/secondserve/domain/engine/TennisScoreEngineTest.kt` (NEW)
+
+---
+
+## Review Findings
+
+### Code Review (2026-06-17)
+
+- [x] [Review][Patch] P1 — `processSuperTieBreakPoint` ne met pas à jour `completedSets` : résultat du super tie-break absent de l'historique des sets [`TennisScoreEngine.kt:processSuperTieBreakPoint`] — **corrigé**
+- [x] [Review][Patch] P2 — Paramètre mort `gameChangeover` dans `awardSet()` : déclaré mais jamais utilisé, la fonction recalcule `setChangeover` en interne [`TennisScoreEngine.kt:awardSet`] — **corrigé**
+- [x] [Review][Patch] P3 — Test `changeover always true after tie-break` n'asserte pas la valeur `changeover` du `SetWon` [`TennisScoreEngineTest.kt:ChangeoversDetection`] — **corrigé**
+- [x] [Review][Patch] P4 — Manque de test pour les cycles multiples deuce/avantage dans un même jeu [`TennisScoreEngineTest.kt:RegularGameRules`] — **corrigé**
+- [x] [Review][Patch] P5 — Manque de tests de symétrie : Player B gagnant le SHORT_DECISIVE_SET (4-0, 4-2) [`TennisScoreEngineTest.kt:ShortDecisiveSet`] — **corrigé**
+- [x] [Review][Defer] D1 — `MatchOver` ne transporte pas de signal changeover — Story 2.5 aura besoin de ce signal pour le dernier point — déféré, hors scope Story 2.1
+- [x] [Review][Defer] D2 — Changeover au début d'un nouveau set vs règles ATP complètes — par conception, Story 2.5 gérera — déféré, pre-existing design
+- [x] [Review][Defer] D3 — Combinaison invalide `BEST_OF_1 + SHORT_DECISIVE_SET` non validée — latent, non utilisable en pratique — déféré
+- [x] [Review][Defer] D4 — Couplage structurel `winner` dans `awardSet` — la valeur est toujours correcte via les callers — déféré, risque futur seulement

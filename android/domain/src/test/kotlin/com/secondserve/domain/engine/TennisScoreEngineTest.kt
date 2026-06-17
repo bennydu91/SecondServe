@@ -91,6 +91,28 @@ class TennisScoreEngineTest {
             assertTrue(event is EngineEvent.GameWon)
             assertEquals(Player.B, (event as EngineEvent.GameWon).winner)
         }
+
+        @Test
+        fun `multiple deuce-advantage cycles in one game`() {
+            val engine = TennisScoreEngine(bestOf1Format)
+            engine.winPoints(Player.A, 3)
+            engine.winPoints(Player.B, 3)
+            // Cycle 1: A gets advantage, B takes it back to deuce
+            engine.recordPoint(Player.A)
+            assertEquals(GamePoint.ADVANTAGE, engine.currentScore.currentGamePointsA)
+            engine.recordPoint(Player.B)
+            assertTrue(engine.currentScore.isDeuce)
+            // Cycle 2: B gets advantage, A takes it back to deuce
+            engine.recordPoint(Player.B)
+            assertEquals(GamePoint.ADVANTAGE, engine.currentScore.currentGamePointsB)
+            engine.recordPoint(Player.A)
+            assertTrue(engine.currentScore.isDeuce)
+            // Cycle 3: A wins
+            engine.recordPoint(Player.A)
+            val event = engine.recordPoint(Player.A)
+            assertTrue(event is EngineEvent.GameWon)
+            assertEquals(Player.A, (event as EngineEvent.GameWon).winner)
+        }
     }
 
     @Nested
@@ -118,8 +140,11 @@ class TennisScoreEngineTest {
             val engine = TennisScoreEngine(bestOf3Format)
             engine.reachSixSixTieBreak()
             assertTrue(engine.currentScore.isTieBreak)
-            // Win tie-break 7-0
-            engine.winPoints(Player.A, 7)
+            // Win tie-break 7-0 (6 points then the winning point)
+            engine.winPoints(Player.A, 6)
+            val event = engine.recordPoint(Player.A)  // 7-0 → SetWon
+            assertTrue(event is EngineEvent.SetWon)
+            assertTrue((event as EngineEvent.SetWon).changeover)
             val score = engine.currentScore
             assertFalse(score.isTieBreak)
             assertEquals(1, score.completedSets.size)
@@ -239,6 +264,19 @@ class TennisScoreEngineTest {
             assertFalse(engine.currentScore.isMatchOver)
             engine.winPoints(Player.A, 1)  // 11-9, won
             assertTrue(engine.currentScore.isMatchOver)
+        }
+
+        @Test
+        fun `super tie-break result appears in completedSets`() {
+            val engine = TennisScoreEngine(superTbFormat)
+            engine.winSet6_0(Player.A)
+            engine.winSet6_0(Player.B)
+            engine.winPoints(Player.A, 10)
+            val score = engine.currentScore
+            assertTrue(score.isMatchOver)
+            assertEquals(3, score.completedSets.size)
+            assertEquals(10, score.completedSets[2].gamesA)
+            assertEquals(0, score.completedSets[2].gamesB)
         }
     }
 
@@ -403,6 +441,30 @@ class TennisScoreEngineTest {
             engine.winPoints(Player.A, 7)  // 7-0 → tie-break won → set won → match over
             assertTrue(engine.currentScore.isMatchOver)
             assertEquals(Player.A, engine.currentScore.matchWinner)
+        }
+
+        @Test
+        fun `SHORT_DECISIVE_SET Player B wins third set 4-0`() {
+            val engine = TennisScoreEngine(shortSetFormat)
+            engine.winSet6_0(Player.A)
+            engine.winSet6_0(Player.B)
+            engine.winGames(Player.B, 3)  // 0-3
+            val event = engine.winGame(Player.B)  // 0-4 → MatchOver
+            assertTrue(event is EngineEvent.MatchOver)
+            assertEquals(Player.B, (event as EngineEvent.MatchOver).winner)
+        }
+
+        @Test
+        fun `SHORT_DECISIVE_SET Player B wins third set 4-2`() {
+            val engine = TennisScoreEngine(shortSetFormat)
+            engine.winSet6_0(Player.A)
+            engine.winSet6_0(Player.B)
+            engine.winGames(Player.A, 2)  // 2-0
+            engine.winGames(Player.B, 2)  // 2-2
+            engine.winGames(Player.B, 1)  // 2-3
+            val event = engine.winGame(Player.B)  // 2-4 → MatchOver
+            assertTrue(event is EngineEvent.MatchOver)
+            assertEquals(Player.B, (event as EngineEvent.MatchOver).winner)
         }
     }
 
