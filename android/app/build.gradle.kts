@@ -67,6 +67,7 @@ dependencies {
 
     implementation(libs.coroutines.android)
     implementation(libs.timber)
+    implementation(libs.wearable)
 
     // HTTP & JSON (for AuthModule)
     implementation(libs.retrofit)
