@@ -11,6 +11,7 @@ android {
 
     defaultConfig {
         minSdk = 33 // must match :wear (Wear OS 4 = API 33) since DataLayerClient lives here
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     compileOptions {

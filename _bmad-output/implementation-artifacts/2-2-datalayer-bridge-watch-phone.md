@@ -4,7 +4,7 @@ baseline_commit: 616e254
 
 # Story 2.2 : DataLayer Bridge Watch ↔ Phone
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -777,16 +777,16 @@ claude-sonnet-4-6 (Claude Code remote session)
 
 ### Decision Needed
 
-- [ ] [Review][Decision] **F3 — DataLayerListener dans `:app` au lieu de `:data/wearable/`** — AC#6 exige que DataLayerClient ET DataLayerListener soient dans `:data/wearable/`. Le commit `da199db` a déplacé DataLayerListener dans `:app/com.secondserve` pour Hilt. Techniquement, `EntryPointAccessors.fromApplication()` fonctionne depuis n'importe quel module (`:data` a déjà `ksp(libs.hilt.compiler)`). Options : (A) Remettre dans `:data/wearable/` pour respecter le spec ; (B) Accepter la déviation et mettre à jour le spec.
+- [x] [Review][Decision] **F3 — DataLayerListener dans `:app` au lieu de `:data/wearable/`** — Résolu : déplacé vers `data/wearable/DataLayerListener.kt` (package `com.secondserve.data.wearable`). Manifest mis à jour avec nom complet de classe. `implementation(libs.wearable)` retiré de `:app`.
 
 ### Patches
 
-- [ ] [Review][Patch] **F1 — `serviceScope` sans `SupervisorJob` ni `onDestroy.cancel()`** — fuite de coroutines [`DataLayerListener.kt:33`]
-- [ ] [Review][Patch] **F2 — `toDomain()` lève `IAE` silencieusement dans `launch`** — exception avalée, score figé sans log [`DataLayerListener.kt:58,71`]
-- [ ] [Review][Patch] **F6 — `@JsonClass(generateAdapter = false)` sans règles ProGuard/R8** — crash silencieux en release build [`data/wearable/dto/*.kt`]
-- [ ] [Review][Patch] **F7 — `android:exported="true"` sans `android:permission`** — surface d'attaque inutile [`AndroidManifest.xml:20`]
-- [ ] [Review][Patch] **F14 — Pas de test pour `toDomain()` avec enum invalide** — failure mode invisible [`MatchScoreDtoTest.kt`]
-- [ ] [Review][Patch] **F16 — `Timber.e()` utilisé comme expression `return`** — idiome fragile [`DataLayerListener.kt:54,64`]
+- [x] [Review][Patch] **F1 — `serviceScope` sans `SupervisorJob` ni `onDestroy.cancel()`** — Corrigé : `CoroutineScope(SupervisorJob() + Dispatchers.IO)` + `onDestroy { serviceScope.cancel() }` [`DataLayerListener.kt`]
+- [x] [Review][Patch] **F2 — `toDomain()` lève `IAE` silencieusement dans `launch`** — Corrigé : `toDomain()` sorti du `launch`, couvert par le `try/catch` externe [`DataLayerListener.kt`]
+- [x] [Review][Patch] **F6 — `@JsonClass(generateAdapter = false)` sans règles ProGuard/R8** — Corrigé : `consumer-rules.pro` créé + `consumerProguardFiles` ajouté dans `data/build.gradle.kts` [`data/consumer-rules.pro`]
+- [x] [Review][Patch] **F7 — `android:exported="true"` sans `android:permission`** — Corrigé : `android:permission="com.google.android.gms.wearable.BIND_LISTENER"` ajouté [`AndroidManifest.xml`]
+- [x] [Review][Patch] **F14 — Pas de test pour `toDomain()` avec enum invalide** — Corrigé : 2 tests ajoutés (`unknown GamePoint`, `unknown Player`) [`MatchScoreDtoTest.kt`]
+- [x] [Review][Patch] **F16 — `Timber.e()` utilisé comme expression `return`** — Corrigé : remplacé par `if (payload == null) { Timber.e(...); return }` [`DataLayerListener.kt`]
 
 ### Deferred
 

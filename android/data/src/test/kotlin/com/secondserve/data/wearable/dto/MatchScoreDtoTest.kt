@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class MatchScoreDtoTest {
 
@@ -66,5 +67,41 @@ class MatchScoreDtoTest {
         assertNull(dto.matchWinner)
         val restored = dto.toDomain()
         assertNull(restored.matchWinner)
+    }
+
+    @Test
+    fun `toDomain throws on unknown GamePoint string`() {
+        val dto = MatchScoreDto(
+            completedSets = emptyList(),
+            currentSetGamesA = 0,
+            currentSetGamesB = 0,
+            currentGamePointsA = "INVALID_POINT",
+            currentGamePointsB = "ZERO",
+            tieBreakPointsA = 0,
+            tieBreakPointsB = 0,
+            isTieBreak = false,
+            isSuperTieBreak = false,
+            isMatchOver = false,
+            matchWinner = null
+        )
+        assertThrows<IllegalArgumentException> { dto.toDomain() }
+    }
+
+    @Test
+    fun `toDomain throws on unknown Player string`() {
+        val dto = MatchScoreDto(
+            completedSets = emptyList(),
+            currentSetGamesA = 0,
+            currentSetGamesB = 0,
+            currentGamePointsA = "ZERO",
+            currentGamePointsB = "ZERO",
+            tieBreakPointsA = 0,
+            tieBreakPointsB = 0,
+            isTieBreak = false,
+            isSuperTieBreak = false,
+            isMatchOver = true,
+            matchWinner = "C"
+        )
+        assertThrows<IllegalArgumentException> { dto.toDomain() }
     }
 }

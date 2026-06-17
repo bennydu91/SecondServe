@@ -1,8 +1,7 @@
-package com.secondserve
+package com.secondserve.data.wearable
 
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
-import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.data.wearable.dto.GameOverPayload
 import com.secondserve.data.wearable.dto.ScoreEventPayload
 import com.secondserve.data.wearable.dto.toDomain
@@ -15,6 +14,8 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -30,13 +31,18 @@ class DataLayerListener : WearableListenerService() {
         .addLast(KotlinJsonAdapterFactory())
         .build()
 
-    private val serviceScope = CoroutineScope(Dispatchers.IO)
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val scoreRepository: ScoreRepository by lazy {
         EntryPointAccessors.fromApplication(
             applicationContext,
             DataLayerListenerEntryPoint::class.java
         ).scoreRepository()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
@@ -53,26 +59,34 @@ class DataLayerListener : WearableListenerService() {
     private fun handleScoreEvent(json: String) {
         try {
             val payload = moshi.adapter(ScoreEventPayload::class.java).fromJson(json)
-                ?: return Timber.e("DataLayerListener: null ScoreEventPayload from JSON")
+            if (payload == null) {
+                Timber.e("DataLayerListener: null ScoreEventPayload from JSON")
+                return
+            }
+            val score = payload.score.toDomain()
             serviceScope.launch {
-                scoreRepository.updateScore(payload.score.toDomain())
+                scoreRepository.updateScore(score)
                 Timber.d("DataLayerListener: ScoreRepository updated via score_event")
             }
         } catch (e: Exception) {
-            Timber.e(e, "DataLayerListener: failed to parse score_event JSON")
+            Timber.e(e, "DataLayerListener: failed to handle score_event")
         }
     }
 
     private fun handleGameOver(json: String) {
         try {
             val payload = moshi.adapter(GameOverPayload::class.java).fromJson(json)
-                ?: return Timber.e("DataLayerListener: null GameOverPayload from JSON")
+            if (payload == null) {
+                Timber.e("DataLayerListener: null GameOverPayload from JSON")
+                return
+            }
+            val score = payload.score_snapshot.toDomain()
             serviceScope.launch {
-                scoreRepository.updateScore(payload.score_snapshot.toDomain())
+                scoreRepository.updateScore(score)
                 Timber.d("DataLayerListener: ScoreRepository updated via game_over")
             }
         } catch (e: Exception) {
-            Timber.e(e, "DataLayerListener: failed to parse game_over JSON")
+            Timber.e(e, "DataLayerListener: failed to handle game_over")
         }
     }
 }
