@@ -10,7 +10,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 35
+        minSdk = 33 // must match :wear (Wear OS 4 = API 33) since DataLayerClient lives here
     }
 
     compileOptions {
