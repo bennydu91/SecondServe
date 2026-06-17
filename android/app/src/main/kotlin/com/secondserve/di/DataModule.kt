@@ -8,10 +8,8 @@ import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.repository.PlayerProfileRepositoryImpl
-import com.secondserve.data.repository.ScoreRepositoryImpl
 import com.secondserve.data.repository.WorkAxisRepositoryImpl
 import com.secondserve.domain.repository.PlayerProfileRepository
-import com.secondserve.domain.repository.ScoreRepository
 import com.secondserve.domain.repository.WorkAxisRepository
 import dagger.Module
 import dagger.Provides
@@ -70,7 +68,4 @@ object DataModule {
     ): PlayerProfileRepository =
         PlayerProfileRepositoryImpl(dao, vpsApiService, workAxisRepository)
 
-    @Provides
-    @Singleton
-    fun provideScoreRepository(): ScoreRepository = ScoreRepositoryImpl()
 }
