@@ -770,3 +770,30 @@ claude-sonnet-4-6 (Claude Code remote session)
 - `android/data/src/test/kotlin/com/secondserve/data/repository/ScoreRepositoryImplTest.kt` — NEW
 - `android/data/src/test/kotlin/com/secondserve/data/wearable/dto/MatchScoreDtoTest.kt` — NEW
 - `_bmad-output/implementation-artifacts/2-2-datalayer-bridge-watch-phone.md` — status → review
+
+---
+
+## Review Findings
+
+### Decision Needed
+
+- [ ] [Review][Decision] **F3 — DataLayerListener dans `:app` au lieu de `:data/wearable/`** — AC#6 exige que DataLayerClient ET DataLayerListener soient dans `:data/wearable/`. Le commit `da199db` a déplacé DataLayerListener dans `:app/com.secondserve` pour Hilt. Techniquement, `EntryPointAccessors.fromApplication()` fonctionne depuis n'importe quel module (`:data` a déjà `ksp(libs.hilt.compiler)`). Options : (A) Remettre dans `:data/wearable/` pour respecter le spec ; (B) Accepter la déviation et mettre à jour le spec.
+
+### Patches
+
+- [ ] [Review][Patch] **F1 — `serviceScope` sans `SupervisorJob` ni `onDestroy.cancel()`** — fuite de coroutines [`DataLayerListener.kt:33`]
+- [ ] [Review][Patch] **F2 — `toDomain()` lève `IAE` silencieusement dans `launch`** — exception avalée, score figé sans log [`DataLayerListener.kt:58,71`]
+- [ ] [Review][Patch] **F6 — `@JsonClass(generateAdapter = false)` sans règles ProGuard/R8** — crash silencieux en release build [`data/wearable/dto/*.kt`]
+- [ ] [Review][Patch] **F7 — `android:exported="true"` sans `android:permission`** — surface d'attaque inutile [`AndroidManifest.xml:20`]
+- [ ] [Review][Patch] **F14 — Pas de test pour `toDomain()` avec enum invalide** — failure mode invisible [`MatchScoreDtoTest.kt`]
+- [ ] [Review][Patch] **F16 — `Timber.e()` utilisé comme expression `return`** — idiome fragile [`DataLayerListener.kt:54,64`]
+
+### Deferred
+
+- [x] [Review][Defer] **F4 — `getPhoneNodeId()` `firstOrNull()` sans filtre `isNearby`** [`DataLayerClient.kt:61`] — déféré, cas multi-watch hors scope story 2.2
+- [x] [Review][Defer] **F5 — Hilt potentiellement non initialisé au démarrage GMS** [`DataLayerListener.kt:35`] — déféré, faux positif en mode same-process standard
+- [x] [Review][Defer] **F8 — `updateScore()` public sur l'interface domain** [`ScoreRepository.kt`] — déféré, défini par le spec ; enforçable par convention
+- [x] [Review][Defer] **F9 — Ordering concurrent `score_event` / `game_over`** [`ScoreRepositoryImpl.kt:19`] — déféré, `StateFlow.value` atomique ; ordering garanti par Story 2.3 (Room)
+- [x] [Review][Defer] **F11 — Deux instances `Moshi` séparées** [`DataLayerListener.kt:29`, `DataLayerClient.kt:23`] — déféré, optimisation hors scope
+- [x] [Review][Defer] **F12 — Taille payload non vérifiée (limite 8 KB Wearable)** [`DataLayerClient.kt:36`] — déféré, MatchScore normal bien sous 8 KB
+- [x] [Review][Defer] **F13 — Downgrade `minSdk` 35→33 trop large pour `:data`** [`data/build.gradle.kts:13`] — déféré, refactoring module séparé hors scope
