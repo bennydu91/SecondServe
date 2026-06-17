@@ -54,17 +54,18 @@ fun WorkAxesScreen(
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var editingAxis by remember { mutableStateOf<WorkAxis?>(null) }
-    var newTitle by remember { mutableStateOf("") }
+    var createTitle by remember { mutableStateOf("") }
+    var editTitle by remember { mutableStateOf("") }
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is WorkAxesSideEffect.WorkAxisCreated -> {
                 showCreateDialog = false
-                newTitle = ""
+                createTitle = ""
             }
             is WorkAxesSideEffect.WorkAxisUpdated -> {
                 editingAxis = null
-                newTitle = ""
+                editTitle = ""
             }
             WorkAxesSideEffect.WorkAxisDeleted -> {}
             is WorkAxesSideEffect.ShowError ->
@@ -85,17 +86,20 @@ fun WorkAxesScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    if (state.isAtMaxCapacity) {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Maximum $MAX_WORK_AXES axes actifs atteint")
-                        }
-                    } else {
-                        showCreateDialog = true
-                    }
-                }
+                onClick = { if (!state.isAtMaxCapacity) showCreateDialog = true },
+                containerColor = if (state.isAtMaxCapacity)
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                else
+                    MaterialTheme.colorScheme.primaryContainer
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Ajouter un axe")
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Ajouter un axe",
+                    tint = if (state.isAtMaxCapacity)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    else
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -128,7 +132,7 @@ fun WorkAxesScreen(
             items(state.workAxes, key = { it.id }) { axis ->
                 WorkAxisCard(
                     axis = axis,
-                    onEdit = { editingAxis = axis; newTitle = axis.title },
+                    onEdit = { editingAxis = axis; editTitle = axis.title },
                     onDelete = { viewModel.deleteWorkAxis(axis.id) }
                 )
             }
@@ -137,52 +141,52 @@ fun WorkAxesScreen(
 
     if (showCreateDialog) {
         AlertDialog(
-            onDismissRequest = { showCreateDialog = false; newTitle = "" },
+            onDismissRequest = { showCreateDialog = false; createTitle = "" },
             title = { Text("Nouvel axe de travail") },
             text = {
                 OutlinedTextField(
-                    value = newTitle,
-                    onValueChange = { if (it.length <= 200) newTitle = it },
+                    value = createTitle,
+                    onValueChange = { if (it.length <= 200) createTitle = it },
                     label = { Text("Description de l'axe") },
-                    supportingText = { Text("${newTitle.length}/200") },
+                    supportingText = { Text("${createTitle.length}/200") },
                     singleLine = false,
                     maxLines = 3
                 )
             },
             confirmButton = {
                 TextButton(
-                    onClick = { viewModel.createWorkAxis(newTitle) },
-                    enabled = newTitle.isNotBlank() && !state.isSaving
+                    onClick = { viewModel.createWorkAxis(createTitle) },
+                    enabled = createTitle.isNotBlank() && !state.isSaving
                 ) { Text("Créer") }
             },
             dismissButton = {
-                TextButton(onClick = { showCreateDialog = false; newTitle = "" }) { Text("Annuler") }
+                TextButton(onClick = { showCreateDialog = false; createTitle = "" }) { Text("Annuler") }
             }
         )
     }
 
     editingAxis?.let { axis ->
         AlertDialog(
-            onDismissRequest = { editingAxis = null; newTitle = "" },
+            onDismissRequest = { editingAxis = null; editTitle = "" },
             title = { Text("Modifier l'axe") },
             text = {
                 OutlinedTextField(
-                    value = newTitle,
-                    onValueChange = { if (it.length <= 200) newTitle = it },
+                    value = editTitle,
+                    onValueChange = { if (it.length <= 200) editTitle = it },
                     label = { Text("Description de l'axe") },
-                    supportingText = { Text("${newTitle.length}/200") },
+                    supportingText = { Text("${editTitle.length}/200") },
                     singleLine = false,
                     maxLines = 3
                 )
             },
             confirmButton = {
                 TextButton(
-                    onClick = { viewModel.updateWorkAxis(axis.id, newTitle) },
-                    enabled = newTitle.isNotBlank() && !state.isSaving
+                    onClick = { viewModel.updateWorkAxis(axis.id, editTitle) },
+                    enabled = editTitle.isNotBlank() && !state.isSaving
                 ) { Text("Enregistrer") }
             },
             dismissButton = {
-                TextButton(onClick = { editingAxis = null; newTitle = "" }) { Text("Annuler") }
+                TextButton(onClick = { editingAxis = null; editTitle = "" }) { Text("Annuler") }
             }
         )
     }

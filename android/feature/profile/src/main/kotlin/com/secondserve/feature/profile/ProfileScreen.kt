@@ -54,7 +54,7 @@ import java.util.Date
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToWorkAxes: () -> Unit,
+    onNavigateToWorkAxes: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()

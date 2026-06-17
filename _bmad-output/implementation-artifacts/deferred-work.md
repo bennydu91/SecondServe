@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 1-6-axes-de-travail-crud-de-base (2026-06-17)
+
+- **TOCTOU dans `WorkAxisService.create()` count check VPS** — `count()` et `create()` sont deux opérations séparées sans verrouillage. Sous concurrence (peu probable dans un contexte single-user), deux requêtes simultanées peuvent insérer plus de 3 axes. Même pattern que `update_profile_details()`. Requiert `SELECT FOR UPDATE` ou contrainte unique si multi-user. [`backend/app/features/work_axes/service.py:create()`]
+- **Race condition Android — check `isAtMaxCapacity` non atomique** — L'état Flow peut ne pas refléter un insert en cours entre la vérification ViewModel et l'insert Room. Pattern inhérent à l'architecture Flow/Orbit; room insérera le 4e localement avant que le Flow émette, VPS rejettera. Acceptable pour un usage single-user séquentiel. [`android/feature/profile/.../WorkAxesViewModel.kt`]
+- **`created_at` non contraint UNIQUE côté VPS** — Si deux axes sont créés en moins d'1ms, le même epoch ms est envoyé au VPS pour deux lignes distinctes. La réconciliation future par `created_at` serait ambiguë. À traiter si une synchronisation multi-device est ajoutée. [`backend/app/features/work_axes/models.py`]
+- **Pas d'empty-state UI dans `WorkAxesScreen`** — Quand la liste est vide, seul le texte "0/3 axes actifs" s'affiche. Pas d'illustration ni de texte d'invitation à créer. Amélioration UX non spécifiée dans les AC. [`android/feature/profile/.../WorkAxesScreen.kt`]
+- **Records VPS orphelins sur échec réseau lors d'un delete** — Si Room supprime localement mais que le DELETE VPS échoue (réseau absent), les axes existent encore sur le VPS. À la reconnexion, la limite de 3 côté VPS sera atteinte avant le côté Android. À résoudre avec une file de sync offline. Pattern fire-and-forget documenté dans spec, hors scope Story 1.6. [`android/data/.../repository/WorkAxisRepositoryImpl.kt`]
+
 ## Deferred from: code review of 1-5-profil-joueur-style-de-jeu-donnees-complementaires — Passe 2 (2026-06-16)
 
 - **Ordre non déterministe `selectedSurfaces.toList()`** — `toSet()` sur `List<String>` produit un `LinkedHashSet` (ordre d'insertion stable en session), mais les toggles de `FilterChip` utilisent `SnapshotStateSet` dont l'ordre d'itération n'est pas garanti par contrat. Le CSV stocké peut différer entre sessions pour la même sélection logique. Cosmétique, pas d'impact fonctionnel. [`android/feature/profile/.../ProfileScreen.kt:PlayStyleSection`]

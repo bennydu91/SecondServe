@@ -4,7 +4,7 @@ baseline_commit: 6760248b8a323a4c2022d7754096add7015d1c6d
 
 # Story 1.6 : Axes de travail — CRUD de base
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -1147,6 +1147,19 @@ from app.features.work_axes.models import WorkAxis  # ← ajouter aux imports ex
 - [x] **Task T-3** — `PlayerProfileRepositoryImplTest.kt` : `buildMatchContextProfile()` avec 2 work axes → `activeWorkAxes = ["Revers", "Service"]`
 - [x] **Task T-4** — `backend/tests/integration/test_work_axes_api.py` : CRUD complet, POST 4e axe → 422, DELETE 404, sans JWT → 401 (12 tests passent)
 - [x] **Task T-5** — `backend/tests/unit/test_work_axis_service.py` : `create()` quand count=3 → HTTPException 422 (9 tests passent)
+
+### Review Findings
+
+- [x] [Review][Patch] FAB non désactivé à la capacité max — AC2 requiert `enabled = false` (apparence disabled), pas seulement un garde du clic [`android/feature/profile/.../WorkAxesScreen.kt:87`]
+- [x] [Review][Patch] `isSaving` jamais remis à `false` sur `AppResult.Loading` — UI bloquée indéfiniment si le repository retourne `Loading` [`android/feature/profile/.../WorkAxesViewModel.kt:54,73`]
+- [x] [Review][Patch] État `newTitle` partagé entre dialog création et édition — UX bug : titre de l'axe édité peut polluer le dialog de création [`android/feature/profile/.../WorkAxesScreen.kt:57`]
+- [x] [Review][Patch] Test AC2 assertion trop faible — `message.contains("3")` au lieu de valider le message complet "Maximum 3 axes actifs atteint" [`android/feature/profile/.../WorkAxesViewModelTest.kt:57`]
+- [x] [Review][Patch] `onNavigateToWorkAxes` sans valeur par défaut — les Previews Compose et call sites existants cassent à la compilation [`android/feature/profile/.../ProfileScreen.kt:57`]
+- [x] [Review][Defer] TOCTOU dans `WorkAxisService.create()` count check VPS — même pattern dans toutes les features ; fire-and-forget est l'architecture documentée [`backend/app/features/work_axes/service.py:create()`] — deferred, pre-existing
+- [x] [Review][Defer] Race condition Android côté client — check `isAtMaxCapacity` non atomique — inhérent à l'architecture Flow, pattern identique à toutes les features [`android/feature/profile/.../WorkAxesViewModel.kt`] — deferred, pre-existing
+- [x] [Review][Defer] `created_at` non contraint UNIQUE côté VPS — décision data model pour story future si réconciliation multi-device est ajoutée [`backend/app/features/work_axes/models.py`] — deferred, pre-existing
+- [x] [Review][Defer] Pas d'empty-state UI dans `WorkAxesScreen` — amélioration UX non spécifiée dans les AC [`android/feature/profile/.../WorkAxesScreen.kt`] — deferred, pre-existing
+- [x] [Review][Defer] Records VPS orphelins sur échec réseau delete — pattern fire-and-forget documenté dans spec, offline sync hors scope story [`android/data/.../repository/WorkAxisRepositoryImpl.kt`] — deferred, pre-existing
 
 ---
 

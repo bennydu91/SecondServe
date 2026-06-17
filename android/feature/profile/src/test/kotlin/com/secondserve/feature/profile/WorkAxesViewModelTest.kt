@@ -54,7 +54,7 @@ class WorkAxesViewModelTest {
             viewModel.createWorkAxis("D")
             val effect = awaitItem()
             assertIs<WorkAxesSideEffect.ShowError>(effect)
-            assertTrue(effect.message.contains("3"))
+            assertEquals("Maximum 3 axes actifs atteint", effect.message)
             cancelAndIgnoreRemainingEvents()
         }
         coVerify(exactly = 0) { repository.createWorkAxis(any()) }

@@ -51,7 +51,7 @@ class WorkAxesViewModel @Inject constructor(
                 reduce { state.copy(isSaving = false) }
                 postSideEffect(WorkAxesSideEffect.ShowError("Erreur lors de la création"))
             }
-            AppResult.Loading -> {}
+            AppResult.Loading -> reduce { state.copy(isSaving = false) }
         }
     }
 
@@ -70,7 +70,7 @@ class WorkAxesViewModel @Inject constructor(
                 reduce { state.copy(isSaving = false) }
                 postSideEffect(WorkAxesSideEffect.ShowError("Erreur lors de la modification"))
             }
-            AppResult.Loading -> {}
+            AppResult.Loading -> reduce { state.copy(isSaving = false) }
         }
     }
 
