@@ -1,7 +1,8 @@
-package com.secondserve.data.wearable
+package com.secondserve
 
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
+import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.data.wearable.dto.GameOverPayload
 import com.secondserve.data.wearable.dto.ScoreEventPayload
 import com.secondserve.data.wearable.dto.toDomain
