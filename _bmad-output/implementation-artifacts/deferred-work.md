@@ -1,5 +1,23 @@
 # Deferred Work
 
+## Deferred from: code review of 2-2-datalayer-bridge-watch-phone — Passe 2 (2026-06-17)
+
+- **D1 — `ScoreRepositoryImpl` instancié inutilement dans le process Watch** — `ScoreModule` est dans `:data` qui est maintenant dépendance de `:wear`. Le Hilt graph Watch crée `ScoreRepositoryImpl` même si la Watch n'utilise que `DataLayerClient`. Pas de bug runtime (lazily constructed), mais confusant. Envisager un qualifier `@PhoneOnly` ou déplacer `ScoreModule` dans `:app`. [`ScoreModule.kt`]
+- **D2 — `DataLayerClient` injectable côté Phone sans guard compile-time** — Aucun mécanisme empêche un ViewModel Phone d'injecter `DataLayerClient` et d'envoyer des messages depuis le Phone. Enforçable par convention ou annotation `@WatchOnly` custom. [`DataLayerClient.kt`]
+- **D3 — Path exception dans `DataLayerListener.handleScoreEvent()` non testé end-to-end** — Le test `toDomain throws on unknown GamePoint string` prouve que l'exception est levée, mais ne couvre pas le comportement de `DataLayerListener` (catch + log + skip). Nécessite un mock de `WearableListenerService`. [`DataLayerListener.kt`]
+- **D4 — `getPhoneNodeId()` ne distingue pas erreur transitoire vs "non appairé"** — Exception GMS et absence de nœuds sont toutes deux retournées comme `null`. Un appelant ne peut pas décider de retry vs abandon. [`DataLayerClient.kt:59`]
+- **D5 — Tests concurrents `updateScore` absents** — `StateFlow.value` est atomique, mais aucun test ne valide qu'une rafale de `score_event` rapprochés ne provoque pas d'état incohérent. [`ScoreRepositoryImpl.kt`]
+
+## Deferred from: code review of 2-2-datalayer-bridge-watch-phone (2026-06-17)
+
+- **F4 — `getPhoneNodeId()` `firstOrNull()` sans filtre `isNearby`** — En scénario multi-watch, `connectedNodes.firstOrNull()` peut cibler un nœud arbitraire au lieu du téléphone. Ajouter un filtre `node.isNearby` ou `CapabilityClient` phone-specific. [`DataLayerClient.kt:61`]
+- **F5 — Hilt potentiellement non initialisé au démarrage GMS** — `EntryPointAccessors.fromApplication()` dans le lazy `scoreRepository` pourrait lever `IllegalStateException` si GMS démarre le service avant `Application.onCreate()`. Faux positif en pratique (même process), mais à monitorer. [`DataLayerListener.kt:35`]
+- **F8 — `updateScore()` public sur l'interface domain** — Aucun mécanisme compile-time n'empêche les feature modules d'appeler `updateScore()` directement, contournant le DataLayer. Enforçable par convention jusqu'à Story 2.x ; envisager une interface séparée `WritableScoreRepository` si le pattern internal devient important. [`ScoreRepository.kt`]
+- **F9 — Ordering concurrent `score_event` / `game_over`** — Deux coroutines IO simultanées écrivent dans `MutableStateFlow.value` sans ordering garanti. Acceptable car `StateFlow.value` est atomique et le cas est théorique ; résoudre avec un timestamp monotone en Story 2.3 si Room est ajouté. [`ScoreRepositoryImpl.kt:19`]
+- **F11 — Deux instances `Moshi` séparées** — `DataLayerClient` et `DataLayerListener` créent chacun leur propre `Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()`. À fusionner en singleton DI si Moshi est injecté dans le projet. [`DataLayerListener.kt:29`, `DataLayerClient.kt:23`]
+- **F12 — Taille payload non vérifiée (limite 8 KB Wearable API)** — `sendMessage()` n'a pas de guard sur la taille du payload. La limite Wearable est ~8 KB. Un `MatchScore` avec des sets normaux est bien en dessous, mais à documenter. [`DataLayerClient.kt:36`]
+- **F13 — Downgrade `minSdk` 35→33 trop large pour `:data`** — Abaisse le plancher du module `:data` entier pour le seul `DataLayerClient`. Refactoring idéal : extraire `:data:wearable` en module Gradle séparé avec `minSdk = 33`. [`data/build.gradle.kts:13`]
+
 ## Deferred from: code review of 2-1-tennisscoreengine-automate-a-etats-finis — Passe 2 (2026-06-17)
 
 - **Couplage structurel `winner` dans `awardSet` (D5)** — Le match winner est pris du paramètre `winner` (gagnant du dernier set), pas recalculé depuis `setsWonA/B`. Identique à D4 de la passe 1. Correct pour tout flux actuel, risque de régression sur refactoring futur. [`TennisScoreEngine.kt:awardSet`]

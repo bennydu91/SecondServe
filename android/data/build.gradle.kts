@@ -10,7 +10,8 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 35
+        minSdk = 33 // must match :wear (Wear OS 4 = API 33) since DataLayerClient lives here
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     compileOptions {
@@ -38,6 +39,8 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.coroutines.android)
+    implementation(libs.coroutines.play.services)
+    implementation(libs.wearable)
 
     // HTTP & JSON
     implementation(libs.retrofit)

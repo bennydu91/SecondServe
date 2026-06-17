@@ -67,4 +67,5 @@ object DataModule {
         workAxisRepository: WorkAxisRepository
     ): PlayerProfileRepository =
         PlayerProfileRepositoryImpl(dao, vpsApiService, workAxisRepository)
+
 }
