@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 2-2-datalayer-bridge-watch-phone — Passe 2 (2026-06-17)
+
+- **D1 — `ScoreRepositoryImpl` instancié inutilement dans le process Watch** — `ScoreModule` est dans `:data` qui est maintenant dépendance de `:wear`. Le Hilt graph Watch crée `ScoreRepositoryImpl` même si la Watch n'utilise que `DataLayerClient`. Pas de bug runtime (lazily constructed), mais confusant. Envisager un qualifier `@PhoneOnly` ou déplacer `ScoreModule` dans `:app`. [`ScoreModule.kt`]
+- **D2 — `DataLayerClient` injectable côté Phone sans guard compile-time** — Aucun mécanisme empêche un ViewModel Phone d'injecter `DataLayerClient` et d'envoyer des messages depuis le Phone. Enforçable par convention ou annotation `@WatchOnly` custom. [`DataLayerClient.kt`]
+- **D3 — Path exception dans `DataLayerListener.handleScoreEvent()` non testé end-to-end** — Le test `toDomain throws on unknown GamePoint string` prouve que l'exception est levée, mais ne couvre pas le comportement de `DataLayerListener` (catch + log + skip). Nécessite un mock de `WearableListenerService`. [`DataLayerListener.kt`]
+- **D4 — `getPhoneNodeId()` ne distingue pas erreur transitoire vs "non appairé"** — Exception GMS et absence de nœuds sont toutes deux retournées comme `null`. Un appelant ne peut pas décider de retry vs abandon. [`DataLayerClient.kt:59`]
+- **D5 — Tests concurrents `updateScore` absents** — `StateFlow.value` est atomique, mais aucun test ne valide qu'une rafale de `score_event` rapprochés ne provoque pas d'état incohérent. [`ScoreRepositoryImpl.kt`]
+
 ## Deferred from: code review of 2-2-datalayer-bridge-watch-phone (2026-06-17)
 
 - **F4 — `getPhoneNodeId()` `firstOrNull()` sans filtre `isNearby`** — En scénario multi-watch, `connectedNodes.firstOrNull()` peut cibler un nœud arbitraire au lieu du téléphone. Ajouter un filtre `node.isNearby` ou `CapabilityClient` phone-specific. [`DataLayerClient.kt:61`]

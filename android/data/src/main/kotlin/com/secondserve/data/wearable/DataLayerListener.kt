@@ -14,9 +14,11 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class DataLayerListener : WearableListenerService() {
@@ -65,7 +67,7 @@ class DataLayerListener : WearableListenerService() {
             }
             val score = payload.score.toDomain()
             serviceScope.launch {
-                scoreRepository.updateScore(score)
+                withContext(NonCancellable) { scoreRepository.updateScore(score) }
                 Timber.d("DataLayerListener: ScoreRepository updated via score_event")
             }
         } catch (e: Exception) {
@@ -80,9 +82,9 @@ class DataLayerListener : WearableListenerService() {
                 Timber.e("DataLayerListener: null GameOverPayload from JSON")
                 return
             }
-            val score = payload.score_snapshot.toDomain()
+            val score = payload.scoreSnapshot.toDomain()
             serviceScope.launch {
-                scoreRepository.updateScore(score)
+                withContext(NonCancellable) { scoreRepository.updateScore(score) }
                 Timber.d("DataLayerListener: ScoreRepository updated via game_over")
             }
         } catch (e: Exception) {

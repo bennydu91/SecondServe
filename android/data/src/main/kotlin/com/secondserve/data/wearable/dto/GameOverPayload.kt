@@ -7,5 +7,5 @@ import com.squareup.moshi.JsonClass
 data class GameOverPayload(
     @Json(name = "type") val type: String = "GAME_OVER",
     @Json(name = "ts") val ts: Long,
-    @Json(name = "score_snapshot") val score_snapshot: MatchScoreDto
+    @Json(name = "score_snapshot") val scoreSnapshot: MatchScoreDto
 )

@@ -749,7 +749,7 @@ claude-sonnet-4-6 (Claude Code remote session)
 - ✅ DL-1 : `DataLayerClient` créé — envoie `score_event` et `game_over` via GMS MessageClient
 - ✅ DL-2 : `DataLayerListener` créé — `WearableListenerService` avec `EntryPointAccessors` pour injection Hilt
 - ✅ R-1 : `ScoreRepositoryImpl` créé — `@Singleton`, `MutableStateFlow<MatchScore?>` interne
-- ✅ DI-1 : `provideScoreRepository()` ajouté dans `DataModule`
+- ✅ DI-1 : binding `ScoreRepository` → `ScoreRepositoryImpl` via `@Binds @Singleton` dans `ScoreModule` (`:data/di/`) — **NOTE** : le spec indiquait `DataModule.kt` dans `:app`, l'implémentation utilise `ScoreModule.kt` dans `:data` (meilleure pratique — binding co-localisé avec l'impl). Ne pas ajouter un second binding dans `DataModule.kt`.
 - ✅ DI-2 : `DataLayerListener` enregistré dans `AndroidManifest.xml` avec `pathPrefix="/secondserve/"`
 - ✅ T-1/T-2 : tests JVM `ScoreRepositoryImplTest` et `MatchScoreDtoTest` créés
 
@@ -765,7 +765,7 @@ claude-sonnet-4-6 (Claude Code remote session)
 - `android/data/src/main/kotlin/com/secondserve/data/wearable/DataLayerClient.kt` — NEW
 - `android/data/src/main/kotlin/com/secondserve/data/wearable/DataLayerListener.kt` — NEW
 - `android/data/src/main/kotlin/com/secondserve/data/repository/ScoreRepositoryImpl.kt` — NEW
-- `android/app/src/main/kotlin/com/secondserve/di/DataModule.kt` — ajout `provideScoreRepository()`
+- `android/data/src/main/kotlin/com/secondserve/data/di/ScoreModule.kt` — NEW (binding `ScoreRepository` → `ScoreRepositoryImpl`, remplace l'instruction spec de modifier `DataModule.kt`)
 - `android/app/src/main/AndroidManifest.xml` — enregistrement `DataLayerListener`
 - `android/data/src/test/kotlin/com/secondserve/data/repository/ScoreRepositoryImplTest.kt` — NEW
 - `android/data/src/test/kotlin/com/secondserve/data/wearable/dto/MatchScoreDtoTest.kt` — NEW
@@ -797,3 +797,19 @@ claude-sonnet-4-6 (Claude Code remote session)
 - [x] [Review][Defer] **F11 — Deux instances `Moshi` séparées** [`DataLayerListener.kt:29`, `DataLayerClient.kt:23`] — déféré, optimisation hors scope
 - [x] [Review][Defer] **F12 — Taille payload non vérifiée (limite 8 KB Wearable)** [`DataLayerClient.kt:36`] — déféré, MatchScore normal bien sous 8 KB
 - [x] [Review][Defer] **F13 — Downgrade `minSdk` 35→33 trop large pour `:data`** [`data/build.gradle.kts:13`] — déféré, refactoring module séparé hors scope
+
+### Passe 2 — Patches (2026-06-17)
+
+- [x] [Review][Patch] **P1 — `DataLayerListener` non protégé par ProGuard → crash manifest runtime** — Corrigé : `-keep class com.secondserve.data.wearable.DataLayerListener` + keep interface `DataLayerListenerEntryPoint` ajoutés dans `consumer-rules.pro` [`data/consumer-rules.pro`]
+- [x] [Review][Patch] **P2 — `serviceScope.cancel()` dans `onDestroy` peut interrompre un `updateScore` en vol** — Corrigé : `withContext(NonCancellable)` ajouté autour de `scoreRepository.updateScore(score)` dans `handleScoreEvent` et `handleGameOver` [`DataLayerListener.kt`]
+- [x] [Review][Patch] **P3 — `MatchScoreDtoTest` ne teste pas la désérialisation Moshi** — Corrigé : 2 tests de round-trip complet (sérialise → JSON → désérialise via Moshi) ajoutés pour `ScoreEventPayload` et `GameOverPayload` [`MatchScoreDtoTest.kt`]
+- [x] [Review][Patch] **P4 — `GameOverPayload.score_snapshot` utilise snake_case comme nom de propriété Kotlin** — Corrigé : renommé en `scoreSnapshot` (camelCase) ; `@Json(name = "score_snapshot")` conservé pour le contrat DataLayer. Références mises à jour dans `DataLayerClient.kt`, `DataLayerListener.kt`, `MatchScoreDtoTest.kt` [`GameOverPayload.kt`]
+- [x] [Review][Patch] **P5 — Story doc DI-1 pointait vers `DataModule.kt` alors que le binding réel est dans `ScoreModule.kt`** — Corrigé : completion notes et file list mis à jour pour éviter une double liaison accidentelle
+
+### Passe 2 — Déférés (2026-06-17)
+
+- [x] [Review][Defer] **D1 — `ScoreRepositoryImpl` instancié dans le process Watch inutilement** — déféré, pas de bug runtime, `ScoreRepository` est lazy ; refactoring à envisager si Watch introduit des ViewModels heavy
+- [x] [Review][Defer] **D2 — `DataLayerClient` injectable dans le process Phone sans guard compile-time** — déféré, aucun consumer Phone prévu ; à adresser par convention jusqu'à introduction d'un qualifier `@WatchOnly`
+- [x] [Review][Defer] **D3 — Absence de test d'intégration `DataLayerListener.handleScoreEvent()` path exception** — déféré, nécessite `WearableListenerService` mock ; hors scope JVM tests
+- [x] [Review][Defer] **D4 — `getPhoneNodeId()` ne distingue pas erreur transitoire vs "téléphone non appairé"** — déféré, complexifie l'API sans cas d'usage immédiat
+- [x] [Review][Defer] **D5 — Tests `ScoreRepositoryImpl` concurrents absents** — déféré, `StateFlow.value` est atomique, ordering acceptable jusqu'à Story 2.3

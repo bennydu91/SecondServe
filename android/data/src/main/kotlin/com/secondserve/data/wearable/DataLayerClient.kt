@@ -35,7 +35,7 @@ class DataLayerClient @Inject constructor(
     }
 
     suspend fun sendGameOver(score: MatchScore): AppResult<Unit> {
-        val payload = GameOverPayload(ts = System.currentTimeMillis(), score_snapshot = score.toDto())
+        val payload = GameOverPayload(ts = System.currentTimeMillis(), scoreSnapshot = score.toDto())
         val json = moshi.adapter(GameOverPayload::class.java).toJson(payload)
         return sendMessage(PATH_GAME_OVER, json.toByteArray(Charsets.UTF_8))
     }

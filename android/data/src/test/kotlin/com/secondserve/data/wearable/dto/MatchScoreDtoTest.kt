@@ -43,10 +43,39 @@ class MatchScoreDtoTest {
     @Test
     fun `GameOverPayload serializes with score_snapshot field`() {
         val score = MatchScore()
-        val payload = GameOverPayload(ts = 9999L, score_snapshot = score.toDto())
+        val payload = GameOverPayload(ts = 9999L, scoreSnapshot = score.toDto())
         val json = moshi.adapter(GameOverPayload::class.java).toJson(payload)
         assertTrue(json.contains("\"type\":\"GAME_OVER\""))
         assertTrue(json.contains("\"score_snapshot\""))
+    }
+
+    @Test
+    fun `ScoreEventPayload survives full Moshi serialization round-trip`() {
+        val original = MatchScore(
+            completedSets = listOf(SetResult(6, 3)),
+            currentSetGamesA = 2,
+            currentSetGamesB = 1,
+            currentGamePointsA = GamePoint.THIRTY,
+            currentGamePointsB = GamePoint.ZERO
+        )
+        val payload = ScoreEventPayload(ts = 1700000000000L, score = original.toDto())
+        val adapter = moshi.adapter(ScoreEventPayload::class.java)
+        val json = adapter.toJson(payload)
+        val restored = adapter.fromJson(json)!!
+        assertEquals(original, restored.score.toDomain())
+        assertEquals(1700000000000L, restored.ts)
+        assertEquals("SCORE_EVENT", restored.type)
+    }
+
+    @Test
+    fun `GameOverPayload survives full Moshi serialization round-trip`() {
+        val original = MatchScore(isMatchOver = true, matchWinner = Player.A)
+        val payload = GameOverPayload(ts = 1700000000001L, scoreSnapshot = original.toDto())
+        val adapter = moshi.adapter(GameOverPayload::class.java)
+        val json = adapter.toJson(payload)
+        val restored = adapter.fromJson(json)!!
+        assertEquals(original, restored.scoreSnapshot.toDomain())
+        assertEquals("GAME_OVER", restored.type)
     }
 
     @Test
