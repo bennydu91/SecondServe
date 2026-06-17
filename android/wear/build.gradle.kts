@@ -36,6 +36,7 @@ android {
 dependencies {
     implementation(project(":domain"))
     implementation(project(":core:ai"))
+    implementation(project(":data"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.wear.compose.material3)

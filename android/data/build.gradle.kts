@@ -38,6 +38,8 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.coroutines.android)
+    implementation(libs.coroutines.play.services)
+    implementation(libs.wearable)
 
     // HTTP & JSON
     implementation(libs.retrofit)

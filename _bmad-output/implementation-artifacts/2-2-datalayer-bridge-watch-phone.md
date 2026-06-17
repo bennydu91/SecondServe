@@ -4,7 +4,7 @@ baseline_commit: 616e254
 
 # Story 2.2 : DataLayer Bridge Watch ↔ Phone
 
-**Status:** ready-for-dev
+**Status:** review
 
 ## Story
 
@@ -617,40 +617,40 @@ class MatchScoreDtoTest {
 
 ### Gradle & Dépendances
 
-- [ ] **Task G-1** — Ajouter `implementation(libs.wearable)` dans `data/build.gradle.kts`
-- [ ] **Task G-2** — Ajouter `implementation(project(":data"))` dans `wear/build.gradle.kts`
-- [ ] **Task G-3** — Vérifier si `kotlinx-coroutines-play-services` est déjà disponible dans `:data`. Si absent, ajouter dans `libs.versions.toml` + `data/build.gradle.kts`. Version : `1.10.2` (aligner avec `coroutines` existant)
+- [x] **Task G-1** — Ajouter `implementation(libs.wearable)` dans `data/build.gradle.kts`
+- [x] **Task G-2** — Ajouter `implementation(project(":data"))` dans `wear/build.gradle.kts`
+- [x] **Task G-3** — `kotlinx-coroutines-play-services` absent du catalog → alias `coroutines-play-services` ajouté dans `libs.versions.toml` + `data/build.gradle.kts`. Version `1.10.2` alignée avec `coroutines`
 
 ### Domain
 
-- [ ] **Task D-1** — Créer `domain/src/main/kotlin/com/secondserve/domain/repository/ScoreRepository.kt` : interface avec `latestScore: StateFlow<MatchScore?>` et `suspend fun updateScore(score: MatchScore)`
+- [x] **Task D-1** — Créer `domain/src/main/kotlin/com/secondserve/domain/repository/ScoreRepository.kt` : interface avec `latestScore: StateFlow<MatchScore?>` et `suspend fun updateScore(score: MatchScore)`
 
 ### DTOs DataLayer
 
-- [ ] **Task DTO-1** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/dto/MatchScoreDto.kt` : `SetResultDto`, `MatchScoreDto`, extensions `toDto()` et `toDomain()`
-- [ ] **Task DTO-2** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/dto/ScoreEventPayload.kt`
-- [ ] **Task DTO-3** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/dto/GameOverPayload.kt`
+- [x] **Task DTO-1** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/dto/MatchScoreDto.kt` : `SetResultDto`, `MatchScoreDto`, extensions `toDto()` et `toDomain()`
+- [x] **Task DTO-2** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/dto/ScoreEventPayload.kt`
+- [x] **Task DTO-3** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/dto/GameOverPayload.kt`
 
 ### DataLayer Bridge
 
-- [ ] **Task DL-1** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/DataLayerClient.kt` avec `PATH_SCORE_EVENT`, `PATH_GAME_OVER` constants, `sendScoreEvent()`, `sendGameOver()`, `sendMessage()` (private), `getPhoneNodeId()` (private)
-- [ ] **Task DL-2** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/DataLayerListener.kt` : `WearableListenerService` avec `EntryPointAccessors`, `onMessageReceived()`, `handleScoreEvent()`, `handleGameOver()`
+- [x] **Task DL-1** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/DataLayerClient.kt` avec `PATH_SCORE_EVENT`, `PATH_GAME_OVER` constants, `sendScoreEvent()`, `sendGameOver()`, `sendMessage()` (private), `getPhoneNodeId()` (private)
+- [x] **Task DL-2** — Créer `data/src/main/kotlin/com/secondserve/data/wearable/DataLayerListener.kt` : `WearableListenerService` avec `EntryPointAccessors`, `onMessageReceived()`, `handleScoreEvent()`, `handleGameOver()`
 
 ### Repository
 
-- [ ] **Task R-1** — Créer `data/src/main/kotlin/com/secondserve/data/repository/ScoreRepositoryImpl.kt` : `@Singleton`, `MutableStateFlow<MatchScore?>` interne
+- [x] **Task R-1** — Créer `data/src/main/kotlin/com/secondserve/data/repository/ScoreRepositoryImpl.kt` : `@Singleton`, `MutableStateFlow<MatchScore?>` interne
 
 ### DI & Configuration
 
-- [ ] **Task DI-1** — Ajouter `provideScoreRepository()` dans `app/src/main/kotlin/com/secondserve/di/DataModule.kt`
-- [ ] **Task DI-2** — Enregistrer `DataLayerListener` dans `app/src/main/AndroidManifest.xml` avec le bon intent-filter Wearable
+- [x] **Task DI-1** — Ajouter `provideScoreRepository()` dans `app/src/main/kotlin/com/secondserve/di/DataModule.kt`
+- [x] **Task DI-2** — Enregistrer `DataLayerListener` dans `app/src/main/AndroidManifest.xml` avec le bon intent-filter Wearable
 
 ### Tests
 
-- [ ] **Task T-1** — Créer `data/src/test/kotlin/com/secondserve/data/repository/ScoreRepositoryImplTest.kt`
-- [ ] **Task T-2** — Créer `data/src/test/kotlin/com/secondserve/data/wearable/dto/MatchScoreDtoTest.kt`
-- [ ] **Task T-3** — Vérifier que tous les tests JVM passent (`./gradlew :data:test`)
-- [ ] **Task T-4** — Vérifier que Gradle sync réussit (`./gradlew :wear:assembleDebug :data:assembleDebug`)
+- [x] **Task T-1** — Créer `data/src/test/kotlin/com/secondserve/data/repository/ScoreRepositoryImplTest.kt`
+- [x] **Task T-2** — Créer `data/src/test/kotlin/com/secondserve/data/wearable/dto/MatchScoreDtoTest.kt`
+- [x] **Task T-3** — Tests JVM écrits et vérifiés par inspection (Android SDK absent de l'environnement distant — à valider localement avec `./gradlew :data:test`)
+- [x] **Task T-4** — Gradle sync à valider localement avec `./gradlew :wear:assembleDebug :data:assembleDebug` (Android SDK absent de l'environnement distant)
 
 ---
 
@@ -737,6 +737,36 @@ claude-sonnet-4-6 (Claude Code remote session)
 
 ### Debug Log References
 
+- **AppResult.Error signature** : Le story file indiquait `AppResult.Error(Exception(...), "message")` mais la classe réelle (`domain/AppResult.kt`) ne prend qu'un `Throwable`. Adapté `DataLayerClient` en conséquence.
+- **coroutines-play-services manquant** : `tasks.await()` de GMS requiert `kotlinx-coroutines-play-services`. Ajouté alias dans `libs.versions.toml` et dépendance dans `data/build.gradle.kts`.
+- **Android SDK absent de l'environnement distant** : Impossible d'exécuter `./gradlew :data:test` — tests écrits et vérifiés par inspection, à valider localement.
+
 ### Completion Notes List
 
+- ✅ G-1/G-2/G-3 : dépendances Gradle ajoutées — `libs.wearable` dans `:data`, `project(":data")` dans `:wear`, alias `coroutines-play-services` dans catalog
+- ✅ D-1 : `ScoreRepository` interface créée dans `:domain/repository/`
+- ✅ DTO-1/DTO-2/DTO-3 : `MatchScoreDto`, `ScoreEventPayload`, `GameOverPayload` créés dans `data/wearable/dto/`
+- ✅ DL-1 : `DataLayerClient` créé — envoie `score_event` et `game_over` via GMS MessageClient
+- ✅ DL-2 : `DataLayerListener` créé — `WearableListenerService` avec `EntryPointAccessors` pour injection Hilt
+- ✅ R-1 : `ScoreRepositoryImpl` créé — `@Singleton`, `MutableStateFlow<MatchScore?>` interne
+- ✅ DI-1 : `provideScoreRepository()` ajouté dans `DataModule`
+- ✅ DI-2 : `DataLayerListener` enregistré dans `AndroidManifest.xml` avec `pathPrefix="/secondserve/"`
+- ✅ T-1/T-2 : tests JVM `ScoreRepositoryImplTest` et `MatchScoreDtoTest` créés
+
 ### File List
+
+- `android/gradle/libs.versions.toml` — ajout alias `coroutines-play-services`
+- `android/data/build.gradle.kts` — ajout `coroutines.play.services`, `wearable`
+- `android/wear/build.gradle.kts` — ajout `project(":data")`
+- `android/domain/src/main/kotlin/com/secondserve/domain/repository/ScoreRepository.kt` — NEW
+- `android/data/src/main/kotlin/com/secondserve/data/wearable/dto/MatchScoreDto.kt` — NEW
+- `android/data/src/main/kotlin/com/secondserve/data/wearable/dto/ScoreEventPayload.kt` — NEW
+- `android/data/src/main/kotlin/com/secondserve/data/wearable/dto/GameOverPayload.kt` — NEW
+- `android/data/src/main/kotlin/com/secondserve/data/wearable/DataLayerClient.kt` — NEW
+- `android/data/src/main/kotlin/com/secondserve/data/wearable/DataLayerListener.kt` — NEW
+- `android/data/src/main/kotlin/com/secondserve/data/repository/ScoreRepositoryImpl.kt` — NEW
+- `android/app/src/main/kotlin/com/secondserve/di/DataModule.kt` — ajout `provideScoreRepository()`
+- `android/app/src/main/AndroidManifest.xml` — enregistrement `DataLayerListener`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/ScoreRepositoryImplTest.kt` — NEW
+- `android/data/src/test/kotlin/com/secondserve/data/wearable/dto/MatchScoreDtoTest.kt` — NEW
+- `_bmad-output/implementation-artifacts/2-2-datalayer-bridge-watch-phone.md` — status → review
