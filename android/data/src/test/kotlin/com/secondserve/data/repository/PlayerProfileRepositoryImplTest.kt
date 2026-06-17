@@ -7,6 +7,7 @@ import com.secondserve.data.local.db.entity.RankingHistoryEntity
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
 import com.secondserve.data.remote.api.dto.RankingEntryDto
+import com.secondserve.domain.repository.WorkAxisRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -25,13 +26,16 @@ class PlayerProfileRepositoryImplTest {
 
     private lateinit var dao: PlayerProfileDao
     private lateinit var vpsApiService: VpsApiService
+    private lateinit var workAxisRepository: WorkAxisRepository
     private lateinit var repository: PlayerProfileRepositoryImpl
 
     @BeforeEach
     fun setup() {
         dao = mockk()
         vpsApiService = mockk()
-        repository = PlayerProfileRepositoryImpl(dao, vpsApiService)
+        workAxisRepository = mockk()
+        coEvery { workAxisRepository.getActiveWorkAxesTitles() } returns emptyList()
+        repository = PlayerProfileRepositoryImpl(dao, vpsApiService, workAxisRepository)
     }
 
     private fun profileEntity(
@@ -140,6 +144,26 @@ class PlayerProfileRepositoryImplTest {
         val context = repository.buildMatchContextProfile()
 
         assertEquals(listOf("CLAY", "HARD"), context.preferredSurfaces)
+    }
+
+    @Test
+    fun `buildMatchContextProfile returns activeWorkAxes from workAxisRepository`() = runTest {
+        coEvery { dao.getProfile() } returns profileEntity()
+        coEvery { workAxisRepository.getActiveWorkAxesTitles() } returns listOf("Revers", "Service")
+
+        val context = repository.buildMatchContextProfile()
+
+        assertEquals(listOf("Revers", "Service"), context.activeWorkAxes)
+    }
+
+    @Test
+    fun `buildMatchContextProfile returns empty activeWorkAxes when no work axes`() = runTest {
+        coEvery { dao.getProfile() } returns profileEntity()
+        coEvery { workAxisRepository.getActiveWorkAxesTitles() } returns emptyList()
+
+        val context = repository.buildMatchContextProfile()
+
+        assertTrue(context.activeWorkAxes.isEmpty())
     }
 
     @Test

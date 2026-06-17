@@ -14,6 +14,7 @@ import com.secondserve.domain.model.MatchContextProfile
 import com.secondserve.domain.model.PlayerProfile
 import com.secondserve.domain.model.RankingEntry
 import com.secondserve.domain.repository.PlayerProfileRepository
+import com.secondserve.domain.repository.WorkAxisRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -21,7 +22,8 @@ import timber.log.Timber
 
 class PlayerProfileRepositoryImpl(
     private val dao: PlayerProfileDao,
-    private val vpsApiService: VpsApiService
+    private val vpsApiService: VpsApiService,
+    private val workAxisRepository: WorkAxisRepository
 ) : PlayerProfileRepository {
 
     override suspend fun getProfile(): AppResult<PlayerProfile?> = try {
@@ -71,7 +73,8 @@ class PlayerProfileRepositoryImpl(
                 profile?.coachInstruction1?.takeIf { it.isNotBlank() },
                 profile?.coachInstruction2?.takeIf { it.isNotBlank() },
                 profile?.coachInstruction3?.takeIf { it.isNotBlank() }
-            )
+            ),
+            activeWorkAxes = workAxisRepository.getActiveWorkAxesTitles()
         )
     }
 

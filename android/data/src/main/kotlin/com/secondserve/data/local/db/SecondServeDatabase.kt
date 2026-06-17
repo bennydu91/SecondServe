@@ -5,16 +5,23 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.secondserve.data.local.dao.PlayerProfileDao
+import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
+import com.secondserve.data.local.db.entity.WorkAxisEntity
 
 @Database(
-    entities = [PlayerProfileEntity::class, RankingHistoryEntity::class],
-    version = 2,
+    entities = [
+        PlayerProfileEntity::class,
+        RankingHistoryEntity::class,
+        WorkAxisEntity::class
+    ],
+    version = 3,
     exportSchema = true
 )
 abstract class SecondServeDatabase : RoomDatabase() {
     abstract fun playerProfileDao(): PlayerProfileDao
+    abstract fun workAxisDao(): WorkAxisDao
 
     companion object {
         const val DB_NAME = "secondserve_db"
@@ -26,6 +33,19 @@ abstract class SecondServeDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE player_profiles ADD COLUMN coach_instruction_1 TEXT")
                 database.execSQL("ALTER TABLE player_profiles ADD COLUMN coach_instruction_2 TEXT")
                 database.execSQL("ALTER TABLE player_profiles ADD COLUMN coach_instruction_3 TEXT")
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """CREATE TABLE IF NOT EXISTS work_axes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        created_at INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL
+                    )"""
+                )
             }
         }
     }
