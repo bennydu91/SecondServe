@@ -86,7 +86,15 @@ fun WorkAxesScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { if (!state.isAtMaxCapacity) showCreateDialog = true },
+                onClick = {
+                    if (state.isAtMaxCapacity) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Maximum $MAX_WORK_AXES axes actifs atteint")
+                        }
+                    } else {
+                        showCreateDialog = true
+                    }
+                },
                 containerColor = if (state.isAtMaxCapacity)
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 else
@@ -94,7 +102,7 @@ fun WorkAxesScreen(
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = "Ajouter un axe",
+                    contentDescription = if (state.isAtMaxCapacity) "Limite atteinte" else "Ajouter un axe",
                     tint = if (state.isAtMaxCapacity)
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     else

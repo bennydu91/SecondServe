@@ -6,6 +6,7 @@ import com.secondserve.domain.model.WorkAxis
 import com.secondserve.domain.repository.WorkAxisRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,7 +32,7 @@ class WorkAxesViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
-        coEvery { repository.getWorkAxes() } returns flowOf(emptyList())
+        every { repository.getWorkAxes() } returns flowOf(emptyList())
     }
 
     @AfterEach
@@ -46,7 +47,7 @@ class WorkAxesViewModelTest {
     @Test
     fun `createWorkAxis when at max capacity emits ShowError`() = runTest {
         val threeAxes = listOf(axis(1, "A"), axis(2, "B"), axis(3, "C"))
-        coEvery { repository.getWorkAxes() } returns flowOf(threeAxes)
+        every { repository.getWorkAxes() } returns flowOf(threeAxes)
 
         val viewModel = createViewModel()
 
@@ -68,7 +69,7 @@ class WorkAxesViewModelTest {
             viewModel.createWorkAxis("   ")
             val effect = awaitItem()
             assertIs<WorkAxesSideEffect.ShowError>(effect)
-            assertTrue(effect.message.contains("vide"))
+            assertEquals("Le titre ne peut pas être vide", effect.message)
             cancelAndIgnoreRemainingEvents()
         }
         coVerify(exactly = 0) { repository.createWorkAxis(any()) }
@@ -108,7 +109,7 @@ class WorkAxesViewModelTest {
             viewModel.updateWorkAxis(1L, "")
             val effect = awaitItem()
             assertIs<WorkAxesSideEffect.ShowError>(effect)
-            assertTrue(effect.message.contains("vide"))
+            assertEquals("Le titre ne peut pas être vide", effect.message)
             cancelAndIgnoreRemainingEvents()
         }
         coVerify(exactly = 0) { repository.updateWorkAxis(any(), any()) }
@@ -130,7 +131,7 @@ class WorkAxesViewModelTest {
     @Test
     fun `isAtMaxCapacity is true when 3 work axes exist`() = runTest {
         val threeAxes = listOf(axis(1, "A"), axis(2, "B"), axis(3, "C"))
-        coEvery { repository.getWorkAxes() } returns flowOf(threeAxes)
+        every { repository.getWorkAxes() } returns flowOf(threeAxes)
 
         val viewModel = createViewModel()
 

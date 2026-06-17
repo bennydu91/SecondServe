@@ -8,6 +8,7 @@ import com.secondserve.data.remote.api.dto.WorkAxisResponse
 import com.secondserve.domain.AppResult
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
@@ -127,7 +128,7 @@ class WorkAxisRepositoryImplTest {
             axisEntity(id = 1L, title = "Revers", createdAt = 1000L),
             axisEntity(id = 2L, title = "Service", createdAt = 2000L)
         )
-        coEvery { dao.getAll() } returns flowOf(entities)
+        every { dao.getAll() } returns flowOf(entities)
 
         repository.getWorkAxes().test {
             val items = awaitItem()

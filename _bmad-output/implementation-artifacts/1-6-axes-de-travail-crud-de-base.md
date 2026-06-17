@@ -1161,6 +1161,21 @@ from app.features.work_axes.models import WorkAxis  # ← ajouter aux imports ex
 - [x] [Review][Defer] Pas d'empty-state UI dans `WorkAxesScreen` — amélioration UX non spécifiée dans les AC [`android/feature/profile/.../WorkAxesScreen.kt`] — deferred, pre-existing
 - [x] [Review][Defer] Records VPS orphelins sur échec réseau delete — pattern fire-and-forget documenté dans spec, offline sync hors scope story [`android/data/.../repository/WorkAxisRepositoryImpl.kt`] — deferred, pre-existing
 
+### Review Findings — 2e passe (2026-06-17)
+
+- [x] [Review][Patch] AC2 violation : FAB click silencieux quand `isAtMaxCapacity` — AC2 requiert "l'app affiche un message d'erreur" mais le FAB patché absorbait le clic sans snackbar ; restauré [`android/feature/profile/.../WorkAxesScreen.kt:89`]
+- [x] [Review][Patch] FAB `contentDescription` non conditionnel — TalkBack annonçait "Ajouter un axe" même quand désactivé ; corrigé en "Limite atteinte" [`android/feature/profile/.../WorkAxesScreen.kt:97`]
+- [x] [Review][Patch] Import `OutlinedButton` hors ordre alphabétique — inséré avant `CircularProgressIndicator` (C < O) ; swappé [`android/feature/profile/.../ProfileScreen.kt:19`]
+- [x] [Review][Patch] Assertions `contains("vide")` faibles sur tests titre vide — remplacées par `assertEquals("Le titre ne peut pas être vide", ...)` dans 2 tests [`android/feature/profile/.../WorkAxesViewModelTest.kt:71,111`]
+- [x] [Review][Patch] `test_create_4th_axis_rejected` sans assert sur les 3 créations préliminaires — ajout de `assert resp.status_code == 201` dans la boucle [`backend/tests/integration/test_work_axes_api.py:43`]
+- [x] [Review][Patch] `coEvery` utilisé sur `getAll()` non-suspend retournant un `Flow` — remplacé par `every {}` (MockK : `coEvery` pour suspend uniquement) [`android/data/.../WorkAxisRepositoryImplTest.kt:130`, `android/feature/profile/.../WorkAxesViewModelTest.kt:34,49,133`]
+- [x] [Review][Defer] `deleteWorkAxis` retourne `AppResult.Success` même si l'id n'existe pas localement — Room `DELETE WHERE id = :id` est un no-op silencieux ; acceptable en usage single-user [`android/data/.../WorkAxisRepositoryImpl.kt:54`] — deferred, pre-existing
+- [x] [Review][Defer] Pas de dialog de confirmation avant suppression — hors AC, amélioration UX future [`android/feature/profile/.../WorkAxesScreen.kt:WorkAxisCard`] — deferred, pre-existing
+- [x] [Review][Defer] `created_at` envoyé dans PUT VPS mais ignoré côté serveur — architecture fire-and-forget documentée ; nécessite un DTO séparé si la spec évolue [`android/data/.../WorkAxisRepositoryImpl.kt:45`, `backend/app/features/work_axes/repository.py`] — deferred, pre-existing
+- [x] [Review][Defer] `localId` retourné par `dao.insert()` ignoré — pas de sync Android↔VPS par id dans cette story ; à traiter si réconciliation multi-device ajoutée [`android/data/.../WorkAxisRepositoryImpl.kt:29`] — deferred, pre-existing
+- [x] [Review][Defer] `CancellationException` swallowée dans `try/catch (e: Exception)` — pattern systémique pre-existing dans tous les repositories du projet [`android/data/.../WorkAxisRepositoryImpl.kt`] — deferred, pre-existing
+- [x] [Review][Defer] Status HTTP 422 pour limite métier (`MAX_WORK_AXES_REACHED`) conflit sémantiquement avec 422 Pydantic — décision architecture ; 409 Conflict serait plus précis [`backend/app/features/work_axes/service.py`] — deferred, pre-existing
+
 ---
 
 ## Dev Notes

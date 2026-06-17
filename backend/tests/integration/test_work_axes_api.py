@@ -40,11 +40,12 @@ async def test_create_work_axis(client):
 async def test_create_4th_axis_rejected(client):
     token = make_token()
     for i in range(3):
-        await client.post(
+        resp = await client.post(
             "/api/v1/work_axes",
             json={"title": f"Axe {i}", "created_at": 1000 + i},
             headers=auth(token)
         )
+        assert resp.status_code == 201
     response = await client.post(
         "/api/v1/work_axes",
         json={"title": "Axe 4", "created_at": 1003},
