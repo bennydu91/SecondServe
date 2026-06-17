@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-17 (story 2.1 ready-for-dev — epic 2 démarré)
+last_updated: 2026-06-17 (story 2.1 review — TennisScoreEngine implémenté)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -54,7 +54,7 @@ development_status:
 
   # ─── Epic 2: Mode Match — Score & Session ────────────────────────────────────
   epic-2: in-progress
-  2-1-tennisscoreengine-automate-a-etats-finis: ready-for-dev
+  2-1-tennisscoreengine-automate-a-etats-finis: review
   2-2-datalayer-bridge-watch-phone: backlog
   2-3-demarrage-de-session-match: backlog
   2-4-suivi-de-score-sur-pixel-watch-point-par-point: backlog

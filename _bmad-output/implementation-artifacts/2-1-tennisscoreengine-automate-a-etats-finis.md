@@ -1,6 +1,10 @@
+---
+baseline_commit: 8b7330cb49bf8d5eef9ad9e132c153cc91cd7748
+---
+
 # Story 2.1 : TennisScoreEngine — Automate à états finis
 
-**Status:** ready-for-dev
+**Status:** review
 
 ## Story
 
@@ -433,32 +437,32 @@ class TennisScoreEngine(val format: SessionFormat) {
 
 ### Modèles domaine
 
-- [ ] **Task M-1** — Créer `SessionFormat.kt` : `MatchFormat` (BEST_OF_1, BEST_OF_3), `ThirdSetRule` (FULL_ADVANTAGE, SUPER_TIE_BREAK_10, SHORT_DECISIVE_SET), `data class SessionFormat`
-- [ ] **Task M-2** — Créer `MatchScore.kt` : `Player` (A, B), `GamePoint` (ZERO…ADVANTAGE), `SetResult`, `data class MatchScore` avec toutes les propriétés et computed properties `isDeuce`, `currentSetTotalGames`
+- [x] **Task M-1** — Créer `SessionFormat.kt` : `MatchFormat` (BEST_OF_1, BEST_OF_3), `ThirdSetRule` (FULL_ADVANTAGE, SUPER_TIE_BREAK_10, SHORT_DECISIVE_SET), `data class SessionFormat`
+- [x] **Task M-2** — Créer `MatchScore.kt` : `Player` (A, B), `GamePoint` (ZERO…ADVANTAGE), `SetResult`, `data class MatchScore` avec toutes les propriétés et computed properties `isDeuce`, `currentSetTotalGames`
 
 ### Engine
 
-- [ ] **Task E-1** — Créer `engine/TennisScoreEngine.kt` avec `EngineEvent` sealed class (PointScored, GameWon, SetWon, MatchOver) et la classe `TennisScoreEngine(format: SessionFormat)`
-- [ ] **Task E-2** — Implémenter `processRegularPoint()` : progression ZERO→FIFTEEN→THIRTY→FORTY→Game, Deuce, Advantage cycle
-- [ ] **Task E-3** — Implémenter `processTieBreakPoint()` : comptage 0-1-2..., win à ≥7 avec écart ≥2
-- [ ] **Task E-4** — Implémenter `processSuperTieBreakPoint()` : comptage 0-1-2..., win à ≥10 avec écart ≥2 → MatchOver
-- [ ] **Task E-5** — Implémenter `awardGame()` → détection tie-break (6-6), `checkSetWon()` → détection set, SHORT_DECISIVE_SET (3-3 tie-break, ≥4 avec écart 2)
-- [ ] **Task E-6** — Implémenter `awardSet()` → détection match fini, trigger SUPER_TIE_BREAK_10 (à 1-1), transition `SetWon` ou `MatchOver`
-- [ ] **Task E-7** — Implémenter `undo()` : pop de la `history: ArrayDeque<MatchScore>` (retourne false si vide)
+- [x] **Task E-1** — Créer `engine/TennisScoreEngine.kt` avec `EngineEvent` sealed class (PointScored, GameWon, SetWon, MatchOver) et la classe `TennisScoreEngine(format: SessionFormat)`
+- [x] **Task E-2** — Implémenter `processRegularPoint()` : progression ZERO→FIFTEEN→THIRTY→FORTY→Game, Deuce, Advantage cycle
+- [x] **Task E-3** — Implémenter `processTieBreakPoint()` : comptage 0-1-2..., win à ≥7 avec écart ≥2
+- [x] **Task E-4** — Implémenter `processSuperTieBreakPoint()` : comptage 0-1-2..., win à ≥10 avec écart ≥2 → MatchOver
+- [x] **Task E-5** — Implémenter `awardGame()` → détection tie-break (6-6), `checkSetWon()` → détection set, SHORT_DECISIVE_SET (3-3 tie-break, ≥4 avec écart 2)
+- [x] **Task E-6** — Implémenter `awardSet()` → détection match fini, trigger SUPER_TIE_BREAK_10 (à 1-1), transition `SetWon` ou `MatchOver`
+- [x] **Task E-7** — Implémenter `undo()` : pop de la `history: ArrayDeque<MatchScore>` (retourne false si vide)
 
 ### Tests
 
-- [ ] **Task T-1** — Créer `engine/TennisScoreEngineTest.kt` — jeu régulier complet : 0→15→30→40→Game
-- [ ] **Task T-2** — Égalité et Avantage : 40-40 → Avantage A → Égalité → Avantage A → Jeu A
-- [ ] **Task T-3** — Jeux et sets : scénario 6-0, 6-3, 6-4 (vérifier `SetWon`)
-- [ ] **Task T-4** — Tie-break : déclenchement à 6-6, comptage correct, victoire à 7-5, 8-6
-- [ ] **Task T-5** — Super tie-break : déclenchement à 1-1 sets (SUPER_TIE_BREAK_10), victoire à 10-8, 11-9
-- [ ] **Task T-6** — Changement de côté : vérifier `changeover = true` quand total jeux impair
-- [ ] **Task T-7** — Undo : multi-niveaux, undo jusqu'au début, undo avec `isMatchOver = true`
-- [ ] **Task T-8** — Match BEST_OF_1 : victoire en 1 set → `MatchOver`
-- [ ] **Task T-9** — Match BEST_OF_3 FULL_ADVANTAGE : victoire en 2 sets, en 3 sets
-- [ ] **Task T-10** — SHORT_DECISIVE_SET : 3-3 → tie-break → match, victoire à 4-0, 4-2
-- [ ] **Task T-11** — `check()` après match terminé → `IllegalStateException` levée
+- [x] **Task T-1** — Créer `engine/TennisScoreEngineTest.kt` — jeu régulier complet : 0→15→30→40→Game
+- [x] **Task T-2** — Égalité et Avantage : 40-40 → Avantage A → Égalité → Avantage A → Jeu A
+- [x] **Task T-3** — Jeux et sets : scénario 6-0, 6-3, 6-4 (vérifier `SetWon`)
+- [x] **Task T-4** — Tie-break : déclenchement à 6-6, comptage correct, victoire à 7-5, 8-6
+- [x] **Task T-5** — Super tie-break : déclenchement à 1-1 sets (SUPER_TIE_BREAK_10), victoire à 10-8, 11-9
+- [x] **Task T-6** — Changement de côté : vérifier `changeover = true` quand total jeux impair
+- [x] **Task T-7** — Undo : multi-niveaux, undo jusqu'au début, undo avec `isMatchOver = true`
+- [x] **Task T-8** — Match BEST_OF_1 : victoire en 1 set → `MatchOver`
+- [x] **Task T-9** — Match BEST_OF_3 FULL_ADVANTAGE : victoire en 2 sets, en 3 sets
+- [x] **Task T-10** — SHORT_DECISIVE_SET : 3-3 → tie-break → match, victoire à 4-0, 4-2
+- [x] **Task T-11** — `check()` après match terminé → `IllegalStateException` levée
 
 ---
 
@@ -843,10 +847,32 @@ android/domain/src/test/kotlin/com/secondserve/domain/
 
 ### Agent Model Used
 
-_à compléter par le dev agent_
+claude-sonnet-4-6 (Claude Code remote session)
 
 ### Debug Log References
 
+- Bug corrigé dans `awardTieBreakGame()` : appelait `checkSetWon()` au lieu de `awardSet()`. La condition `gA >= 6 && gA - gB >= 2` ne couvre pas 7-6 (écart = 1). Le gain du tie-break doit toujours déclencher `awardSet()` directement.
+- Tests corrigés : les séquences `winGames(A, 6); winGames(B, 6)` gagnaient deux sets (6-0 + 6-0) au lieu d'atteindre 6-6 dans un set. Ajout du helper `reachSixSixTieBreak()` qui alterne les victoires de jeux pour atteindre 6-6.
+- Tests SHORT_DECISIVE_SET corrigés : les séquences `winGames(A, 2)` de 2-2 → 4-2 gagnaient le set avant le dernier `winGame()`, provoquant une `IllegalStateException`.
+
 ### Completion Notes List
 
+- ✅ `SessionFormat.kt` créé avec `MatchFormat`, `ThirdSetRule`, `SessionFormat`
+- ✅ `MatchScore.kt` créé avec `Player`, `GamePoint`, `SetResult`, `MatchScore` (immutable data class, computed properties `isDeuce` et `currentSetTotalGames`)
+- ✅ `TennisScoreEngine.kt` créé avec `EngineEvent` sealed class et moteur complet (points, jeux, sets, tie-break, super tie-break, undo O(1) via `ArrayDeque`)
+- ✅ `TennisScoreEngineTest.kt` créé avec 34 tests JVM couvrant les 11 groupes de l'AC (aucun device requis)
+- ✅ Tous les 34 tests passent — BUILD SUCCESSFUL
+- ✅ Module `:domain` reste Kotlin pur (kotlin.jvm), zéro import android.*
+- ✅ `EngineEvent.GameWon(changeover: Boolean)` préparé pour Story 2.5
+- ✅ Undo O(1) via `ArrayDeque<MatchScore>` (états immutables copiés avant chaque point)
+
+### Change Log
+
+- 2026-06-17 : Implémentation complète de la story 2.1 — TennisScoreEngine automate à états finis
+
 ### File List
+
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/SessionFormat.kt` (NEW)
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/MatchScore.kt` (NEW)
+- `android/domain/src/main/kotlin/com/secondserve/domain/engine/TennisScoreEngine.kt` (NEW)
+- `android/domain/src/test/kotlin/com/secondserve/domain/engine/TennisScoreEngineTest.kt` (NEW)
