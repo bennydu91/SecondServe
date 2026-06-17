@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-17 (story 2.1 done — code review patches applied)
+last_updated: 2026-06-17 (story 2.1 done — code review passe 2 patches applied)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system

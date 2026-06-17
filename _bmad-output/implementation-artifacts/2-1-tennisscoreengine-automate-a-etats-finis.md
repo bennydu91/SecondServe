@@ -892,3 +892,12 @@ claude-sonnet-4-6 (Claude Code remote session)
 - [x] [Review][Defer] D2 — Changeover au début d'un nouveau set vs règles ATP complètes — par conception, Story 2.5 gérera — déféré, pre-existing design
 - [x] [Review][Defer] D3 — Combinaison invalide `BEST_OF_1 + SHORT_DECISIVE_SET` non validée — latent, non utilisable en pratique — déféré
 - [x] [Review][Defer] D4 — Couplage structurel `winner` dans `awardSet` — la valeur est toujours correcte via les callers — déféré, risque futur seulement
+
+### Code Review — Passe 2 (2026-06-17)
+
+- [x] [Review][Patch] P1 — `isSuperTieBreak` non réinitialisé lors du MatchOver dans `processSuperTieBreakPoint` : état final conserve `isSuperTieBreak=true` alors que le match est terminé [`TennisScoreEngine.kt:133`] — **corrigé**
+- [x] [Review][Patch] P2 — Guard mort `&& !state.isTieBreak` dans `checkSetWon` : `isTieBreak` est toujours `false` à ce point (réinitialisé par `awardGame`) [`TennisScoreEngine.kt:201`] — **corrigé**
+- [x] [Review][Patch] P3 — Test manquant : `undo` après franchissement de frontière de set (SetWon → état en cours de set) [`TennisScoreEngineTest.kt:UndoTests`] — **corrigé**
+- [x] [Review][Patch] P4 — Test manquant : `SetWon.changeover = false` pour un set à total pair (6-0, total=6 pair, AC4) [`TennisScoreEngineTest.kt:ChangeoversDetection`] — **corrigé**
+- [x] [Review][Patch] P5 — Test manquant : Player B gagne un match BEST_OF_3 (symétrie absente de `MatchFormats`) [`TennisScoreEngineTest.kt:MatchFormats`] — **corrigé**
+- [x] [Review][Defer] D5 — Couplage structurel `winner` dans `awardSet` (même problème que D4) — déféré, pre-existing

@@ -136,6 +136,14 @@ class TennisScoreEngineTest {
         }
 
         @Test
+        fun `SetWon changeover false when set total is even (6-0)`() {
+            val engine = TennisScoreEngine(bestOf3Format)
+            val event = engine.winSet6_0(Player.A)  // 6-0 → total=6 (pair)
+            assertTrue(event is EngineEvent.SetWon)
+            assertFalse((event as EngineEvent.SetWon).changeover)
+        }
+
+        @Test
         fun `changeover always true after tie-break (13 total games)`() {
             val engine = TennisScoreEngine(bestOf3Format)
             engine.reachSixSixTieBreak()
@@ -320,6 +328,18 @@ class TennisScoreEngineTest {
         }
 
         @Test
+        fun `undo works across set boundary`() {
+            val engine = TennisScoreEngine(bestOf3Format)
+            engine.winSet6_0(Player.A)
+            assertEquals(1, engine.currentScore.completedSets.size)
+            engine.undo()
+            // Restored to state just before winning point of 6th game: 5-0 games, A at FORTY
+            assertEquals(0, engine.currentScore.completedSets.size)
+            assertEquals(5, engine.currentScore.currentSetGamesA)
+            assertEquals(GamePoint.FORTY, engine.currentScore.currentGamePointsA)
+        }
+
+        @Test
         fun `undo supports multiple levels`() {
             val engine = TennisScoreEngine(bestOf1Format)
             engine.recordPoint(Player.A)
@@ -379,6 +399,17 @@ class TennisScoreEngineTest {
             val event = engine.winSet6_0(Player.A)
             assertTrue(event is EngineEvent.MatchOver)
             assertEquals(Player.A, (event as EngineEvent.MatchOver).winner)
+            assertEquals(2, engine.currentScore.completedSets.size)
+        }
+
+        @Test
+        fun `BEST_OF_3 Player B wins in 2 sets`() {
+            val engine = TennisScoreEngine(bestOf3Format)
+            engine.winSet6_0(Player.B)
+            assertFalse(engine.currentScore.isMatchOver)
+            val event = engine.winSet6_0(Player.B)
+            assertTrue(event is EngineEvent.MatchOver)
+            assertEquals(Player.B, (event as EngineEvent.MatchOver).winner)
             assertEquals(2, engine.currentScore.completedSets.size)
         }
 

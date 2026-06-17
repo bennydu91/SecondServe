@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of 2-1-tennisscoreengine-automate-a-etats-finis — Passe 2 (2026-06-17)
+
+- **Couplage structurel `winner` dans `awardSet` (D5)** — Le match winner est pris du paramètre `winner` (gagnant du dernier set), pas recalculé depuis `setsWonA/B`. Identique à D4 de la passe 1. Correct pour tout flux actuel, risque de régression sur refactoring futur. [`TennisScoreEngine.kt:awardSet`]
+
 ## Deferred from: code review of 2-1-tennisscoreengine-automate-a-etats-finis (2026-06-17)
 
 - **`MatchOver` ne transporte pas de signal changeover** — Quand un point termine à la fois le set et le match, seul `MatchOver` est émis. Story 2.5 (DataLayer bridge) a besoin du signal changeover pour déclencher `game_over`. Il faudra soit ajouter `changeover: Boolean` à `MatchOver`, soit émettre `SetWon` puis `MatchOver` en séquence. [`TennisScoreEngine.kt:awardSet`]

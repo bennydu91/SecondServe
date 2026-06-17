@@ -133,7 +133,8 @@ class TennisScoreEngine(val format: SessionFormat) {
             state = state.copy(
                 completedSets = state.completedSets + superTbResult,
                 isMatchOver = true,
-                matchWinner = winner
+                matchWinner = winner,
+                isSuperTieBreak = false
             )
             return EngineEvent.MatchOver(state, winner)
         }
@@ -198,7 +199,7 @@ class TennisScoreEngine(val format: SessionFormat) {
         val gB = state.currentSetGamesB
 
         if (format.thirdSetRule == ThirdSetRule.SHORT_DECISIVE_SET && isFinalSet() &&
-            gA == 3 && gB == 3 && !state.isTieBreak) {
+            gA == 3 && gB == 3) {
             return startTieBreak(gameChangeover, winner)
         }
 
