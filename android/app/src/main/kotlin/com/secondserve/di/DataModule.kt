@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
+import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
@@ -32,7 +33,8 @@ object DataModule {
         )
         .addMigrations(
             SecondServeDatabase.MIGRATION_1_2,
-            SecondServeDatabase.MIGRATION_2_3
+            SecondServeDatabase.MIGRATION_2_3,
+            SecondServeDatabase.MIGRATION_3_4
         )
         .build()
 
@@ -45,6 +47,11 @@ object DataModule {
     @Singleton
     fun provideWorkAxisDao(db: SecondServeDatabase): WorkAxisDao =
         db.workAxisDao()
+
+    @Provides
+    @Singleton
+    fun provideSessionDao(db: SecondServeDatabase): SessionDao =
+        db.sessionDao()
 
     @Provides
     @Singleton
