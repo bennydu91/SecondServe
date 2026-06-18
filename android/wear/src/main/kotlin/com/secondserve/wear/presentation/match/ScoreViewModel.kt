@@ -2,7 +2,6 @@ package com.secondserve.wear.presentation.match
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.engine.TennisScoreEngine
@@ -12,7 +11,6 @@ import com.secondserve.domain.model.Player
 import com.secondserve.domain.model.SessionFormat
 import com.secondserve.domain.model.ThirdSetRule
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
@@ -50,7 +48,7 @@ class ScoreViewModel @Inject constructor(
                 canUndo = pointCount > 0
             )
         }
-        sendScoreEventAsync(snapshot)
+        sendScoreEvent(snapshot)
     }
 
     fun undo() = intent {
@@ -66,16 +64,14 @@ class ScoreViewModel @Inject constructor(
                     canUndo = pointCount > 0
                 )
             }
-            sendScoreEventAsync(snapshot)
+            sendScoreEvent(snapshot)
         }
     }
 
-    private fun sendScoreEventAsync(score: MatchScore) {
-        viewModelScope.launch {
-            val result = dataLayerClient.sendScoreEvent(score)
-            if (result is AppResult.Error) {
-                Timber.d("ScoreViewModel: sendScoreEvent failed — %s", result.exception.message)
-            }
+    private suspend fun sendScoreEvent(score: MatchScore) {
+        val result = dataLayerClient.sendScoreEvent(score)
+        if (result is AppResult.Error) {
+            Timber.d("ScoreViewModel: sendScoreEvent failed — %s", result.exception.message)
         }
     }
 
