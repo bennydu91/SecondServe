@@ -26,11 +26,12 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScoreViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private lateinit var testDispatcher: UnconfinedTestDispatcher
     private lateinit var dataLayerClient: DataLayerClient
 
     @BeforeEach
     fun setup() {
+        testDispatcher = UnconfinedTestDispatcher()
         Dispatchers.setMain(testDispatcher)
         dataLayerClient = mockk()
         coEvery { dataLayerClient.sendScoreEvent(any()) } returns AppResult.Success(Unit)
@@ -38,6 +39,9 @@ class ScoreViewModelTest {
 
     @AfterEach
     fun tearDown() {
+        // Drain all pending coroutines (Orbit internals + sendScoreEventAsync) before
+        // resetting Main — prevents them from failing on a real dispatcher without a Looper.
+        testDispatcher.scheduler.advanceUntilIdle()
         Dispatchers.resetMain()
     }
 
