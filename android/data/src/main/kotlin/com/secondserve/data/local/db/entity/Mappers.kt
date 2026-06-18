@@ -1,7 +1,13 @@
 package com.secondserve.data.local.db.entity
 
+import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.PlayerProfile
 import com.secondserve.domain.model.RankingEntry
+import com.secondserve.domain.model.Session
+import com.secondserve.domain.model.SessionFormat
+import com.secondserve.domain.model.SessionStatus
+import com.secondserve.domain.model.SessionType
+import com.secondserve.domain.model.ThirdSetRule
 import com.secondserve.domain.model.WorkAxis
 
 fun String?.toPreferredSurfacesList(): List<String> =
@@ -35,3 +41,35 @@ fun WorkAxisEntity.toDomain(): WorkAxis = WorkAxis(
 
 fun List<String>.toPreferredSurfacesString(): String? =
     if (isEmpty()) null else joinToString(",")
+
+fun SessionEntity.toDomain(): Session = Session(
+    id = id,
+    surface = surface,
+    format = SessionFormat(
+        matchFormat = MatchFormat.valueOf(matchFormat),
+        thirdSetRule = ThirdSetRule.valueOf(thirdSetRule)
+    ),
+    opponent = opponent,
+    competitionType = competitionType,
+    tournament = tournament,
+    status = SessionStatus.valueOf(status),
+    sessionType = SessionType.valueOf(sessionType),
+    result = result,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+fun Session.toEntity(): SessionEntity = SessionEntity(
+    id = id,
+    surface = surface,
+    matchFormat = format.matchFormat.name,
+    thirdSetRule = format.thirdSetRule.name,
+    opponent = opponent,
+    competitionType = competitionType,
+    tournament = tournament,
+    status = status.name,
+    sessionType = sessionType.name,
+    result = result,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
