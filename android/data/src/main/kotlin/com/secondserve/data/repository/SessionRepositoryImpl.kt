@@ -27,8 +27,21 @@ class SessionRepositoryImpl @Inject constructor(
     }
 
     override fun getAllSessions(): Flow<List<Session>> =
-        dao.getAllSessions().map { entities -> entities.map { it.toDomain() } }
+        dao.getAllSessions().map { entities ->
+            entities.mapNotNull { entity ->
+                runCatching { entity.toDomain() }.getOrElse { e ->
+                    Timber.e(e, "SessionRepository: skipping corrupted session id=${entity.id}")
+                    null
+                }
+            }
+        }
 
     override suspend fun getSessionById(id: Long): Session? =
-        dao.getById(id)?.toDomain()
+        dao.getById(id)?.let { entity ->
+            runCatching { entity.toDomain() }.getOrElse { e ->
+                Timber.e(e, "SessionRepository: getSessionById id=${entity.id} failed to map")
+                null
+            }
+        }
 }
+

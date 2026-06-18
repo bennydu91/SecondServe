@@ -4,7 +4,7 @@ baseline_commit: f7172c29f93e62f9ec65763fe5978d11cd013f60
 
 # Story 2.3 : Démarrage de session match
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -65,11 +65,11 @@ Status: in-progress
 
 ### Review Findings
 
-- [ ] [Review][Patch] `toDomain()` : `valueOf()` non sécurisé — `getAllSessions()` Flow + `getSessionById()` peuvent crasher sur IAE si un enum DB inconnu est lu [`android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt` / `SessionRepositoryImpl.kt`]
-- [ ] [Review][Patch] Aucune validation enum Pydantic dans `SessionCreateRequest` — `surface`, `match_format`, `third_set_rule` acceptent n'importe quelle string, pouvant créer des rows invalides qui crashent Android [`backend/app/features/sessions/schemas.py`]
-- [ ] [Review][Patch] `updated_at` server-side + `created_at` client-side : état impossible (`updated_at < created_at`) si l'horloge client est en avance [`backend/app/features/sessions/repository.py`]
-- [ ] [Review][Patch] Aucun test couvrant IAE dans `toDomain()` avec valeur enum invalide — crash path invisible en CI (cf. F14 story 2.2) [`android/data/src/test/kotlin/com/secondserve/data/repository/SessionRepositoryImplTest.kt`]
-- [ ] [Review][Patch] Import `logging` mort + `logger` inutilisé [`backend/app/api/v1/sessions.py`]
+- [x] [Review][Patch] `toDomain()` : `valueOf()` non sécurisé — `getAllSessions()` Flow + `getSessionById()` peuvent crasher sur IAE si un enum DB inconnu est lu [`android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt` / `SessionRepositoryImpl.kt`]
+- [x] [Review][Patch] Aucune validation enum Pydantic dans `SessionCreateRequest` — `surface`, `match_format`, `third_set_rule` acceptent n'importe quelle string, pouvant créer des rows invalides qui crashent Android [`backend/app/features/sessions/schemas.py`]
+- [x] [Review][Patch] `updated_at` server-side + `created_at` client-side : état impossible (`updated_at < created_at`) si l'horloge client est en avance [`backend/app/features/sessions/repository.py`]
+- [x] [Review][Patch] Aucun test couvrant IAE dans `toDomain()` avec valeur enum invalide — crash path invisible en CI (cf. F14 story 2.2) [`android/data/src/test/kotlin/com/secondserve/data/repository/SessionRepositoryImplTest.kt`]
+- [x] [Review][Patch] Import `logging` mort + `logger` inutilisé [`backend/app/api/v1/sessions.py`]
 - [x] [Review][Defer] `OnConflictStrategy.REPLACE` sur `SessionDao.insert()` — risque de DELETE silencieux si `id > 0` est passé (future sync path) [`android/data/src/main/kotlin/com/secondserve/data/local/dao/SessionDao.kt`] — deferred, pre-existing pattern, low risk in current usage
 - [x] [Review][Defer] Backend sans scoping utilisateur — pas de FK `user_id` sur `sessions` — deferred, single-user app for now
 - [x] [Review][Defer] `third_set_rule` requis dans `SessionCreateRequest` même pour `BEST_OF_1` — deferred, client envoie toujours une valeur

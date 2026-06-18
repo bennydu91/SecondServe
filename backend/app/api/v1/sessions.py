@@ -1,4 +1,3 @@
-import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -6,7 +5,6 @@ from app.features.sessions.repository import SessionRepository
 from app.features.sessions.schemas import SessionCreateRequest, SessionResponse
 from app.features.sessions.service import SessionService
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -20,3 +18,4 @@ async def create_session(
     service: SessionService = Depends(get_session_service)
 ):
     return await service.create_session(request)
+

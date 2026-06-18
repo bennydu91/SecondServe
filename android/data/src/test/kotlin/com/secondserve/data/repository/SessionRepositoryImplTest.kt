@@ -185,4 +185,28 @@ class SessionRepositoryImplTest {
         assertEquals("BEST_OF_1", slot.captured.matchFormat)
         assertEquals("FULL_ADVANTAGE", slot.captured.thirdSetRule)
     }
+
+    @Test
+    fun `getAllSessions filters out session with invalid matchFormat enum`() = runTest {
+        val invalidEntity = anEntity(id = 99L, matchFormat = "INVALID_FORMAT")
+        val validEntity = anEntity(id = 1L)
+        every { dao.getAllSessions() } returns flowOf(listOf(invalidEntity, validEntity))
+
+        repository.getAllSessions().test {
+            val sessions = awaitItem()
+            assertEquals(1, sessions.size)
+            assertEquals(1L, sessions[0].id)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `getSessionById returns null when entity has invalid enum value`() = runTest {
+        val invalidEntity = anEntity(id = 1L, status = "UNKNOWN_STATUS")
+        coEvery { dao.getById(1L) } returns invalidEntity
+
+        val session = repository.getSessionById(1L)
+
+        assertNull(session)
+    }
 }
