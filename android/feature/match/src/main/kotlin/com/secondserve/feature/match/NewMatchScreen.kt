@@ -142,14 +142,6 @@ fun NewMatchScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (state.error != null) {
-                Text(
-                    text = state.error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
 
             if (state.isLoading) {

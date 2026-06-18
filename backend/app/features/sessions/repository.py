@@ -37,16 +37,3 @@ class SessionRepository:
             select(SessionModel).order_by(SessionModel.created_at.desc())
         )
         return list(result.scalars().all())
-
-
-    async def get_by_id(self, session_id: int) -> SessionModel | None:
-        result = await self.db.execute(
-            select(SessionModel).where(SessionModel.id == session_id)
-        )
-        return result.scalar_one_or_none()
-
-    async def get_all(self) -> list[SessionModel]:
-        result = await self.db.execute(
-            select(SessionModel).order_by(SessionModel.created_at.desc())
-        )
-        return list(result.scalars().all())

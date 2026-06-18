@@ -1,5 +1,10 @@
 # Deferred Work
 
+## Deferred from: code review of 2-3-demarrage-de-session-match — Passe 2 (2026-06-18)
+
+- **D8 — `onSessionStarted` ignore le `sessionId` dans `AppNavGraph`** — Le callback fait `popBackStack()` sans transmettre l'ID de session. Story 2.4 devra router vers l'écran score avec cet ID au lieu de revenir à l'accueil. [`android/app/src/main/kotlin/com/secondserve/navigation/AppNavGraph.kt`]
+- **D9 — `updated_at` figé à `created_at` pour toute la durée de vie de la session** — La valeur ne sera jamais mise à jour après la création. Story 2.6 (clôture de session) devra ajouter un `UPDATE sessions SET updated_at = ? WHERE id = ?` dans le repository. [`backend/app/features/sessions/repository.py`]
+
 ## Deferred from: code review of 2-3-demarrage-de-session-match (2026-06-18)
 
 - **D1 — `OnConflictStrategy.REPLACE` sur `SessionDao.insert()`** — Risque de DELETE silencieux si un `id > 0` est passé (future sync path). Remplacer par `ABORT` ou utiliser `@Update` pour les updates. [`android/data/src/main/kotlin/com/secondserve/data/local/dao/SessionDao.kt`]

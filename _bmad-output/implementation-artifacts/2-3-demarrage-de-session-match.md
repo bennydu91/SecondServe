@@ -78,6 +78,17 @@ Status: done
 - [x] [Review][Defer] Locale incohérente dans les logs Timber (français/anglais) — deferred, cosmétique [`SessionRepositoryImpl.kt`]
 - [x] [Review][Defer] Aucun écran historique pour AC3 — deferred, story future (2.6+)
 
+### Review Findings (Passe 2 — 2026-06-18)
+
+- [x] [Review][Patch] `SessionResponse` et `SessionsResponse` définies deux fois dans `schemas.py` — doublons Python silencieux supprimés [`backend/app/features/sessions/schemas.py`]
+- [x] [Review][Patch] `get_by_id` et `get_all` définies deux fois dans `SessionRepository` — méthodes dupliquées supprimées [`backend/app/features/sessions/repository.py`]
+- [x] [Review][Patch] Import `logging` mort + `logger` inutilisé dans `service.py` — la passe 1 avait ciblé `sessions.py` (propre) ; le vrai problème était dans `service.py` [`backend/app/features/sessions/service.py`]
+- [x] [Review][Patch] Double affichage erreur : `state.error` inline + `ShowError` Snackbar — suppression du champ `error` de `NewMatchUiState`, seul le Snackbar subsiste [`android/feature/match/.../NewMatchViewModel.kt` / `NewMatchScreen.kt`]
+- [x] [Review][Patch] `test_create_session_sets_updated_at` : assertion `updated_at > 0` trop faible — renforcée en `updated_at == 1_000_000` (invariant `updated_at = created_at`) [`backend/tests/integration/test_sessions_api.py`]
+- [x] [Review][Patch] AC1 — `selectedThirdSetRule` pré-initialisé à `FULL_ADVANTAGE` dès BEST_OF_3 sélectionné — l'utilisateur pouvait soumettre sans choisir explicitement ; suppression de la pré-sélection automatique [`android/feature/match/.../NewMatchViewModel.kt`]
+- [x] [Review][Defer] `onSessionStarted` ignore le `sessionId` dans `AppNavGraph` — `popBackStack()` sans transmettre l'ID ; Story 2.4 devra router vers l'écran score avec cet ID [`android/app/.../AppNavGraph.kt`] — deferred, Story 2.4
+- [x] [Review][Defer] `updated_at` figé à `created_at` pour toute la durée de vie de la session — aucune logique de mise à jour ; Story 2.6 devra l'alimenter à la clôture [`backend/app/features/sessions/repository.py`] — deferred, Story 2.6
+
 ---
 
 ## Dev Notes

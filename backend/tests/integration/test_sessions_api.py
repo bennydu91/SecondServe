@@ -110,4 +110,4 @@ async def test_create_session_sets_updated_at(client):
     assert response.status_code == 201
     data = response.json()
     assert "updated_at" in data
-    assert data["updated_at"] > 0
+    assert data["updated_at"] == 1_000_000

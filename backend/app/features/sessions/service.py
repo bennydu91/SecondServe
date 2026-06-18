@@ -1,8 +1,5 @@
-import logging
 from app.features.sessions.repository import SessionRepository
 from app.features.sessions.schemas import SessionCreateRequest, SessionResponse
-
-logger = logging.getLogger(__name__)
 
 
 class SessionService:

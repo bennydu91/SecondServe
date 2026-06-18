@@ -28,7 +28,7 @@ class NewMatchViewModel @Inject constructor(
             state.copy(
                 selectedMatchFormat = format,
                 selectedThirdSetRule = if (format == MatchFormat.BEST_OF_1) null
-                                       else state.selectedThirdSetRule ?: ThirdSetRule.FULL_ADVANTAGE
+                                       else state.selectedThirdSetRule
             )
         }
     }
@@ -56,7 +56,7 @@ class NewMatchViewModel @Inject constructor(
             state.selectedThirdSetRule ?: ThirdSetRule.FULL_ADVANTAGE
         else ThirdSetRule.FULL_ADVANTAGE
 
-        reduce { state.copy(isLoading = true, error = null) }
+        reduce { state.copy(isLoading = true) }
 
         val now = System.currentTimeMillis()
         val session = Session(
@@ -75,7 +75,7 @@ class NewMatchViewModel @Inject constructor(
                 postSideEffect(NewMatchSideEffect.SessionStarted(result.data.id))
             }
             is AppResult.Error -> {
-                reduce { state.copy(isLoading = false, error = "Impossible de créer la session") }
+                reduce { state.copy(isLoading = false) }
                 postSideEffect(NewMatchSideEffect.ShowError("Impossible de créer la session"))
             }
             AppResult.Loading -> {}
@@ -90,8 +90,7 @@ data class NewMatchUiState(
     val opponent: String = "",
     val competitionType: String = "",
     val tournament: String = "",
-    val isLoading: Boolean = false,
-    val error: String? = null
+    val isLoading: Boolean = false
 ) {
     val canStartMatch: Boolean get() =
         selectedSurface != null && selectedMatchFormat != null &&
