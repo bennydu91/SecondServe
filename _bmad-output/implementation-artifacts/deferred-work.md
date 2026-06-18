@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of 2-4-suivi-de-score-sur-pixel-watch-point-par-point (2026-06-18)
+
+- **D1 — Zones de tap rectangulaires inaccessibles sur écran circulaire Wear OS** — `fillMaxHeight()` + `fillMaxWidth(0.5f)` génère deux rectangles pleine hauteur. Sur une montre ronde (Pixel Watch), les arcs à 12h et 6h ont une surface de tap quasi nulle. Amélioration UX à adresser dans Story 2.5 ou lors d'un design review Wear OS. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:53-93`]
+- **D2 — `ScoreSideEffect` vide : échecs DataLayer silencieux** — Quand `sendScoreEvent` retourne `AppResult.Error` (téléphone hors portée), seul un `Timber.d` est émis. L'utilisateur ne reçoit aucun retour visuel que les points ne sont pas synchronisés. Envisager un `ScoreSideEffect.SendError` et un snackbar/vibration sur la montre dans une story future. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt:90`]
+- **D3 — `stateFlow.first { }` sans timeout explicite dans les tests** — Si un prédicat n'est jamais satisfait (bug futur dans l'engine), les tests se suspendent jusqu'au timeout implicite de 10s de `runTest`. Utiliser Turbine (`test { awaitItem() }`) ou un `withTimeout` explicite pour des messages d'erreur plus clairs. [`android/wear/src/test/kotlin/com/secondserve/wear/presentation/match/ScoreViewModelTest.kt:64,74,97,114`]
+- **D4 — `MatchScore.completedSets: List<SetResult>` instable pour Compose** — `List<T>` est une interface non-stable ; Compose ne peut pas ignorer les recompositions de `ScoreDisplay` même quand les sets n'ont pas changé. Remplacer par `ImmutableList` (kotlinx.collections.immutable) ou annoter `MatchScore` avec `@Immutable` dans `:domain`. Pré-existant, hors scope Story 2.4. [`android/domain/src/main/kotlin/com/secondserve/domain/model/MatchScore.kt:10`]
+
 ## Deferred from: code review of 2-3-demarrage-de-session-match — Passe 2 (2026-06-18)
 
 - **D8 — `onSessionStarted` ignore le `sessionId` dans `AppNavGraph`** — Le callback fait `popBackStack()` sans transmettre l'ID de session. Story 2.4 devra router vers l'écran score avec cet ID au lieu de revenir à l'accueil. [`android/app/src/main/kotlin/com/secondserve/navigation/AppNavGraph.kt`]

@@ -556,6 +556,16 @@ class ScoreViewModelTest {
 - [x] **Task T-1** — Créer `wear/src/test/kotlin/.../ScoreViewModelTest.kt` avec 6 tests (JUnit 5 + Turbine + MockK)
 - [x] **Task T-2** — Vérifier que `./gradlew :wear:test` passe (Android SDK requis localement — non disponible en remote, tests vérifiés par review de code)
 
+### Review Findings
+
+- [ ] [Review][Decision] `undo()` pas de guard post-fin de match — annuler le dernier point après `isMatchOver = true` rétablit silencieusement un état non-terminé sans notifier le téléphone ; décider si l'undo post-match doit être bloqué ou autorisé
+- [ ] [Review][Patch] Race condition dans `sendScoreEventAsync` — `engine.currentScore` lu en différé dans la coroutine `viewModelScope.launch`, une intention suivante peut muter l'engine avant la lecture ; capturer le snapshot avant le `launch` [ScoreViewModel.kt:72]
+- [ ] [Review][Patch] Dépendance `turbine` déclarée mais inutilisée — les tests utilisent `stateFlow.first {}` au lieu de l'API Turbine ; supprimer ou adopter [wear/build.gradle.kts:70]
+- [x] [Review][Defer] Zones de tap rectangulaires : arcs haut/bas inaccessibles sur écran circulaire Wear OS — `fillMaxHeight()` génère des zones très étroites aux extrémités 12h/6h [ScoreScreen.kt:53-93] — deferred, UX Wear OS, hors scope story 2.4
+- [x] [Review][Defer] `ScoreSideEffect` vide — échecs DataLayer (téléphone hors portée) seulement loggués Timber, aucun retour visuel dans l'UI [ScoreViewModel.kt:90] — deferred, amélioration UX future
+- [x] [Review][Defer] `stateFlow.first { }` sans timeout explicite dans les tests — suspension infinie si le prédicat n'est jamais satisfait (runTest timeout = 10s implicite) [ScoreViewModelTest.kt:64,74,97,114] — deferred, qualité tests
+- [x] [Review][Defer] `MatchScore.completedSets: List<SetResult>` instable pour Compose — `List<T>` interface non-stable force des recompositions inutiles sur Wear OS — deferred, pre-existing, domaine `:domain`
+
 ---
 
 ## Dev Notes
