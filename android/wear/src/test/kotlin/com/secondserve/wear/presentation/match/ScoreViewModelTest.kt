@@ -12,6 +12,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -26,7 +27,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScoreViewModelTest {
 
-    private lateinit var testDispatcher: UnconfinedTestDispatcher
+    private lateinit var testDispatcher: TestDispatcher
     private lateinit var dataLayerClient: DataLayerClient
 
     @BeforeEach
