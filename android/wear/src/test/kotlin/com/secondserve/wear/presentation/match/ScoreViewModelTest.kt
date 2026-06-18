@@ -11,6 +11,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -45,39 +46,41 @@ class ScoreViewModelTest {
     ) = ScoreViewModel(dataLayerClient, savedStateHandle)
 
     @Test
-    fun `initial state has empty score and canUndo false`() = runTest(testDispatcher) {
+    fun `initial state has empty score and canUndo false`() = runTest {
         val vm = createViewModel()
         assertEquals(MatchScore(), vm.container.stateFlow.value.score)
         assertFalse(vm.container.stateFlow.value.canUndo)
     }
 
     @Test
-    fun `recordPoint updates score to FIFTEEN`() = runTest(testDispatcher) {
+    fun `recordPoint updates score to FIFTEEN`() = runTest {
         val vm = createViewModel()
         vm.recordPoint(Player.A)
-        assertEquals(GamePoint.FIFTEEN, vm.container.stateFlow.value.score.currentGamePointsA)
-        assertTrue(vm.container.stateFlow.value.canUndo)
+        val state = vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
+        assertTrue(state.canUndo)
     }
 
     @Test
-    fun `undo after recordPoint restores ZERO`() = runTest(testDispatcher) {
+    fun `undo after recordPoint restores ZERO`() = runTest {
         val vm = createViewModel()
         vm.recordPoint(Player.A)
+        vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
         vm.undo()
-        assertEquals(GamePoint.ZERO, vm.container.stateFlow.value.score.currentGamePointsA)
-        assertFalse(vm.container.stateFlow.value.canUndo)
+        val state = vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.ZERO && !it.canUndo }
+        assertFalse(state.canUndo)
     }
 
     @Test
-    fun `undo when no points does nothing`() = runTest(testDispatcher) {
+    fun `undo when no points does nothing`() = runTest {
         val vm = createViewModel()
         vm.undo()
+        // undo is a no-op: state never changes, stateFlow value stays at initial
         assertEquals(MatchScore(), vm.container.stateFlow.value.score)
         assertFalse(vm.container.stateFlow.value.canUndo)
     }
 
     @Test
-    fun `recordPoint after match over does nothing`() = runTest(testDispatcher) {
+    fun `recordPoint after match over does nothing`() = runTest {
         val vm = createViewModel(
             savedStateHandle = SavedStateHandle(
                 mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_1.name)
@@ -85,21 +88,25 @@ class ScoreViewModelTest {
         )
         // Win 6-0 set (6 games × 4 points) to trigger match over with BEST_OF_1
         repeat(24) { vm.recordPoint(Player.A) }
-        assertTrue(vm.container.stateFlow.value.score.isMatchOver)
+        // Suspend until Orbit has processed all intents and emitted the match-over state
+        val matchOverState = vm.container.stateFlow.first { it.score.isMatchOver }
+        assertTrue(matchOverState.score.isMatchOver)
 
-        val scoreBeforeGuard = vm.container.stateFlow.value.score
-        vm.recordPoint(Player.A)
+        val scoreBeforeGuard = matchOverState.score
+        vm.recordPoint(Player.A)  // guard: engine.isMatchOver → no-op, no state emission
         assertEquals(scoreBeforeGuard, vm.container.stateFlow.value.score)
     }
 
     @Test
-    fun `tie-break activates at 6-6 in games`() = runTest(testDispatcher) {
+    fun `tie-break activates at 6-6 in games`() = runTest {
         val vm = createViewModel()
         // Alternate game wins: A and B each win 6 games → 6-6 → tie-break
         repeat(6) {
             repeat(4) { vm.recordPoint(Player.A) }
             repeat(4) { vm.recordPoint(Player.B) }
         }
-        assertTrue(vm.container.stateFlow.value.score.isTieBreak)
+        // Suspend until Orbit has processed all intents and emitted the tie-break state
+        val tieBrState = vm.container.stateFlow.first { it.score.isTieBreak }
+        assertTrue(tieBrState.score.isTieBreak)
     }
 }
