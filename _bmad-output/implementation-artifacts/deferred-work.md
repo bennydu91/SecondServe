@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of 2-4-suivi-de-score-sur-pixel-watch-point-par-point — Passe 3 (2026-06-18)
+
+- **D10 — Flash bref de `MatchOverScreen` lors de l'annulation de confirmation** — Dans `CancelConfirmScreen.onConfirm`, `showCancelConfirm = false` est positionné synchroniquement avant que l'intent Orbit ait mis à jour `isMatchOver`. Pendant un frame, le `when` affiche `MatchOverScreen` alors que l'écran de confirmation venait d'être fermé. Peu visible en pratique (recomposition rapide). [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:44-53`]
+- **D11 — Long-press undo sémantiquement ambigu sur deux zones** — Un appui long sur la zone B (joueur B) déclenche l'undo du DERNIER point, qu'il soit A ou B. L'utilisateur peut croire annuler spécifiquement un point de B. Pas de retour visuel indiquant quel point est annulé. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:155, 173`]
+- **D12 — Logique comptage des sets dupliquée** — `score.completedSets.count { it.gamesA > it.gamesB }` écrit deux fois dans le même fichier (`MatchOverScreen` et `ScoreDisplay`). À extraire en propriété calculée `MatchScore.setsWonA / setsWonB` dans le domaine pour éviter divergence. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:78, 166`]
+- **D13 — Guard `undo()` sur `isMatchOver` inatteignable depuis l'UI** — Quand `isMatchOver == true`, `MatchOverScreen` est affiché et `ScoreScreenContent` n'est pas rendu. Le `combinedClickable` n'existe pas → `viewModel.undo()` ne peut jamais être appelé via l'UI avec le match terminé. Guard est du dead code défensif (la fonction est publique). [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt:62`]
+
 ## Deferred from: code review of 2-4-suivi-de-score-sur-pixel-watch-point-par-point — Passe 2 (2026-06-18)
 
 - **D5 — `sendScoreEventAsync` livraison hors-ordre** — Plusieurs taps rapides créent plusieurs `viewModelScope.launch` parallèles ; si le réseau est lent, les événements peuvent arriver au téléphone dans le désordre. Par design fire-and-forget, mais un séquençage (canal, queue) serait plus robuste. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt:73-80`]
