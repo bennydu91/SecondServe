@@ -7,6 +7,7 @@ import com.secondserve.domain.model.GamePoint
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.model.Player
+import com.secondserve.domain.model.ThirdSetRule
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -113,5 +114,50 @@ class ScoreViewModelTest {
         // Suspend until Orbit has processed all intents and emitted the tie-break state
         val tieBrState = vm.container.stateFlow.first { it.score.isTieBreak }
         assertTrue(tieBrState.score.isTieBreak)
+    }
+
+    @Test
+    fun `cancelMatchOver restores score after wrong match-ending point`() = runTest {
+        val vm = createViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_1.name)
+            )
+        )
+        repeat(24) { vm.recordPoint(Player.A) }
+        vm.container.stateFlow.first { it.score.isMatchOver }
+
+        vm.cancelMatchOver()
+
+        val state = vm.container.stateFlow.first { !it.score.isMatchOver }
+        assertFalse(state.score.isMatchOver)
+        assertTrue(state.canUndo)
+    }
+
+    @Test
+    fun `super tie-break activates after one set each with SUPER_TIE_BREAK_10 format`() = runTest {
+        val vm = createViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(
+                ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_3.name,
+                ScoreViewModel.ARG_THIRD_SET_RULE to ThirdSetRule.SUPER_TIE_BREAK_10.name
+            ))
+        )
+        // A wins set 1 (6-0 = 24 points), B wins set 2 (6-0 = 24 points)
+        repeat(24) { vm.recordPoint(Player.A) }
+        repeat(24) { vm.recordPoint(Player.B) }
+
+        val state = vm.container.stateFlow.first { it.score.isSuperTieBreak }
+        assertTrue(state.score.isSuperTieBreak)
+    }
+
+    @Test
+    fun `cancelMatchOver is no-op when match is not over`() = runTest {
+        val vm = createViewModel()
+        vm.recordPoint(Player.A)
+        vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
+
+        vm.cancelMatchOver()
+
+        // State unchanged — match not over, cancelMatchOver is a no-op
+        assertEquals(GamePoint.FIFTEEN, vm.container.stateFlow.value.score.currentGamePointsA)
     }
 }

@@ -568,10 +568,10 @@ class ScoreViewModelTest {
 
 ### Review Findings — Passe 2 (2026-06-18)
 
-- [ ] [Review][Decision] `undo()` bloqué après fin de match — le guard `if (engine.currentScore.isMatchOver) return@intent` dans `undo()` empêche toute correction du dernier point saisi par erreur. AC 5 ne restreint pas l'undo aux matchs non terminés. La passe 1 avait décidé d'ajouter ce guard — faut-il le conserver ou le retirer pour autoriser la correction du point final ? [ScoreViewModel.kt:57, ScoreScreen.kt:58,82]
-- [ ] [Review][Patch] Sets masqués pendant le premier set — `if (score.completedSets.isNotEmpty())` conditionnel masque la ligne "Sets" jusqu'au premier set terminé, violant AC 1 ("en permanence") [ScoreScreen.kt:106-113]
-- [ ] [Review][Patch] Aucun test unitaire pour le super tie-break — AC 4 non couvert dans `ScoreViewModelTest` [ScoreViewModelTest.kt]
-- [ ] [Review][Patch] Fallback silencieux pour MatchFormat/ThirdSetRule invalides — `runCatching { }.getOrNull()` swallow l'exception sans log Timber ; l'utilisateur joue dans le mauvais format sans indication [ScoreViewModel.kt:30-37]
+- [x] [Review][Decision→Patch] `undo()` bloqué après fin de match — résolu : `cancelMatchOver()` dédié dans le ViewModel + `MatchOverScreen` avec bouton "Annuler la fin" + `CancelConfirmScreen` (confirmation plein écran Wear OS). Guard `isMatchOver` conservé dans `undo()`. [ScoreViewModel.kt:71-85, ScoreScreen.kt:44-112]
+- [x] [Review][Patch] Sets masqués pendant le premier set — corrigé : ligne "Sets : 0 — 0" toujours affichée dans `ScoreDisplay` [ScoreScreen.kt:172-177]
+- [x] [Review][Patch] Aucun test unitaire pour le super tie-break — ajouté `super tie-break activates after one set each with SUPER_TIE_BREAK_10 format` [ScoreViewModelTest.kt]
+- [x] [Review][Patch] Fallback silencieux pour MatchFormat/ThirdSetRule invalides — corrigé : `Timber.w` logué sur exception [ScoreViewModel.kt:30-41]
 - [x] [Review][Defer] `sendScoreEventAsync` — livraison hors-ordre possible si réseau lent (plusieurs intents rapides, fire-and-forget par design) [ScoreViewModel.kt:73-80] — deferred, limitation fire-and-forget assumée
 - [x] [Review][Defer] `pointCount` pourrait diverger de `engine.history` si l'historique est borné dans un futur refactor [ScoreViewModel.kt:40] — deferred, théorique
 - [x] [Review][Defer] `ScoreDisplay` affiche `0 — 0` (jeux) pendant le super tie-break — correct techniquement (nouveau set vide), confusant visuellement [ScoreScreen.kt:116-120] — deferred, UX

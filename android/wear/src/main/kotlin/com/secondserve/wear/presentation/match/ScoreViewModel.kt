@@ -26,12 +26,20 @@ class ScoreViewModel @Inject constructor(
 
     private val matchFormat: MatchFormat = savedStateHandle
         .get<String>(ARG_MATCH_FORMAT)
-        ?.let { runCatching { MatchFormat.valueOf(it) }.getOrNull() }
+        ?.let { raw ->
+            runCatching { MatchFormat.valueOf(raw) }
+                .onFailure { Timber.w("ScoreViewModel: invalid matchFormat '%s', using BEST_OF_3", raw) }
+                .getOrNull()
+        }
         ?: MatchFormat.BEST_OF_3
 
     private val thirdSetRule: ThirdSetRule = savedStateHandle
         .get<String>(ARG_THIRD_SET_RULE)
-        ?.let { runCatching { ThirdSetRule.valueOf(it) }.getOrNull() }
+        ?.let { raw ->
+            runCatching { ThirdSetRule.valueOf(raw) }
+                .onFailure { Timber.w("ScoreViewModel: invalid thirdSetRule '%s', using FULL_ADVANTAGE", raw) }
+                .getOrNull()
+        }
         ?: ThirdSetRule.FULL_ADVANTAGE
 
     private val engine = TennisScoreEngine(SessionFormat(matchFormat, thirdSetRule))
@@ -54,6 +62,24 @@ class ScoreViewModel @Inject constructor(
     fun undo() = intent {
         if (engine.currentScore.isMatchOver) return@intent
         if (pointCount <= 0) return@intent
+        val undone = engine.undo()
+        if (undone) {
+            pointCount--
+            val snapshot = engine.currentScore
+            reduce {
+                state.copy(
+                    score = snapshot,
+                    canUndo = pointCount > 0
+                )
+            }
+            sendScoreEvent(snapshot)
+        }
+    }
+
+    // Annule le point final ayant déclenché la fin du match (action explicite avec confirmation UI).
+    // Distinct de undo() qui est réservé aux points en cours de match.
+    fun cancelMatchOver() = intent {
+        if (!engine.currentScore.isMatchOver) return@intent
         val undone = engine.undo()
         if (undone) {
             pointCount--
