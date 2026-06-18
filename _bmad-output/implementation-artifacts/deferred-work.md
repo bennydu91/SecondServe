@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 2-4-suivi-de-score-sur-pixel-watch-point-par-point — Passe 2 (2026-06-18)
+
+- **D5 — `sendScoreEventAsync` livraison hors-ordre** — Plusieurs taps rapides créent plusieurs `viewModelScope.launch` parallèles ; si le réseau est lent, les événements peuvent arriver au téléphone dans le désordre. Par design fire-and-forget, mais un séquençage (canal, queue) serait plus robuste. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt:73-80`]
+- **D6 — `pointCount` divergence théorique** — Si l'engine bornait son historique dans un futur refactor, `engine.undo()` retournerait `false` alors que `pointCount > 0`, laissant `canUndo = true` en permanence. Non bloquant avec l'implémentation actuelle (historique illimité). [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt:40`]
+- **D7 — `ScoreDisplay` affiche `0 — 0` (jeux) pendant le super tie-break** — Après le démarrage du super tie-break, `currentSetGamesA/B` sont reset à 0. La ligne jeux affiche `0 — 0` alors que le super tie-break est en cours, ce qui peut être confusant. Amélioration UX future. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:116-120`]
+- **D8 — Aucun test d'undo traversant une frontière tie-break** — `ScoreViewModelTest` ne couvre pas l'undo après un jeu de tie-break ou immédiatement après que le tie-break a commencé. Régression possible si `pointCount` accounting est modifié. [`android/wear/src/test/kotlin/com/secondserve/wear/presentation/match/ScoreViewModelTest.kt`]
+- **D9 — Strings UI en dur (pas de string resources)** — `"Fin du match"`, `"Tie-break"`, `"Super TB"`, `"Sets :"`, `"Ég."`, `"Avt"` sont en dur. Pré-existant, hors scope story 2.4. À externaliser dans `strings.xml` lors d'un sprint d'internationalisation. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:133-147`]
+
 ## Deferred from: code review of 2-4-suivi-de-score-sur-pixel-watch-point-par-point (2026-06-18)
 
 - **D1 — Zones de tap rectangulaires inaccessibles sur écran circulaire Wear OS** — `fillMaxHeight()` + `fillMaxWidth(0.5f)` génère deux rectangles pleine hauteur. Sur une montre ronde (Pixel Watch), les arcs à 12h et 6h ont une surface de tap quasi nulle. Amélioration UX à adresser dans Story 2.5 ou lors d'un design review Wear OS. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:53-93`]

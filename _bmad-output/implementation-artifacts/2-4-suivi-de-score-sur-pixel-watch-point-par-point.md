@@ -566,6 +566,18 @@ class ScoreViewModelTest {
 - [x] [Review][Defer] `stateFlow.first { }` sans timeout explicite dans les tests — suspension infinie si le prédicat n'est jamais satisfait (runTest timeout = 10s implicite) [ScoreViewModelTest.kt:64,74,97,114] — deferred, qualité tests
 - [x] [Review][Defer] `MatchScore.completedSets: List<SetResult>` instable pour Compose — `List<T>` interface non-stable force des recompositions inutiles sur Wear OS — deferred, pre-existing, domaine `:domain`
 
+### Review Findings — Passe 2 (2026-06-18)
+
+- [ ] [Review][Decision] `undo()` bloqué après fin de match — le guard `if (engine.currentScore.isMatchOver) return@intent` dans `undo()` empêche toute correction du dernier point saisi par erreur. AC 5 ne restreint pas l'undo aux matchs non terminés. La passe 1 avait décidé d'ajouter ce guard — faut-il le conserver ou le retirer pour autoriser la correction du point final ? [ScoreViewModel.kt:57, ScoreScreen.kt:58,82]
+- [ ] [Review][Patch] Sets masqués pendant le premier set — `if (score.completedSets.isNotEmpty())` conditionnel masque la ligne "Sets" jusqu'au premier set terminé, violant AC 1 ("en permanence") [ScoreScreen.kt:106-113]
+- [ ] [Review][Patch] Aucun test unitaire pour le super tie-break — AC 4 non couvert dans `ScoreViewModelTest` [ScoreViewModelTest.kt]
+- [ ] [Review][Patch] Fallback silencieux pour MatchFormat/ThirdSetRule invalides — `runCatching { }.getOrNull()` swallow l'exception sans log Timber ; l'utilisateur joue dans le mauvais format sans indication [ScoreViewModel.kt:30-37]
+- [x] [Review][Defer] `sendScoreEventAsync` — livraison hors-ordre possible si réseau lent (plusieurs intents rapides, fire-and-forget par design) [ScoreViewModel.kt:73-80] — deferred, limitation fire-and-forget assumée
+- [x] [Review][Defer] `pointCount` pourrait diverger de `engine.history` si l'historique est borné dans un futur refactor [ScoreViewModel.kt:40] — deferred, théorique
+- [x] [Review][Defer] `ScoreDisplay` affiche `0 — 0` (jeux) pendant le super tie-break — correct techniquement (nouveau set vide), confusant visuellement [ScoreScreen.kt:116-120] — deferred, UX
+- [x] [Review][Defer] Aucun test d'undo traversant une frontière tie-break au niveau ViewModel [ScoreViewModelTest.kt] — deferred, couverture complémentaire
+- [x] [Review][Defer] Strings UI en dur (pas de string resources Android) — pré-existant, hors scope story 2.4 [ScoreScreen.kt:133-147] — deferred, pré-existant
+
 ---
 
 ## Dev Notes
