@@ -1,5 +1,15 @@
 # Deferred Work
 
+## Deferred from: code review of 2-3-demarrage-de-session-match (2026-06-18)
+
+- **D1 — `OnConflictStrategy.REPLACE` sur `SessionDao.insert()`** — Risque de DELETE silencieux si un `id > 0` est passé (future sync path). Remplacer par `ABORT` ou utiliser `@Update` pour les updates. [`android/data/src/main/kotlin/com/secondserve/data/local/dao/SessionDao.kt`]
+- **D2 — Backend sans scoping utilisateur** — Pas de FK `user_id` sur `sessions`. App mono-utilisateur pour l'instant, à adresser si multi-tenant requis.
+- **D3 — `third_set_rule` requis dans `SessionCreateRequest` même pour `BEST_OF_1`** — Le client Android envoie toujours FULL_ADVANTAGE, donc pas de rupture. À rendre optionnel lorsque le backend prend en charge plusieurs clients. [`backend/app/features/sessions/schemas.py`]
+- **D4 — `created_at` client non validé côté serveur** — Timestamp epoch ms envoyé par le client sans bornage. À valider/sanitizer si l'API est exposée à des clients tiers. [`backend/app/features/sessions/repository.py`]
+- **D5 — `SessionsResponse` défini mais inutilisé** — Schema Pydantic créé en anticipation du GET /sessions. Sera utilisé dans une story future. [`backend/app/features/sessions/schemas.py`]
+- **D6 — Locale incohérente dans les logs Timber** — Messages de log en français/anglais mélangés. Cosmétique. [`android/data/src/main/kotlin/com/secondserve/data/repository/SessionRepositoryImpl.kt`]
+- **D7 — AC3 (historique sessions) non exposé à l'utilisateur** — `getAllSessions()` existe mais aucun écran historique n'est implémenté. Story 2.6+ à planifier.
+
 ## Deferred from: code review of 2-2-datalayer-bridge-watch-phone — Passe 2 (2026-06-17)
 
 - **D1 — `ScoreRepositoryImpl` instancié inutilement dans le process Watch** — `ScoreModule` est dans `:data` qui est maintenant dépendance de `:wear`. Le Hilt graph Watch crée `ScoreRepositoryImpl` même si la Watch n'utilise que `DataLayerClient`. Pas de bug runtime (lazily constructed), mais confusant. Envisager un qualifier `@PhoneOnly` ou déplacer `ScoreModule` dans `:app`. [`ScoreModule.kt`]
