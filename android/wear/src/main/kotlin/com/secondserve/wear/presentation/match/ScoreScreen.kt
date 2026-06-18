@@ -55,7 +55,7 @@ private fun ScoreScreenContent(
                 .align(Alignment.CenterStart)
                 .combinedClickable(
                     onClick = { if (!state.score.isMatchOver) onPointA() },
-                    onLongClick = { if (state.canUndo) onUndo() }
+                    onLongClick = { if (state.canUndo && !state.score.isMatchOver) onUndo() }
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -79,7 +79,7 @@ private fun ScoreScreenContent(
                 .align(Alignment.CenterEnd)
                 .combinedClickable(
                     onClick = { if (!state.score.isMatchOver) onPointB() },
-                    onLongClick = { if (state.canUndo) onUndo() }
+                    onLongClick = { if (state.canUndo && !state.score.isMatchOver) onUndo() }
                 ),
             contentAlignment = Alignment.Center
         ) {

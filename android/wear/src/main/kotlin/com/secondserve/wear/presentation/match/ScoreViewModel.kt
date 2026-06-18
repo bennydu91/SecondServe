@@ -43,33 +43,36 @@ class ScoreViewModel @Inject constructor(
         if (engine.currentScore.isMatchOver) return@intent
         engine.recordPoint(scorer)
         pointCount++
+        val snapshot = engine.currentScore
         reduce {
             state.copy(
-                score = engine.currentScore,
+                score = snapshot,
                 canUndo = pointCount > 0
             )
         }
-        sendScoreEventAsync()
+        sendScoreEventAsync(snapshot)
     }
 
     fun undo() = intent {
+        if (engine.currentScore.isMatchOver) return@intent
         if (pointCount <= 0) return@intent
         val undone = engine.undo()
         if (undone) {
             pointCount--
+            val snapshot = engine.currentScore
             reduce {
                 state.copy(
-                    score = engine.currentScore,
+                    score = snapshot,
                     canUndo = pointCount > 0
                 )
             }
-            sendScoreEventAsync()
+            sendScoreEventAsync(snapshot)
         }
     }
 
-    private fun sendScoreEventAsync() {
+    private fun sendScoreEventAsync(score: MatchScore) {
         viewModelScope.launch {
-            val result = dataLayerClient.sendScoreEvent(engine.currentScore)
+            val result = dataLayerClient.sendScoreEvent(score)
             if (result is AppResult.Error) {
                 Timber.d("ScoreViewModel: sendScoreEvent failed — %s", result.exception.message)
             }

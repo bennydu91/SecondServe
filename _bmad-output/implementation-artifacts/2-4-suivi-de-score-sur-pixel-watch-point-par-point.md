@@ -4,7 +4,7 @@ baseline_commit: 64e17908904278548c3c972ee149d51be553a06e
 
 # Story 2.4 : Suivi de score sur Pixel Watch — Point par point
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -558,9 +558,9 @@ class ScoreViewModelTest {
 
 ### Review Findings
 
-- [ ] [Review][Decision] `undo()` pas de guard post-fin de match — annuler le dernier point après `isMatchOver = true` rétablit silencieusement un état non-terminé sans notifier le téléphone ; décider si l'undo post-match doit être bloqué ou autorisé
-- [ ] [Review][Patch] Race condition dans `sendScoreEventAsync` — `engine.currentScore` lu en différé dans la coroutine `viewModelScope.launch`, une intention suivante peut muter l'engine avant la lecture ; capturer le snapshot avant le `launch` [ScoreViewModel.kt:72]
-- [ ] [Review][Patch] Dépendance `turbine` déclarée mais inutilisée — les tests utilisent `stateFlow.first {}` au lieu de l'API Turbine ; supprimer ou adopter [wear/build.gradle.kts:70]
+- [x] [Review][Decision→Patch] `undo()` guard post-fin de match ajouté — `if (engine.currentScore.isMatchOver) return@intent` + `!state.score.isMatchOver` dans le long press UI [ScoreViewModel.kt:56, ScoreScreen.kt:58,83]
+- [x] [Review][Patch] Race condition `sendScoreEventAsync` corrigée — snapshot capturé avant `viewModelScope.launch`, passé en paramètre [ScoreViewModel.kt:50,62]
+- [x] [Review][Patch] Dépendance `turbine` supprimée [wear/build.gradle.kts]
 - [x] [Review][Defer] Zones de tap rectangulaires : arcs haut/bas inaccessibles sur écran circulaire Wear OS — `fillMaxHeight()` génère des zones très étroites aux extrémités 12h/6h [ScoreScreen.kt:53-93] — deferred, UX Wear OS, hors scope story 2.4
 - [x] [Review][Defer] `ScoreSideEffect` vide — échecs DataLayer (téléphone hors portée) seulement loggués Timber, aucun retour visuel dans l'UI [ScoreViewModel.kt:90] — deferred, amélioration UX future
 - [x] [Review][Defer] `stateFlow.first { }` sans timeout explicite dans les tests — suspension infinie si le prédicat n'est jamais satisfait (runTest timeout = 10s implicite) [ScoreViewModelTest.kt:64,74,97,114] — deferred, qualité tests
