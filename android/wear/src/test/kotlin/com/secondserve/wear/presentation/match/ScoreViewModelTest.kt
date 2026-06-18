@@ -45,14 +45,14 @@ class ScoreViewModelTest {
     ) = ScoreViewModel(dataLayerClient, savedStateHandle)
 
     @Test
-    fun `initial state has empty score and canUndo false`() = runTest {
+    fun `initial state has empty score and canUndo false`() = runTest(testDispatcher) {
         val vm = createViewModel()
         assertEquals(MatchScore(), vm.container.stateFlow.value.score)
         assertFalse(vm.container.stateFlow.value.canUndo)
     }
 
     @Test
-    fun `recordPoint updates score to FIFTEEN`() = runTest {
+    fun `recordPoint updates score to FIFTEEN`() = runTest(testDispatcher) {
         val vm = createViewModel()
         vm.recordPoint(Player.A)
         assertEquals(GamePoint.FIFTEEN, vm.container.stateFlow.value.score.currentGamePointsA)
@@ -60,7 +60,7 @@ class ScoreViewModelTest {
     }
 
     @Test
-    fun `undo after recordPoint restores ZERO`() = runTest {
+    fun `undo after recordPoint restores ZERO`() = runTest(testDispatcher) {
         val vm = createViewModel()
         vm.recordPoint(Player.A)
         vm.undo()
@@ -69,7 +69,7 @@ class ScoreViewModelTest {
     }
 
     @Test
-    fun `undo when no points does nothing`() = runTest {
+    fun `undo when no points does nothing`() = runTest(testDispatcher) {
         val vm = createViewModel()
         vm.undo()
         assertEquals(MatchScore(), vm.container.stateFlow.value.score)
@@ -77,7 +77,7 @@ class ScoreViewModelTest {
     }
 
     @Test
-    fun `recordPoint after match over does nothing`() = runTest {
+    fun `recordPoint after match over does nothing`() = runTest(testDispatcher) {
         val vm = createViewModel(
             savedStateHandle = SavedStateHandle(
                 mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_1.name)
@@ -93,7 +93,7 @@ class ScoreViewModelTest {
     }
 
     @Test
-    fun `tie-break activates at 6-6 in games`() = runTest {
+    fun `tie-break activates at 6-6 in games`() = runTest(testDispatcher) {
         val vm = createViewModel()
         // Alternate game wins: A and B each win 6 games → 6-6 → tie-break
         repeat(6) {
