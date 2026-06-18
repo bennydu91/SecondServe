@@ -31,6 +31,11 @@ android {
         compose = true
         buildConfig = true
     }
+
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 dependencies {
@@ -42,11 +47,26 @@ dependencies {
     implementation(libs.wear.compose.material3)
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.navigation)
+    implementation(libs.compose.foundation)
+    implementation(libs.lifecycle.runtime.compose)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+    implementation(libs.orbit.core)
+    implementation(libs.orbit.viewmodel)
+    implementation(libs.orbit.compose)
 
     implementation(libs.coroutines.android)
     implementation(libs.timber)
     implementation(libs.wearable)
+
+    testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(kotlin("test"))
 }
