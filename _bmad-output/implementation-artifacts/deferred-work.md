@@ -1,5 +1,14 @@
 # Deferred Work
 
+## Deferred from: code review of 2-5-detection-changement-de-cote-game-over-automatique (2026-06-19)
+
+- **Pas de test vérifiant que `sendGameOver` n'est PAS appelé lors d'un `undo()`** — Coverage gap : si `undo()` était accidentellement modifié pour appeler `sendGameOver`, aucun test ne l'attraperait. [`android/wear/src/test/.../ScoreViewModelTest.kt`]
+- **Pas de test vérifiant que `sendGameOver` n'est PAS appelé lors d'un `MatchOver`** — Le comportement won't-fix est documenté dans la spec mais non asserté en test. [`android/wear/src/test/.../ScoreViewModelTest.kt`]
+- **Pas de test pour le scénario tie-break 7-6 (`SetWon` changeover via `awardTieBreakGame`)** — Chemin `awardTieBreakGame` → `awardSet` → `SetWon(changeover=true)` non couvert par les tests ViewModel. [`android/wear/src/test/.../ScoreViewModelTest.kt`]
+- **`else -> false` dans le `when` de détection changeover supprime la sécurité exhaustive de Kotlin sur sealed class** — Si un nouveau `EngineEvent` est ajouté, la branche `else` l'absorbe silencieusement au lieu d'une erreur de compilation. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`]
+- **`EngineEvent.isChangeover()` non extrait en extension function** — La spec prescrit `private fun EngineEvent.isChangeover(): Boolean` ; l'implémentation utilise `val changeover = when(event) { ... }` inline. Fonctionnellement équivalent mais moins réutilisable. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`]
+- **Pas de test pour le chemin erreur `sendGameOver` (`AppResult.Error`)** — Même gap que `sendScoreEvent` (pré-existant). Silently swallowed avec `Timber.d`. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`]
+
 ## Deferred from: code review of 2-4-suivi-de-score-sur-pixel-watch-point-par-point — Passe 3 (2026-06-18)
 
 - **D10 — Flash bref de `MatchOverScreen` lors de l'annulation de confirmation** — Dans `CancelConfirmScreen.onConfirm`, `showCancelConfirm = false` est positionné synchroniquement avant que l'intent Orbit ait mis à jour `isMatchOver`. Pendant un frame, le `when` affiche `MatchOverScreen` alors que l'écran de confirmation venait d'être fermé. Peu visible en pratique (recomposition rapide). [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreScreen.kt:44-53`]
