@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.engine.EngineEvent
 import com.secondserve.domain.engine.TennisScoreEngine
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.MatchScore
@@ -49,7 +50,12 @@ class ScoreViewModel @Inject constructor(
 
     fun recordPoint(scorer: Player) = intent {
         if (engine.currentScore.isMatchOver) return@intent
-        engine.recordPoint(scorer)
+        val event = engine.recordPoint(scorer)
+        val changeover = when (event) {
+            is EngineEvent.GameWon -> event.changeover
+            is EngineEvent.SetWon -> event.changeover
+            else -> false
+        }
         pointCount++
         val snapshot = engine.currentScore
         reduce {
@@ -59,6 +65,7 @@ class ScoreViewModel @Inject constructor(
             )
         }
         viewModelScope.launch { sendScoreEvent(snapshot) }
+        if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
     }
 
     fun undo() = intent {
@@ -100,6 +107,13 @@ class ScoreViewModel @Inject constructor(
         val result = dataLayerClient.sendScoreEvent(score)
         if (result is AppResult.Error) {
             Timber.d("ScoreViewModel: sendScoreEvent failed — %s", result.exception.message)
+        }
+    }
+
+    private suspend fun sendGameOver(score: MatchScore) {
+        val result = dataLayerClient.sendGameOver(score)
+        if (result is AppResult.Error) {
+            Timber.d("ScoreViewModel: sendGameOver failed — %s", result.exception.message)
         }
     }
 
