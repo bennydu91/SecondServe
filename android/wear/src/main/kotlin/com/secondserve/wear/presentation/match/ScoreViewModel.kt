@@ -51,6 +51,11 @@ class ScoreViewModel @Inject constructor(
     fun recordPoint(scorer: Player) = intent {
         if (engine.currentScore.isMatchOver) return@intent
         val event = engine.recordPoint(scorer)
+        val changeover = when (event) {
+            is EngineEvent.GameWon -> event.changeover
+            is EngineEvent.SetWon -> event.changeover
+            else -> false
+        }
         pointCount++
         val snapshot = engine.currentScore
         reduce {
@@ -60,7 +65,7 @@ class ScoreViewModel @Inject constructor(
             )
         }
         viewModelScope.launch { sendScoreEvent(snapshot) }
-        if (event.isChangeover()) viewModelScope.launch { sendGameOver(snapshot) }
+        if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
     }
 
     fun undo() = intent {
@@ -96,12 +101,6 @@ class ScoreViewModel @Inject constructor(
             }
             viewModelScope.launch { sendScoreEvent(snapshot) }
         }
-    }
-
-    private fun EngineEvent.isChangeover(): Boolean = when (this) {
-        is EngineEvent.GameWon -> changeover
-        is EngineEvent.SetWon -> changeover
-        else -> false
     }
 
     private suspend fun sendScoreEvent(score: MatchScore) {

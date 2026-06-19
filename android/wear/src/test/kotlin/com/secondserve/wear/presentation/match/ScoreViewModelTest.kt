@@ -196,6 +196,7 @@ class ScoreViewModelTest {
         // A wins game 1 (1-0, total=1, odd → changeover) then game 2 (2-0, total=2, even → no changeover)
         repeat(4) { vm.recordPoint(Player.A) } // game 1 → changeover
         repeat(4) { vm.recordPoint(Player.A) } // game 2 → no changeover
+        vm.container.stateFlow.first { it.score.currentSetGamesA == 2 }
         testDispatcher.scheduler.advanceUntilIdle()
 
         // sendGameOver ne doit être appelé qu'UNE seule fois (jeu 1 uniquement)
@@ -207,6 +208,7 @@ class ScoreViewModelTest {
         val vm = createViewModel()
         // A wins game 1 at love → changeover → sendGameOver avec score 1-0
         repeat(4) { vm.recordPoint(Player.A) }
+        vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify {
