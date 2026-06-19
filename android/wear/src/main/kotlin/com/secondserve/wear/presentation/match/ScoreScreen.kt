@@ -95,7 +95,7 @@ private fun MatchOverScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 8.dp)
         ) {
-            Text("Annuler la fin", fontSize = 11.sp)
+            Text("Annuler le dernier point", fontSize = 11.sp)
         }
     }
 }

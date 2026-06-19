@@ -9,6 +9,7 @@ import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.model.Player
 import com.secondserve.domain.model.ThirdSetRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -92,7 +93,7 @@ class ScoreViewModelTest {
                 mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_1.name)
             )
         )
-        // Win 6-0 set (6 games × 4 points) to trigger match over with BEST_OF_1
+        // 24 = 6 games × 4 points at love (only A scores → no deuce possible)
         repeat(24) { vm.recordPoint(Player.A) }
         // Suspend until Orbit has processed all intents and emitted the match-over state
         val matchOverState = vm.container.stateFlow.first { it.score.isMatchOver }
@@ -123,6 +124,7 @@ class ScoreViewModelTest {
                 mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_1.name)
             )
         )
+        // 24 = 6 games × 4 points at love (only A scores → no deuce possible)
         repeat(24) { vm.recordPoint(Player.A) }
         vm.container.stateFlow.first { it.score.isMatchOver }
 
@@ -141,12 +143,27 @@ class ScoreViewModelTest {
                 ScoreViewModel.ARG_THIRD_SET_RULE to ThirdSetRule.SUPER_TIE_BREAK_10.name
             ))
         )
-        // A wins set 1 (6-0 = 24 points), B wins set 2 (6-0 = 24 points)
-        repeat(24) { vm.recordPoint(Player.A) }
-        repeat(24) { vm.recordPoint(Player.B) }
+        // 24 = 6 games × 4 points at love per set (single scorer per block → no deuce)
+        repeat(24) { vm.recordPoint(Player.A) } // set 1 → A wins 6-0
+        repeat(24) { vm.recordPoint(Player.B) } // set 2 → B wins 6-0 → super tie-break
 
         val state = vm.container.stateFlow.first { it.score.isSuperTieBreak }
         assertTrue(state.score.isSuperTieBreak)
+    }
+
+    @Test
+    fun `undo sends corrected score_event to DataLayer (AC 5)`() = runTest {
+        val vm = createViewModel()
+        vm.recordPoint(Player.A)
+        vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
+
+        vm.undo()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // sendScoreEvent must be called twice: once after recordPoint, once after undo
+        coVerify(exactly = 2) { dataLayerClient.sendScoreEvent(any()) }
+        // And the second call carries the corrected (restored) score
+        coVerify { dataLayerClient.sendScoreEvent(match { it.currentGamePointsA == GamePoint.ZERO }) }
     }
 
     @Test

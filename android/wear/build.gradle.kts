@@ -56,7 +56,6 @@ dependencies {
 
     implementation(libs.orbit.core)
     implementation(libs.orbit.viewmodel)
-    implementation(libs.orbit.compose)
 
     implementation(libs.coroutines.android)
     implementation(libs.timber)
