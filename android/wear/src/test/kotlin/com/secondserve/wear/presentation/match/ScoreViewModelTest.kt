@@ -149,6 +149,7 @@ class ScoreViewModelTest {
         repeat(24) { vm.recordPoint(Player.B) } // set 2 → B wins 6-0 → super tie-break
 
         val state = vm.container.stateFlow.first { it.score.isSuperTieBreak }
+        testDispatcher.scheduler.advanceUntilIdle()
         assertTrue(state.score.isSuperTieBreak)
     }
 
