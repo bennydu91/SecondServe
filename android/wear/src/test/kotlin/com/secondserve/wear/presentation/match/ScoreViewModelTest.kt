@@ -159,6 +159,7 @@ class ScoreViewModelTest {
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
 
         vm.undo()
+        vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.ZERO && !it.canUndo }
         testDispatcher.scheduler.advanceUntilIdle()
 
         // sendScoreEvent must be called twice: once after recordPoint, once after undo
@@ -184,12 +185,7 @@ class ScoreViewModelTest {
         val vm = createViewModel()
         // A wins game 1 (love game: 4 points A at love → game 1-0, total=1, odd → changeover)
         repeat(4) { vm.recordPoint(Player.A) }
-        // One extra intent as barrier: Orbit is sequential, so the game-2 point-1 intent only starts
-        // after the game-1 intent fully completes (including viewModelScope.launch { sendGameOver }).
-        vm.recordPoint(Player.A)
-        vm.container.stateFlow.first {
-            it.score.currentSetGamesA == 1 && it.score.currentGamePointsA == GamePoint.FIFTEEN
-        }
+        vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { dataLayerClient.sendGameOver(any()) }
