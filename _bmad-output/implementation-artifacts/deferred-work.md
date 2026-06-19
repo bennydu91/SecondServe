@@ -1,5 +1,11 @@
 # Deferred Work
 
+## Deferred from: code review of 2-5-detection-changement-de-cote-game-over-automatique — Passe 2 (2026-06-19)
+
+- **`else -> false` supprime l'exhaustivité Kotlin sur sealed class** — Tout nouveau sous-type d'`EngineEvent` sera silencieusement absorbé sans erreur de compilation. Confirmé deferred depuis passe 1. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`]
+- **`isChangeover()` non extrait en extension function** — Logique inlinée comme `val changeover = when(event)` au lieu de `private fun EngineEvent.isChangeover(): Boolean`. Confirmé deferred depuis passe 1. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`]
+- **Pas de test `sendGameOver NOT called on undo/MatchOver`** — Coverage gap confirmé depuis passe 1. [`android/wear/src/test/.../ScoreViewModelTest.kt`]
+
 ## Deferred from: code review of 2-5-detection-changement-de-cote-game-over-automatique (2026-06-19)
 
 - **Pas de test vérifiant que `sendGameOver` n'est PAS appelé lors d'un `undo()`** — Coverage gap : si `undo()` était accidentellement modifié pour appeler `sendGameOver`, aucun test ne l'attraperait. [`android/wear/src/test/.../ScoreViewModelTest.kt`]
