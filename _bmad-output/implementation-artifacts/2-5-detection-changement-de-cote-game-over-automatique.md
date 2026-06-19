@@ -4,7 +4,7 @@ baseline_commit: e9f821e
 
 # Story 2.5 : Détection changement de côté & game_over automatique
 
-**Status:** review
+**Status:** done
 
 ## Story
 
@@ -235,8 +235,8 @@ fun `game_over sent when set ends with odd total games (SetWon changeover)`() = 
 
 ### Review Findings
 
-- [ ] [Review][Patch] `reduce {}` placé APRÈS les `viewModelScope.launch {}` dans `recordPoint()` — inversion par rapport à la spec et au guardrail Story 2.4 [`ScoreViewModel.kt:recordPoint()`]
-- [ ] [Review][Patch] `viewModelScope.launch { sendScoreEvent }` déplacé avant `reduce {}` dans `undo()` et `cancelMatchOver()` — changement hors scope Story 2.5, inversion du pattern approuvé lors des reviews précédentes [`ScoreViewModel.kt:undo()`, `cancelMatchOver()`]
+- [x] [Review][Patch] `reduce {}` placé APRÈS les `viewModelScope.launch {}` dans `recordPoint()` — inversion par rapport à la spec et au guardrail Story 2.4 [`ScoreViewModel.kt:recordPoint()`]
+- [x] [Review][Patch] `viewModelScope.launch { sendScoreEvent }` déplacé avant `reduce {}` dans `undo()` et `cancelMatchOver()` — changement hors scope Story 2.5, inversion du pattern approuvé lors des reviews précédentes [`ScoreViewModel.kt:undo()`, `cancelMatchOver()`]
 - [x] [Review][Defer] Pas de test vérifiant que `sendGameOver` n'est PAS appelé lors d'un `undo()` [`ScoreViewModelTest.kt`] — deferred, pre-existing
 - [x] [Review][Defer] Pas de test vérifiant que `sendGameOver` n'est PAS appelé lors d'un `MatchOver` [`ScoreViewModelTest.kt`] — deferred, pre-existing
 - [x] [Review][Defer] Pas de test pour le scénario tie-break 7-6 (`SetWon` changeover via `awardTieBreakGame`) [`ScoreViewModelTest.kt`] — deferred, pre-existing

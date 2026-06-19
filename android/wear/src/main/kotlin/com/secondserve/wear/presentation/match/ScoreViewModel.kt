@@ -58,14 +58,14 @@ class ScoreViewModel @Inject constructor(
         }
         pointCount++
         val snapshot = engine.currentScore
-        viewModelScope.launch { sendScoreEvent(snapshot) }
-        if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
         reduce {
             state.copy(
                 score = snapshot,
                 canUndo = pointCount > 0
             )
         }
+        viewModelScope.launch { sendScoreEvent(snapshot) }
+        if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
     }
 
     fun undo() = intent {
@@ -75,13 +75,13 @@ class ScoreViewModel @Inject constructor(
         if (undone) {
             pointCount--
             val snapshot = engine.currentScore
-            viewModelScope.launch { sendScoreEvent(snapshot) }
             reduce {
                 state.copy(
                     score = snapshot,
                     canUndo = pointCount > 0
                 )
             }
+            viewModelScope.launch { sendScoreEvent(snapshot) }
         }
     }
 
@@ -93,13 +93,13 @@ class ScoreViewModel @Inject constructor(
         if (undone) {
             pointCount--
             val snapshot = engine.currentScore
-            viewModelScope.launch { sendScoreEvent(snapshot) }
             reduce {
                 state.copy(
                     score = snapshot,
                     canUndo = pointCount > 0
                 )
             }
+            viewModelScope.launch { sendScoreEvent(snapshot) }
         }
     }
 
