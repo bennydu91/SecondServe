@@ -249,6 +249,10 @@ class ScoreViewModelTest {
         repeat(4) { vm.recordPoint(Player.A) } // game 6 (5-1, total=6 → no changeover)
         repeat(4) { vm.recordPoint(Player.A) } // game 7 → A wins 6-1, SetWon (total=7 → changeover)
         vm.container.stateFlow.first { it.score.completedSets.isNotEmpty() }
+        // stateFlow.first{} resumes when reduce{} completes, but Orbit's Default thread may not
+        // have yet dispatched viewModelScope.launch{sendGameOver} for the set-winning game.
+        // Same root cause as tearDown — give the thread time to post before draining.
+        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Jeux avec changeover (total impair): 1, 3, 5, 7 → 4 game_over
