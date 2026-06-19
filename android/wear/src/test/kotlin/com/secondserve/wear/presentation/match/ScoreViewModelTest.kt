@@ -16,8 +16,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetDefault
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setDefault
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -36,6 +38,7 @@ class ScoreViewModelTest {
     fun setup() {
         testDispatcher = UnconfinedTestDispatcher()
         Dispatchers.setMain(testDispatcher)
+        Dispatchers.setDefault(testDispatcher)
         dataLayerClient = mockk()
         coEvery { dataLayerClient.sendScoreEvent(any()) } returns AppResult.Success(Unit)
         coEvery { dataLayerClient.sendGameOver(any()) } returns AppResult.Success(Unit)
@@ -43,9 +46,8 @@ class ScoreViewModelTest {
 
     @AfterEach
     fun tearDown() {
-        // Drain all pending coroutines (Orbit internals + sendScoreEventAsync) before
-        // resetting Main — prevents them from failing on a real dispatcher without a Looper.
         testDispatcher.scheduler.advanceUntilIdle()
+        Dispatchers.resetDefault()
         Dispatchers.resetMain()
     }
 
