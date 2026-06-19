@@ -38,6 +38,7 @@ class ScoreViewModelTest {
         Dispatchers.setMain(testDispatcher)
         dataLayerClient = mockk()
         coEvery { dataLayerClient.sendScoreEvent(any()) } returns AppResult.Success(Unit)
+        coEvery { dataLayerClient.sendGameOver(any()) } returns AppResult.Success(Unit)
     }
 
     @AfterEach
@@ -176,5 +177,68 @@ class ScoreViewModelTest {
 
         // State unchanged — match not over, cancelMatchOver is a no-op
         assertEquals(GamePoint.FIFTEEN, vm.container.stateFlow.value.score.currentGamePointsA)
+    }
+
+    @Test
+    fun `game_over sent automatically when first game ends (odd total = changeover)`() = runTest {
+        val vm = createViewModel()
+        // A wins game 1 (love game: 4 points A at love → game 1-0, total=1, odd → changeover)
+        repeat(4) { vm.recordPoint(Player.A) }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { dataLayerClient.sendGameOver(any()) }
+    }
+
+    @Test
+    fun `game_over NOT sent when second game ends (even total = no changeover)`() = runTest {
+        val vm = createViewModel()
+        // A wins game 1 (1-0, total=1, odd → changeover) then game 2 (2-0, total=2, even → no changeover)
+        repeat(4) { vm.recordPoint(Player.A) } // game 1 → changeover
+        repeat(4) { vm.recordPoint(Player.A) } // game 2 → no changeover
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // sendGameOver ne doit être appelé qu'UNE seule fois (jeu 1 uniquement)
+        coVerify(exactly = 1) { dataLayerClient.sendGameOver(any()) }
+    }
+
+    @Test
+    fun `game_over carries correct score snapshot (AC 1 — score_snapshot complet)`() = runTest {
+        val vm = createViewModel()
+        // A wins game 1 at love → changeover → sendGameOver avec score 1-0
+        repeat(4) { vm.recordPoint(Player.A) }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            dataLayerClient.sendGameOver(match { score ->
+                score.currentSetGamesA == 1 && score.currentSetGamesB == 0
+            })
+        }
+    }
+
+    @Test
+    fun `UI state updates before game_over is sent (AC 2 — no UI block)`() = runTest {
+        val vm = createViewModel()
+        // A wins game 1 — l'état UI doit refléter 1-0 immédiatement sans attendre DataLayer
+        repeat(4) { vm.recordPoint(Player.A) }
+        val state = vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
+        assertEquals(1, state.score.currentSetGamesA)
+        assertEquals(0, state.score.currentSetGamesB)
+    }
+
+    @Test
+    fun `game_over sent when set ends with odd total games (SetWon changeover)`() = runTest {
+        val vm = createViewModel()
+        // A wins 6-1: jeux 1,3,5,7 (total impair) → changeover → 4 game_over
+        repeat(4) { vm.recordPoint(Player.A) } // game 1 (1-0, total=1 → changeover)
+        repeat(4) { vm.recordPoint(Player.A) } // game 2 (2-0, total=2 → no changeover)
+        repeat(4) { vm.recordPoint(Player.A) } // game 3 (3-0, total=3 → changeover)
+        repeat(4) { vm.recordPoint(Player.A) } // game 4 (4-0, total=4 → no changeover)
+        repeat(4) { vm.recordPoint(Player.B) } // game 5 (4-1, total=5 → changeover)
+        repeat(4) { vm.recordPoint(Player.A) } // game 6 (5-1, total=6 → no changeover)
+        repeat(4) { vm.recordPoint(Player.A) } // game 7 → A wins 6-1, SetWon (total=7 → changeover)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Jeux avec changeover (total impair): 1, 3, 5, 7 → 4 game_over
+        coVerify(exactly = 4) { dataLayerClient.sendGameOver(any()) }
     }
 }
