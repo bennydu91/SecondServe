@@ -102,6 +102,7 @@ class ScoreViewModelTest {
 
         val scoreBeforeGuard = matchOverState.score
         vm.recordPoint(Player.A)  // guard: engine.isMatchOver → no-op, no state emission
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(scoreBeforeGuard, vm.container.stateFlow.value.score)
     }
 
@@ -115,6 +116,7 @@ class ScoreViewModelTest {
         }
         // Suspend until Orbit has processed all intents and emitted the tie-break state
         val tieBrState = vm.container.stateFlow.first { it.score.isTieBreak }
+        testDispatcher.scheduler.advanceUntilIdle()
         assertTrue(tieBrState.score.isTieBreak)
     }
 
@@ -132,6 +134,7 @@ class ScoreViewModelTest {
         vm.cancelMatchOver()
 
         val state = vm.container.stateFlow.first { !it.score.isMatchOver }
+        testDispatcher.scheduler.advanceUntilIdle()
         assertFalse(state.score.isMatchOver)
         assertTrue(state.canUndo)
     }
