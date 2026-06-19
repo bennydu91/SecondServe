@@ -184,6 +184,7 @@ class ScoreViewModelTest {
         val vm = createViewModel()
         // A wins game 1 (love game: 4 points A at love → game 1-0, total=1, odd → changeover)
         repeat(4) { vm.recordPoint(Player.A) }
+        vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { dataLayerClient.sendGameOver(any()) }
@@ -236,6 +237,7 @@ class ScoreViewModelTest {
         repeat(4) { vm.recordPoint(Player.B) } // game 5 (4-1, total=5 → changeover)
         repeat(4) { vm.recordPoint(Player.A) } // game 6 (5-1, total=6 → no changeover)
         repeat(4) { vm.recordPoint(Player.A) } // game 7 → A wins 6-1, SetWon (total=7 → changeover)
+        vm.container.stateFlow.first { it.score.completedSets.isNotEmpty() }
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Jeux avec changeover (total impair): 1, 3, 5, 7 → 4 game_over
