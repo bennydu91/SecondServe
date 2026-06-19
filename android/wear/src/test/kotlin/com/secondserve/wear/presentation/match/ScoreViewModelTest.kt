@@ -43,7 +43,11 @@ class ScoreViewModelTest {
 
     @AfterEach
     fun tearDown() {
-        // Give Default-thread intent tails time to dispatch viewModelScope.launch{} to Main before draining
+        // Orbit runs intent blocks on Dispatchers.Default (real thread); viewModelScope.launch{}
+        // inside them posts to Main (testDispatcher) asynchronously — not yet queued when the
+        // test body's advanceUntilIdle() finishes. Without this wait, resetMain() fires while
+        // those launches are still in-flight, crashing with "no Looper" on Default-pool threads.
+        // Dispatchers.setDefault/resetDefault do not exist in this test setup (API unavailable).
         Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
         Dispatchers.resetMain()

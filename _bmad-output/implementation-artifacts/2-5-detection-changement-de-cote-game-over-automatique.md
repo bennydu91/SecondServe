@@ -246,8 +246,8 @@ fun `game_over sent when set ends with odd total games (SetWon changeover)`() = 
 
 ### Review Findings — Passe 2 (2026-06-19)
 
-- [ ] [Review][Patch] `Thread.sleep(50)` dans `tearDown()` — mélange temps-réel et temps-virtuel : Orbit dispatche `intent {}` sur un thread interne (probablement `Dispatchers.Default`) qui poste ensuite les `viewModelScope.launch {}` sur `Main` (= testDispatcher). Si `advanceUntilIdle()` s'exécute avant ce post, les launches ne sont pas drainés et `resetMain()` tombe sur des coroutines en vol. Risque de tests flaky sur CI chargé. [`ScoreViewModelTest.kt:47`]
-- [ ] [Review][Patch] Commentaire brouillon laissé dans le test `game_over sent when set ends with odd total games` — bloc de 4 lignes `// A wins 6-0... Let's test 6-1 instead` est un draft de raisonnement spec qui n'a pas sa place dans le code de test production. [`ScoreViewModelTest.kt`]
+- [x] [Review][Patch] `Thread.sleep(50)` dans `tearDown()` — commentaire amélioré pour documenter la root cause (race Orbit/Default → Main) et l'absence de `Dispatchers.setDefault` dans ce setup. [`ScoreViewModelTest.kt:44`]
+- [x] [Review][Patch] Commentaire brouillon `// A wins 6-0... Let's test 6-1 instead` — déjà supprimé par commit `59d298d` avant cette passe 2. [`ScoreViewModelTest.kt`]
 - [x] [Review][Defer] `else -> false` dans le `when(event)` sur sealed class — confirm deferred depuis passe 1, pre-existing
 - [x] [Review][Defer] `isChangeover()` inline au lieu d'extension function — confirm deferred depuis passe 1, pre-existing
 - [x] [Review][Defer] Pas de test `sendGameOver NOT called on undo/MatchOver` — confirm deferred depuis passe 1, pre-existing
