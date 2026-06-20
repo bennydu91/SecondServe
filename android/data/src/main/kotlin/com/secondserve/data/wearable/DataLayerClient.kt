@@ -26,6 +26,7 @@ class DataLayerClient @Inject constructor(
     companion object {
         const val PATH_SCORE_EVENT = "/secondserve/score_event"
         const val PATH_GAME_OVER = "/secondserve/game_over"
+        const val PATH_CLOSE_SESSION = "/secondserve/close_session"
     }
 
     suspend fun sendScoreEvent(score: MatchScore): AppResult<Unit> {
@@ -38,6 +39,11 @@ class DataLayerClient @Inject constructor(
         val payload = GameOverPayload(ts = System.currentTimeMillis(), scoreSnapshot = score.toDto())
         val json = moshi.adapter(GameOverPayload::class.java).toJson(payload)
         return sendMessage(PATH_GAME_OVER, json.toByteArray(Charsets.UTF_8))
+    }
+
+    suspend fun sendCloseRequest(): AppResult<Unit> {
+        val payload = """{"type":"CLOSE_SESSION","ts":${System.currentTimeMillis()}}"""
+        return sendMessage(PATH_CLOSE_SESSION, payload.toByteArray(Charsets.UTF_8))
     }
 
     private suspend fun sendMessage(path: String, payload: ByteArray): AppResult<Unit> {

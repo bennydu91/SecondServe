@@ -13,6 +13,8 @@ data class Session(
     val status: SessionStatus = SessionStatus.ACTIVE,
     val sessionType: SessionType = SessionType.MATCH,
     val result: String? = null,
+    val feelingRating: Int? = null,
+    val feelingComment: String? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

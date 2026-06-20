@@ -79,6 +79,11 @@ dependencies {
     // Room (for DataModule)
     implementation(libs.room.runtime)
 
+    // WorkManager (for SecondServeApp HiltWorkerFactory)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 

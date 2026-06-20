@@ -5,13 +5,17 @@ import androidx.room.Room
 import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
+import com.secondserve.data.local.dao.SyncQueueDao
 import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.repository.PlayerProfileRepositoryImpl
 import com.secondserve.data.repository.WorkAxisRepositoryImpl
+import com.secondserve.data.worker.SyncSchedulerImpl
+import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.WorkAxisRepository
+import com.secondserve.domain.sync.SyncScheduler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,7 +38,8 @@ object DataModule {
         .addMigrations(
             SecondServeDatabase.MIGRATION_1_2,
             SecondServeDatabase.MIGRATION_2_3,
-            SecondServeDatabase.MIGRATION_3_4
+            SecondServeDatabase.MIGRATION_3_4,
+            SecondServeDatabase.MIGRATION_4_5
         )
         .build()
 
@@ -52,6 +57,20 @@ object DataModule {
     @Singleton
     fun provideSessionDao(db: SecondServeDatabase): SessionDao =
         db.sessionDao()
+
+    @Provides
+    @Singleton
+    fun provideSyncQueueDao(db: SecondServeDatabase): SyncQueueDao =
+        db.syncQueueDao()
+
+    @Provides
+    @Singleton
+    fun provideDataLayerEventBus(): DataLayerEventBus = DataLayerEventBus()
+
+    @Provides
+    @Singleton
+    fun provideSyncScheduler(@ApplicationContext context: Context): SyncScheduler =
+        SyncSchedulerImpl(context)
 
     @Provides
     @Singleton

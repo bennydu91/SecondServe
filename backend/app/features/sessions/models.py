@@ -15,5 +15,7 @@ class SessionModel(Base):
     status = Column(String, nullable=False, default="ACTIVE")
     session_type = Column(String, nullable=False, default="MATCH")
     result = Column(String, nullable=True)
+    feeling_rating = Column(Integer, nullable=True)
+    feeling_comment = Column(String, nullable=True)
     created_at = Column(Integer, nullable=False)
     updated_at = Column(Integer, nullable=False)

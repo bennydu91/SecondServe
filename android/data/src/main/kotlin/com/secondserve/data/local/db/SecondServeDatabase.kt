@@ -6,10 +6,13 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
+import com.secondserve.data.local.dao.SyncQueueDao
 import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
+import com.secondserve.data.local.db.entity.PointEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
 import com.secondserve.data.local.db.entity.SessionEntity
+import com.secondserve.data.local.db.entity.SyncQueueEntity
 import com.secondserve.data.local.db.entity.WorkAxisEntity
 
 @Database(
@@ -17,15 +20,18 @@ import com.secondserve.data.local.db.entity.WorkAxisEntity
         PlayerProfileEntity::class,
         RankingHistoryEntity::class,
         WorkAxisEntity::class,
-        SessionEntity::class
+        SessionEntity::class,
+        PointEntity::class,
+        SyncQueueEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class SecondServeDatabase : RoomDatabase() {
     abstract fun playerProfileDao(): PlayerProfileDao
     abstract fun workAxisDao(): WorkAxisDao
     abstract fun sessionDao(): SessionDao
+    abstract fun syncQueueDao(): SyncQueueDao
 
     companion object {
         const val DB_NAME = "secondserve_db"
@@ -74,6 +80,42 @@ abstract class SecondServeDatabase : RoomDatabase() {
                 database.execSQL(
                     "CREATE INDEX IF NOT EXISTS idx_sessions_surface ON sessions (surface)"
                 )
+            }
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS points (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        session_id INTEGER NOT NULL,
+                        scorer TEXT NOT NULL,
+                        sequence_num INTEGER NOT NULL,
+                        recorded_at INTEGER NOT NULL,
+                        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS idx_points_session ON points (session_id)"
+                )
+
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS sync_queue (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        entity_type TEXT NOT NULL,
+                        entity_id INTEGER NOT NULL,
+                        operation TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'PENDING',
+                        created_at INTEGER NOT NULL,
+                        retry_count INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue (status)"
+                )
+
+                database.execSQL("ALTER TABLE sessions ADD COLUMN feeling_rating INTEGER")
+                database.execSQL("ALTER TABLE sessions ADD COLUMN feeling_comment TEXT")
             }
         }
     }

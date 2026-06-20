@@ -20,6 +20,8 @@ data class SessionEntity(
     @ColumnInfo(name = "status") val status: String = "ACTIVE",
     @ColumnInfo(name = "session_type") val sessionType: String = "MATCH",
     @ColumnInfo(name = "result") val result: String? = null,
+    @ColumnInfo(name = "feeling_rating") val feelingRating: Int? = null,
+    @ColumnInfo(name = "feeling_comment") val feelingComment: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long
 )

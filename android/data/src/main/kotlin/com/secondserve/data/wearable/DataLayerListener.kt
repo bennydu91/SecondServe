@@ -5,6 +5,7 @@ import com.google.android.gms.wearable.WearableListenerService
 import com.secondserve.data.wearable.dto.GameOverPayload
 import com.secondserve.data.wearable.dto.ScoreEventPayload
 import com.secondserve.data.wearable.dto.toDomain
+import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.repository.ScoreRepository
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -27,6 +28,7 @@ class DataLayerListener : WearableListenerService() {
     @InstallIn(SingletonComponent::class)
     interface DataLayerListenerEntryPoint {
         fun scoreRepository(): ScoreRepository
+        fun dataLayerEventBus(): DataLayerEventBus
     }
 
     private val moshi = Moshi.Builder()
@@ -42,6 +44,13 @@ class DataLayerListener : WearableListenerService() {
         ).scoreRepository()
     }
 
+    private val dataLayerEventBus: DataLayerEventBus by lazy {
+        EntryPointAccessors.fromApplication(
+            applicationContext,
+            DataLayerListenerEntryPoint::class.java
+        ).dataLayerEventBus()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
@@ -54,6 +63,7 @@ class DataLayerListener : WearableListenerService() {
         when (messageEvent.path) {
             DataLayerClient.PATH_SCORE_EVENT -> handleScoreEvent(json)
             DataLayerClient.PATH_GAME_OVER -> handleGameOver(json)
+            DataLayerClient.PATH_CLOSE_SESSION -> handleCloseSession()
             else -> Timber.d("DataLayerListener: unknown path=%s, ignoring", messageEvent.path)
         }
     }
@@ -90,5 +100,10 @@ class DataLayerListener : WearableListenerService() {
         } catch (e: Exception) {
             Timber.e(e, "DataLayerListener: failed to handle game_over")
         }
+    }
+
+    private fun handleCloseSession() {
+        dataLayerEventBus.emitCloseRequest()
+        Timber.d("DataLayerListener: close_session request received from Watch")
     }
 }

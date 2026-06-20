@@ -49,7 +49,8 @@ fun ScoreScreen(
         )
         state.score.isMatchOver -> MatchOverScreen(
             score = state.score,
-            onCancelRequest = { showCancelConfirm = true }
+            onCancelRequest = { showCancelConfirm = true },
+            onCloseRequest = { viewModel.requestClose() }
         )
         else -> ScoreScreenContent(
             state = state,
@@ -63,7 +64,8 @@ fun ScoreScreen(
 @Composable
 private fun MatchOverScreen(
     score: MatchScore,
-    onCancelRequest: () -> Unit
+    onCancelRequest: () -> Unit,
+    onCloseRequest: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -89,13 +91,19 @@ private fun MatchOverScreen(
             )
         }
 
-        FilledTonalButton(
-            onClick = onCancelRequest,
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 8.dp)
+                .padding(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Annuler le dernier point", fontSize = 11.sp)
+            Button(onClick = onCloseRequest) {
+                Text("Terminer", fontSize = 12.sp)
+            }
+            FilledTonalButton(onClick = onCancelRequest) {
+                Text("Annuler le dernier point", fontSize = 11.sp)
+            }
         }
     }
 }

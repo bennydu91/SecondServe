@@ -1,10 +1,13 @@
 package com.secondserve.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.secondserve.HomeScreen
+import com.secondserve.feature.match.MatchScreen
 import com.secondserve.feature.match.NewMatchScreen
 import com.secondserve.feature.profile.ProfileScreen
 import com.secondserve.feature.profile.WorkAxesScreen
@@ -21,8 +24,24 @@ fun AppNavGraph() {
         }
         composable("new_match") {
             NewMatchScreen(
-                onSessionStarted = { navController.popBackStack() },
+                onSessionStarted = { sessionId ->
+                    navController.navigate("match/$sessionId") {
+                        popUpTo("home")
+                    }
+                },
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "match/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.LongType })
+        ) {
+            MatchScreen(
+                onSessionClosed = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
             )
         }
         composable("profile") {

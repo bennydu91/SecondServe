@@ -8,4 +8,10 @@ interface SessionRepository {
     suspend fun createSession(session: Session): AppResult<Session>
     fun getAllSessions(): Flow<List<Session>>
     suspend fun getSessionById(id: Long): Session?
+    suspend fun closeSession(
+        sessionId: Long,
+        result: String,
+        feelingRating: Int?,
+        feelingComment: String?
+    ): AppResult<Unit>
 }

@@ -1,6 +1,10 @@
 package com.secondserve.data.repository
 
+import androidx.room.withTransaction
 import com.secondserve.data.local.dao.SessionDao
+import com.secondserve.data.local.dao.SyncQueueDao
+import com.secondserve.data.local.db.SecondServeDatabase
+import com.secondserve.data.local.db.entity.SyncQueueEntity
 import com.secondserve.data.local.db.entity.toDomain
 import com.secondserve.data.local.db.entity.toEntity
 import com.secondserve.domain.AppResult
@@ -14,7 +18,9 @@ import javax.inject.Singleton
 
 @Singleton
 class SessionRepositoryImpl @Inject constructor(
-    private val dao: SessionDao
+    private val dao: SessionDao,
+    private val syncQueueDao: SyncQueueDao,
+    private val database: SecondServeDatabase
 ) : SessionRepository {
 
     override suspend fun createSession(session: Session): AppResult<Session> = try {
@@ -43,5 +49,37 @@ class SessionRepositoryImpl @Inject constructor(
                 null
             }
         }
+
+    override suspend fun closeSession(
+        sessionId: Long,
+        result: String,
+        feelingRating: Int?,
+        feelingComment: String?
+    ): AppResult<Unit> = try {
+        val now = System.currentTimeMillis()
+        val existing = dao.getById(sessionId) ?: return AppResult.Error(
+            IllegalArgumentException("Session $sessionId introuvable")
+        )
+        database.withTransaction {
+            dao.update(existing.copy(
+                status = "COMPLETED",
+                result = result,
+                feelingRating = feelingRating,
+                feelingComment = feelingComment,
+                updatedAt = now
+            ))
+            syncQueueDao.insert(SyncQueueEntity(
+                entityType = SyncQueueEntity.ENTITY_TYPE_SESSION,
+                entityId = sessionId,
+                operation = SyncQueueEntity.OPERATION_UPSERT,
+                createdAt = now
+            ))
+        }
+        Timber.d("SessionRepository: session %d closed, SyncQueue entry created", sessionId)
+        AppResult.Success(Unit)
+    } catch (e: Exception) {
+        Timber.e(e, "SessionRepository: closeSession failed")
+        AppResult.Error(e)
+    }
 }
 

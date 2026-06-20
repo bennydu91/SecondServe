@@ -1,5 +1,6 @@
 package com.secondserve.data.local.db.entity
 
+import com.secondserve.data.remote.api.dto.SyncSessionDto
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.PlayerProfile
 import com.secondserve.domain.model.RankingEntry
@@ -55,6 +56,8 @@ fun SessionEntity.toDomain(): Session = Session(
     status = SessionStatus.valueOf(status),
     sessionType = SessionType.valueOf(sessionType),
     result = result,
+    feelingRating = feelingRating,
+    feelingComment = feelingComment,
     createdAt = createdAt,
     updatedAt = updatedAt
 )
@@ -70,6 +73,25 @@ fun Session.toEntity(): SessionEntity = SessionEntity(
     status = status.name,
     sessionType = sessionType.name,
     result = result,
+    feelingRating = feelingRating,
+    feelingComment = feelingComment,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+fun Session.toSyncDto(): SyncSessionDto = SyncSessionDto(
+    clientId = id,
+    surface = surface,
+    matchFormat = format.matchFormat.name,
+    thirdSetRule = format.thirdSetRule.name,
+    opponent = opponent,
+    competitionType = competitionType,
+    tournament = tournament,
+    status = status.name,
+    sessionType = sessionType.name,
+    result = result,
+    feelingRating = feelingRating,
+    feelingComment = feelingComment,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

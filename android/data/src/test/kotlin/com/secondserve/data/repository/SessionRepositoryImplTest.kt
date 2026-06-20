@@ -2,6 +2,8 @@ package com.secondserve.data.repository
 
 import app.cash.turbine.test
 import com.secondserve.data.local.dao.SessionDao
+import com.secondserve.data.local.dao.SyncQueueDao
+import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.local.db.entity.SessionEntity
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
@@ -14,24 +16,42 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SessionRepositoryImplTest {
 
     private lateinit var dao: SessionDao
+    private lateinit var syncQueueDao: SyncQueueDao
+    private lateinit var database: SecondServeDatabase
     private lateinit var repository: SessionRepositoryImpl
 
     @BeforeEach
     fun setup() {
         dao = mockk()
-        repository = SessionRepositoryImpl(dao)
+        syncQueueDao = mockk(relaxed = true)
+        database = mockk()
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { database.withTransaction(any()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            (firstArg<suspend () -> Any?>())()
+        }
+        repository = SessionRepositoryImpl(dao, syncQueueDao, database)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
     }
 
     private fun aSession(
@@ -208,5 +228,45 @@ class SessionRepositoryImplTest {
         val session = repository.getSessionById(1L)
 
         assertNull(session)
+    }
+
+    @Test
+    fun `closeSession updates entity to COMPLETED and inserts SyncQueue entry`() = runTest {
+        val existingEntity = anEntity(id = 7L, status = "ACTIVE")
+        coEvery { dao.getById(7L) } returns existingEntity
+        coEvery { dao.update(any()) } returns Unit
+        coEvery { syncQueueDao.insert(any()) } returns 1L
+
+        val result = repository.closeSession(7L, "VICTORY", 5, "Super match")
+
+        assertIs<AppResult.Success<Unit>>(result)
+        coVerify {
+            dao.update(match { it.status == "COMPLETED" && it.result == "VICTORY" && it.feelingRating == 5 })
+        }
+        coVerify { syncQueueDao.insert(match { it.entityId == 7L && it.entityType == "SESSION" }) }
+    }
+
+    @Test
+    fun `closeSession returns error when session not found`() = runTest {
+        coEvery { dao.getById(99L) } returns null
+
+        val result = repository.closeSession(99L, "VICTORY", null, null)
+
+        assertIs<AppResult.Error>(result)
+    }
+
+    @Test
+    fun `closeSession D9 fix - updatedAt is set to current time`() = runTest {
+        val beforeTime = System.currentTimeMillis()
+        val existingEntity = anEntity(id = 3L, updatedAt = 500L)
+        coEvery { dao.getById(3L) } returns existingEntity
+        val updatedSlot = slot<SessionEntity>()
+        coEvery { dao.update(capture(updatedSlot)) } returns Unit
+        coEvery { syncQueueDao.insert(any()) } returns 1L
+
+        repository.closeSession(3L, "DRAW", null, null)
+
+        assertTrue(updatedSlot.captured.updatedAt >= beforeTime,
+            "updatedAt doit être mis à jour à l'heure courante (fix D9)")
     }
 }

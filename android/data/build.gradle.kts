@@ -50,6 +50,11 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
 
+    // WorkManager + Hilt Work
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
     // Security
     implementation(libs.security.crypto)
 
@@ -61,5 +66,6 @@ dependencies {
     testImplementation(libs.coroutines.test)
     testImplementation(kotlin("test"))
     testImplementation(libs.turbine)
+    testImplementation(libs.work.testing)
     implementation(libs.timber)
 }

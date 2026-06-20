@@ -5,6 +5,8 @@ import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
 import com.secondserve.data.remote.api.dto.ProfileSummaryDto
 import com.secondserve.data.remote.api.dto.RankingEntryDto
 import com.secondserve.data.remote.api.dto.RankingRequest
+import com.secondserve.data.remote.api.dto.SyncPushRequest
+import com.secondserve.data.remote.api.dto.SyncPushResponse
 import com.secondserve.data.remote.api.dto.WorkAxesResponse
 import com.secondserve.data.remote.api.dto.WorkAxisRequest
 import com.secondserve.data.remote.api.dto.WorkAxisResponse
@@ -42,4 +44,7 @@ interface VpsApiService {
 
     @DELETE("api/v1/work_axes/{id}")
     suspend fun deleteWorkAxis(@Path("id") id: Long)
+
+    @POST("api/v1/sync/push")
+    suspend fun syncPush(@Body request: SyncPushRequest): SyncPushResponse
 }

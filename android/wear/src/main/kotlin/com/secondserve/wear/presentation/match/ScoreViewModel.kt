@@ -85,6 +85,13 @@ class ScoreViewModel @Inject constructor(
         }
     }
 
+    fun requestClose() = intent {
+        val result = dataLayerClient.sendCloseRequest()
+        if (result is AppResult.Error) {
+            Timber.d("ScoreViewModel: sendCloseRequest failed — %s", result.exception.message)
+        }
+    }
+
     // Annule le point final ayant déclenché la fin du match (action explicite avec confirmation UI).
     // Distinct de undo() qui est réservé aux points en cours de match.
     fun cancelMatchOver() = intent {
