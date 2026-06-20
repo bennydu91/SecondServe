@@ -168,6 +168,9 @@ class ScoreViewModelTest {
 
         vm.undo()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.ZERO && !it.canUndo }
+        // Same race as SetWon test: Orbit's Default thread may not have posted
+        // viewModelScope.launch{sendScoreEvent} to Main yet when advanceUntilIdle() runs.
+        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // sendScoreEvent must be called twice: once after recordPoint, once after undo
