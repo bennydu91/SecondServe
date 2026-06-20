@@ -1,5 +1,19 @@
 # Deferred Work
 
+## Deferred from: code review of 2-6-cloture-de-session-match-syncworker (2026-06-20)
+
+- **`DataLayerEventBus` dual-singleton** — `WearDataModule` crée une instance distincte dans `:wear` qui n'est jamais consommée ; `DataLayerListener` passe correctement par l'instance `:app` via `EntryPointAccessors`. Architecture dead code non bloquante, risque futur si un composant wear injecte directement `DataLayerEventBus`. [`android/wear/src/main/kotlin/com/secondserve/wear/di/WearDataModule.kt`]
+- **Backend `client_id` comme PK serveur sans scoping `user_id`** — Sessions de deux utilisateurs différents avec le même autoincrement SQLite (`id=1`) s'écraseraient mutuellement. Pré-existant (D2 story 2.3), app mono-utilisateur pour l'instant. [`backend/app/features/sync/service.py`]
+- **`MatchViewModel.sessionId = 0L` fallback silencieux** — Si l'argument `sessionId` est absent du `SavedStateHandle`, la valeur par défaut est `0L`. En pratique inatteignable via la navigation correctement typée (`NavType.LongType`). [`android/feature/match/src/main/kotlin/com/secondserve/feature/match/MatchViewModel.kt:28`]
+- **LWW last-write-wins sensible au clock skew client** — `updated_at = System.currentTimeMillis()` peut régresser (NTP, DST, ajustement manuel), faisant ignorer une mise à jour valide. Trade-off architectural accepté par NFR-S3/S4. [`backend/app/features/sync/service.py`]
+- **`DataLayerEventBus.tryEmit()` silent drop sur double-tap rapide** — `extraBufferCapacity=1` : si deux événements de fermeture arrivent avant que le premier soit consommé, le second est silencieusement ignoré. [`android/domain/src/main/kotlin/com/secondserve/domain/event/DataLayerEventBus.kt:7`]
+- **`MatchViewModel.init {}` collector survie à la navigation** — Si le `MatchViewModel` n'est pas clearé rapidement après navigation, un événement Watch retardé pourrait déclencher `onCloseRequested()` sur une session déjà fermée. En pratique géré par le lifecycle Compose Navigation. [`android/feature/match/src/main/kotlin/com/secondserve/feature/match/MatchViewModel.kt:34-39`]
+- **`SyncService.push()` sans transaction globale** — Une exception sur la N-ième session rollbacke toutes les sessions précédentes du même batch. En pratique 1 session par SyncWorker ; problème structurel si le batch évolue. [`backend/app/features/sync/service.py`]
+- **`PointDao` non exposé dans `SecondServeDatabase`** — `PointEntity` enregistrée dans le schéma DB mais aucun `abstract fun pointDao()` exposé. Usage différé à Epic 3/4 par spec. [`android/data/src/main/kotlin/com/secondserve/data/local/db/SecondServeDatabase.kt`]
+- **`WearDataModule.kt` non prévu dans la spec** — Ajouté par le dev pour résoudre DL-4 (Hilt binding `:wear`). Dead code en scope story 2.6 (aucun composant wear n'injecte `DataLayerEventBus` directement). [`android/wear/src/main/kotlin/com/secondserve/wear/di/WearDataModule.kt`]
+- **`SyncQueueDao.insert` ABORT + doublons PENDING** — Sans contrainte UNIQUE sur `(entity_id, status)`, `closeSession` appelé deux fois insère deux entrées PENDING pour la même session. Atténué par le patch `enqueueUniqueWork`. [`android/data/src/main/kotlin/com/secondserve/data/local/dao/SyncQueueDao.kt`]
+- **Backend : pas de validation enum avant persistence** — `status`, `match_format`, `session_type` reçus du client sont stockés comme strings sans validation Python Enum. Pré-existant, hors scope story 2.6. [`backend/app/features/sync/service.py`]
+
 ## Deferred from: code review of 2-5-detection-changement-de-cote-game-over-automatique — Passe 2 (2026-06-19)
 
 - **`else -> false` supprime l'exhaustivité Kotlin sur sealed class** — Tout nouveau sous-type d'`EngineEvent` sera silencieusement absorbé sans erreur de compilation. Confirmé deferred depuis passe 1. [`android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`]
