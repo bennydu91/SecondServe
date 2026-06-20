@@ -12,6 +12,7 @@ import com.secondserve.domain.model.SessionFormat
 import com.secondserve.domain.model.SessionStatus
 import com.secondserve.domain.model.SessionType
 import com.secondserve.domain.model.ThirdSetRule
+import androidx.room.withTransaction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -42,7 +43,7 @@ class SessionRepositoryImplTest {
         syncQueueDao = mockk(relaxed = true)
         database = mockk()
         mockkStatic("androidx.room.RoomDatabaseKt")
-        coEvery { database.withTransaction(any()) } coAnswers {
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
             @Suppress("UNCHECKED_CAST")
             (firstArg<suspend () -> Any?>())()
         }
