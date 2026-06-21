@@ -6,6 +6,7 @@ import com.secondserve.core.ai.InferenceEngine
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.ErrorCode
 import com.secondserve.domain.model.InferenceEngineException
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -34,6 +35,8 @@ class GeminiNanoEngine @Inject constructor() : InferenceEngine {
                     )
                 )
             AppResult.Success(text)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.d("GeminiNanoEngine unavailable, falling back")
             AppResult.Error(

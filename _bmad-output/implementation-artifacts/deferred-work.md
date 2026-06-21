@@ -168,3 +168,10 @@
 - **allowBackup sans règles de backup** — Définir `android:dataExtractionRules` ou `android:fullBackupContent` avant la mise en production, surtout une fois Room ajouté. [`android/app/src/main/AndroidManifest.xml:7`]
 - **InferenceEngine sans binding Hilt** — `AppModule` vide, aucun `@Binds` pour `InferenceEngine`. Toute injection déclenchera `[Dagger/MissingBinding]`. À adresser en Story 3.1. [`android/app/src/main/kotlin/com/secondserve/di/AppModule.kt`]
 - **Permissions Wear manquantes** — `BODY_SENSORS` et `ACTIVITY_RECOGNITION` absents du manifest Wear. À ajouter dans les stories concernant la capture de données capteurs. [`android/wear/src/main/AndroidManifest.xml`]
+
+## Deferred from: code review of 3-2-geminananoengine-coaching-on-device (2026-06-21)
+
+- **`Thread.sleep(50)` dans `ScoreViewModelTest`** — Workaround race condition Orbit/TestDispatcher. Pré-existant (commit 80f8577). À corriger proprement quand le setup de test coroutine sera revu. [`android/wear/src/test/.../ScoreViewModelTest.kt`]
+- **`@Singleton` + cycle de vie `Generation.getClient()`** — ML Kit ContentProvider pattern est safe par design. À re-évaluer si ML Kit exige un `close()` explicite en basse mémoire. [`GeminiNanoEngine.kt`]
+- **`FeatureStatus` non exhaustif** — `DOWNLOADING` et `UNAVAILABLE` retournent le même `INFERENCE_FAILED`. Différenciation (retry logic pour DOWNLOADING) à considérer en Story 3.3/3.4. [`GeminiNanoEngine.kt:19`]
+- **Pas de `withTimeout(3000)` pour NFR latence ≤ 3s** — AC6 = validation manuelle sur Pixel 9 Pro. À considérer en Story 3.4 (CoachingResolver) pour garantir le timeout côté appelant. [`GeminiNanoEngine.kt`]

@@ -4,7 +4,7 @@ baseline_commit: 2689c7c
 
 # Story 3.2: GeminiNanoEngine — Coaching on-device
 
-Status: review
+Status: done
 
 ## Story
 
@@ -307,6 +307,14 @@ abstract class AiModule {
 - [x] **Task GN-12** — Lancer `:app:kspReleaseKotlin` — BUILD SUCCESSFUL, aucun conflit Hilt en release
 - [x] **Task GN-13** — Lancer `:core:ai:testDebugUnitTest` — 5 tests `MockInferenceEngineTest` toujours verts (aucune régression)
 - [ ] **Task GN-14** — (Sur device Pixel 9 Pro) Test manuel : lancer l'app en release, vérifier `generate("Quel conseil pour ce jeu ?")` répond en ≤ 3s
+
+### Review Findings
+
+- [x] [Review][Patch] CancellationException non relancée dans catch générique [`GeminiNanoEngine.kt:37`] — **Appliqué** : ajout `catch (e: CancellationException) { throw e }` avant le catch générique pour préserver l'annulation de coroutine.
+- [x] [Review][Defer] `Thread.sleep(50)` dans `ScoreViewModelTest` — pré-existant (commit 80f8577), workaround race condition Orbit/TestDispatcher.
+- [x] [Review][Defer] `@Singleton` + cycle de vie `Generation.getClient()` — ML Kit ContentProvider pattern sûr par design, hors scope.
+- [x] [Review][Defer] `FeatureStatus` non exhaustif (`DOWNLOADING` vs `UNAVAILABLE`) — différenciation prévue en Story 3.3/3.4.
+- [x] [Review][Defer] Pas de `withTimeout(3000)` — AC6 = validation manuelle sur Pixel 9 Pro.
 
 ---
 
