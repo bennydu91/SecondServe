@@ -30,6 +30,8 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.coroutines.android)
+    implementation(libs.timber)
+    implementation(libs.mlkit.genai.prompt)
 
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)
