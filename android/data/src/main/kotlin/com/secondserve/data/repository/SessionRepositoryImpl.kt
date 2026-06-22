@@ -53,6 +53,7 @@ class SessionRepositoryImpl @Inject constructor(
     override suspend fun closeSession(
         sessionId: Long,
         result: String,
+        scoreText: String?,
         feelingRating: Int?,
         feelingComment: String?
     ): AppResult<Unit> = try {
@@ -64,6 +65,7 @@ class SessionRepositoryImpl @Inject constructor(
             dao.update(existing.copy(
                 status = "COMPLETED",
                 result = result,
+                scoreText = scoreText,
                 feelingRating = feelingRating,
                 feelingComment = feelingComment,
                 updatedAt = now

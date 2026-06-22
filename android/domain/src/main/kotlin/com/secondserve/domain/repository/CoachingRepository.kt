@@ -7,4 +7,5 @@ interface CoachingRepository {
     suspend fun getCachedAdvice(matchId: Long, pattern: MatchPattern): CoachingCacheEntry?
     suspend fun saveAdvice(matchId: Long, pattern: MatchPattern, content: String)
     suspend fun markMatchEntriesStale(matchId: Long)
+    suspend fun getAdvicesForSession(sessionId: Long): List<CoachingCacheEntry>
 }

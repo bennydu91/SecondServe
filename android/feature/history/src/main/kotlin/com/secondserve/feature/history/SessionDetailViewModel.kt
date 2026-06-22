@@ -1,0 +1,36 @@
+package com.secondserve.feature.history
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import com.secondserve.domain.repository.CoachingRepository
+import com.secondserve.domain.repository.SessionRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import org.orbitmvi.orbit.ContainerHost
+import org.orbitmvi.orbit.viewmodel.container
+import javax.inject.Inject
+
+@HiltViewModel
+class SessionDetailViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
+    private val coachingRepository: CoachingRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel(), ContainerHost<SessionDetailUiState, Nothing> {
+
+    private val sessionId: Long = checkNotNull(savedStateHandle["sessionId"])
+
+    override val container = container<SessionDetailUiState, Nothing>(SessionDetailUiState.Loading)
+
+    init {
+        load()
+    }
+
+    private fun load() = intent {
+        val session = sessionRepository.getSessionById(sessionId)
+        if (session == null) {
+            reduce { SessionDetailUiState.Error("Session introuvable") }
+            return@intent
+        }
+        val advices = coachingRepository.getAdvicesForSession(sessionId)
+        reduce { SessionDetailUiState.Content(session, advices) }
+    }
+}

@@ -11,6 +11,7 @@ interface SessionRepository {
     suspend fun closeSession(
         sessionId: Long,
         result: String,
+        scoreText: String?,
         feelingRating: Int?,
         feelingComment: String?
     ): AppResult<Unit>

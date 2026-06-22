@@ -28,4 +28,7 @@ class CoachingRepositoryImpl @Inject constructor(
 
     override suspend fun markMatchEntriesStale(matchId: Long) =
         dao.markAllStale(matchId)
+
+    override suspend fun getAdvicesForSession(sessionId: Long): List<CoachingCacheEntry> =
+        dao.getAllForMatch(sessionId).map { it.toDomain() }
 }

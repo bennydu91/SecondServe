@@ -27,7 +27,7 @@ import com.secondserve.data.local.db.entity.WorkAxisEntity
         SyncQueueEntity::class,
         CoachingCacheEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class SecondServeDatabase : RoomDatabase() {
@@ -139,6 +139,12 @@ abstract class SecondServeDatabase : RoomDatabase() {
                     CREATE UNIQUE INDEX IF NOT EXISTS idx_coaching_cache_match_pattern
                     ON coaching_cache (match_id, pattern)
                 """.trimIndent())
+            }
+        }
+
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE sessions ADD COLUMN score_text TEXT")
             }
         }
     }

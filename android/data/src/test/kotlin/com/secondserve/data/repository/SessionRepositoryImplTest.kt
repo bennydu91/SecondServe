@@ -238,7 +238,7 @@ class SessionRepositoryImplTest {
         coEvery { dao.update(any()) } returns Unit
         coEvery { syncQueueDao.insert(any()) } returns 1L
 
-        val result = repository.closeSession(7L, "VICTORY", 5, "Super match")
+        val result = repository.closeSession(7L, "VICTORY", null, 5, "Super match")
 
         assertIs<AppResult.Success<Unit>>(result)
         coVerify {
@@ -251,7 +251,7 @@ class SessionRepositoryImplTest {
     fun `closeSession returns error when session not found`() = runTest {
         coEvery { dao.getById(99L) } returns null
 
-        val result = repository.closeSession(99L, "VICTORY", null, null)
+        val result = repository.closeSession(99L, "VICTORY", null, null, null)
 
         assertIs<AppResult.Error>(result)
     }
@@ -265,7 +265,7 @@ class SessionRepositoryImplTest {
         coEvery { dao.update(capture(updatedSlot)) } returns Unit
         coEvery { syncQueueDao.insert(any()) } returns 1L
 
-        repository.closeSession(3L, "DRAW", null, null)
+        repository.closeSession(3L, "DRAW", null, null, null)
 
         assertTrue(updatedSlot.captured.updatedAt >= beforeTime,
             "updatedAt doit être mis à jour à l'heure courante (fix D9)")

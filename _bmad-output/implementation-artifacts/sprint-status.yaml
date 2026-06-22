@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-22 (story 3.4 done)
+last_updated: 2026-06-22 (story 4.1 review)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -71,8 +71,8 @@ development_status:
   epic-3-retrospective: optional
 
   # ─── Epic 4: Historique & Statistiques ──────────────────────────────────────
-  epic-4: backlog
-  4-1-historique-des-sessions: backlog
+  epic-4: in-progress
+  4-1-historique-des-sessions: review
   4-2-statistiques-agregees: backlog
   4-3-saisie-manuelle-retrospective: backlog
   epic-4-retrospective: optional

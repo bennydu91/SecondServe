@@ -7,6 +7,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.secondserve.HomeScreen
+import com.secondserve.feature.history.HistoryScreen
+import com.secondserve.feature.history.SessionDetailScreen
 import com.secondserve.feature.match.MatchScreen
 import com.secondserve.feature.match.NewMatchScreen
 import com.secondserve.feature.profile.ProfileScreen
@@ -19,7 +21,8 @@ fun AppNavGraph() {
         composable("home") {
             HomeScreen(
                 onNavigateToNewMatch = { navController.navigate("new_match") },
-                onNavigateToProfile = { navController.navigate("profile") }
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHistory = { navController.navigate("history") }
             )
         }
         composable("new_match") {
@@ -52,6 +55,20 @@ fun AppNavGraph() {
         }
         composable("work_axes") {
             WorkAxesScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable("history") {
+            HistoryScreen(
+                onNavigateToDetail = { sessionId -> navController.navigate("session_detail/$sessionId") },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "session_detail/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.LongType })
+        ) {
+            SessionDetailScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

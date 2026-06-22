@@ -15,9 +15,13 @@ class CloseMatchUseCase @Inject constructor(
         feelingComment: String?
     ): AppResult<Unit> {
         val result = finalScore.calculateResult()
-        return sessionRepository.closeSession(sessionId, result, feelingRating, feelingComment)
+        val scoreText = finalScore.toScoreText().takeIf { it.isNotEmpty() }
+        return sessionRepository.closeSession(sessionId, result, scoreText, feelingRating, feelingComment)
     }
 }
+
+fun MatchScore.toScoreText(): String =
+    completedSets.joinToString(", ") { "${it.gamesA}-${it.gamesB}" }
 
 fun MatchScore.calculateResult(): String {
     if (completedSets.isEmpty()) return "ABANDONED"
