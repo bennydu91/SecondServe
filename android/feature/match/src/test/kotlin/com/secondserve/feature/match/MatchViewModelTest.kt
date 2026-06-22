@@ -39,6 +39,7 @@ class MatchViewModelTest {
     private lateinit var closeMatchUseCase: CloseMatchUseCase
     private lateinit var syncScheduler: SyncScheduler
     private lateinit var dataLayerEventBus: DataLayerEventBus
+    private lateinit var coachingCachePrefetcher: CoachingCachePrefetcher
     private lateinit var viewModel: MatchViewModel
 
     private val scoreFlow = MutableStateFlow<MatchScore?>(null)
@@ -50,6 +51,7 @@ class MatchViewModelTest {
         closeMatchUseCase = mockk()
         syncScheduler = mockk(relaxed = true)
         dataLayerEventBus = DataLayerEventBus()
+        coachingCachePrefetcher = mockk(relaxed = true)
 
         every { scoreRepository.latestScore } returns scoreFlow
 
@@ -58,6 +60,7 @@ class MatchViewModelTest {
             closeMatchUseCase = closeMatchUseCase,
             syncScheduler = syncScheduler,
             dataLayerEventBus = dataLayerEventBus,
+            coachingCachePrefetcher = coachingCachePrefetcher,
             savedStateHandle = SavedStateHandle(mapOf("sessionId" to 10L))
         )
     }
