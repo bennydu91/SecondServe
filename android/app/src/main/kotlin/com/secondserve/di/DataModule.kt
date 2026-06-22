@@ -3,6 +3,7 @@ package com.secondserve.di
 import android.content.Context
 import androidx.room.Room
 import com.secondserve.data.local.PlayerDataStore
+import com.secondserve.data.local.dao.CoachingCacheDao
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
@@ -39,7 +40,8 @@ object DataModule {
             SecondServeDatabase.MIGRATION_1_2,
             SecondServeDatabase.MIGRATION_2_3,
             SecondServeDatabase.MIGRATION_3_4,
-            SecondServeDatabase.MIGRATION_4_5
+            SecondServeDatabase.MIGRATION_4_5,
+            SecondServeDatabase.MIGRATION_5_6
         )
         .build()
 
@@ -62,6 +64,11 @@ object DataModule {
     @Singleton
     fun provideSyncQueueDao(db: SecondServeDatabase): SyncQueueDao =
         db.syncQueueDao()
+
+    @Provides
+    @Singleton
+    fun provideCoachingCacheDao(db: SecondServeDatabase): CoachingCacheDao =
+        db.coachingCacheDao()
 
     @Provides
     @Singleton

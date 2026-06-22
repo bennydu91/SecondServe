@@ -4,10 +4,12 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.secondserve.data.local.dao.CoachingCacheDao
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
 import com.secondserve.data.local.dao.WorkAxisDao
+import com.secondserve.data.local.db.entity.CoachingCacheEntity
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.PointEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
@@ -22,9 +24,10 @@ import com.secondserve.data.local.db.entity.WorkAxisEntity
         WorkAxisEntity::class,
         SessionEntity::class,
         PointEntity::class,
-        SyncQueueEntity::class
+        SyncQueueEntity::class,
+        CoachingCacheEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class SecondServeDatabase : RoomDatabase() {
@@ -32,6 +35,7 @@ abstract class SecondServeDatabase : RoomDatabase() {
     abstract fun workAxisDao(): WorkAxisDao
     abstract fun sessionDao(): SessionDao
     abstract fun syncQueueDao(): SyncQueueDao
+    abstract fun coachingCacheDao(): CoachingCacheDao
 
     companion object {
         const val DB_NAME = "secondserve_db"
@@ -116,6 +120,25 @@ abstract class SecondServeDatabase : RoomDatabase() {
 
                 database.execSQL("ALTER TABLE sessions ADD COLUMN feeling_rating INTEGER")
                 database.execSQL("ALTER TABLE sessions ADD COLUMN feeling_comment TEXT")
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS coaching_cache (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        match_id INTEGER NOT NULL,
+                        pattern TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        generated_at INTEGER NOT NULL,
+                        is_stale INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+                database.execSQL("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_coaching_cache_match_pattern
+                    ON coaching_cache (match_id, pattern)
+                """.trimIndent())
             }
         }
     }

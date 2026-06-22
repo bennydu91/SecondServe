@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-21 (story 3.2 done)
+last_updated: 2026-06-22 (story 3.3 review)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -66,7 +66,7 @@ development_status:
   epic-3: in-progress
   3-1-inferenceengine-interface-mockinferenceengine: review
   3-2-geminananoengine-coaching-on-device: done
-  3-3-offlinecoachingcache-init-match-detection-de-pattern: backlog
+  3-3-offlinecoachingcache-init-match-detection-de-pattern: review
   3-4-coachingresolver-affichage-conseil-sur-telephone: backlog
   epic-3-retrospective: optional
 

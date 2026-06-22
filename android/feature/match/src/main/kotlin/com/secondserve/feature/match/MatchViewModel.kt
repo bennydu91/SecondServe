@@ -22,6 +22,7 @@ class MatchViewModel @Inject constructor(
     private val closeMatchUseCase: CloseMatchUseCase,
     private val syncScheduler: SyncScheduler,
     private val dataLayerEventBus: DataLayerEventBus,
+    private val coachingCachePrefetcher: CoachingCachePrefetcher,
     savedStateHandle: SavedStateHandle
 ) : ViewModel(), ContainerHost<MatchUiState, MatchSideEffect> {
 
@@ -32,6 +33,8 @@ class MatchViewModel @Inject constructor(
     val currentScore = scoreRepository.latestScore
 
     init {
+        coachingCachePrefetcher.initMatch(sessionId)
+
         viewModelScope.launch {
             dataLayerEventBus.closeSessionRequests.collect {
                 onCloseRequested()
