@@ -1,0 +1,18 @@
+# Team overrides for bmad-dev-story.
+# Committed to the repo — applies to every developer on the project.
+
+[workflow]
+
+on_complete = """
+Avant de déclarer la story définitivement terminée, exécute la séquence CI gate suivante :
+
+1. **Commit** : si l'arbre de travail est dirty, crée un commit conventionnel résumant la story (ex. `feat(story-X.Y): <titre>`). Utilise `rtk git add` puis `rtk git commit`.
+2. **Push** : pousse la branche vers le dépôt distant avec `rtk git push`.
+3. **Surveillance CI via GitHub CLI (`gh`)** :
+   - Si une PR existe sur cette branche : `rtk gh pr checks` — surveille jusqu'à ce que tous les checks soient verts.
+   - Sinon : `rtk gh run list --branch $(git branch --show-current)` — surveille le run le plus récent jusqu'à sa completion.
+4. **Si un check CI échoue** : investigue le log (`rtk gh run view --log-failed`), corrige, relance les tests localement, puis commit et push à nouveau. Répète jusqu'à CI verte.
+5. **Seulement quand CI est confirmée verte** : déclare la story complète et communique le succès à l'utilisateur.
+
+Ne déclare JAMAIS la story terminée tant que la CI n'est pas verte.
+"""

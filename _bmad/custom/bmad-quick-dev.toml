@@ -1,0 +1,17 @@
+# Team overrides for bmad-quick-dev.
+# Committed to the repo — applies to every developer on the project.
+
+[workflow]
+
+on_complete = """
+Avant de clôturer le workflow, exécute la séquence CI gate suivante :
+
+1. **Push** : propose à l'utilisateur de pousser la branche et de créer une PR. Si l'utilisateur accepte, exécute `rtk git push`.
+2. **Surveillance CI via GitHub CLI (`gh`)** :
+   - Si une PR existe : `rtk gh pr checks` — surveille jusqu'à ce que tous les checks soient verts.
+   - Sinon : `rtk gh run list --branch $(git branch --show-current)` — surveille le run le plus récent jusqu'à sa completion.
+3. **Si un check CI échoue** : investigue le log (`rtk gh run view --log-failed`), corrige, relance les tests localement, puis commit et push à nouveau. Répète jusqu'à CI verte.
+4. **Seulement quand CI est confirmée verte** (ou si l'utilisateur a refusé le push) : déclare le workflow terminé.
+
+Ne déclare JAMAIS le workflow terminé si un push a été effectué et que la CI n'est pas verte.
+"""

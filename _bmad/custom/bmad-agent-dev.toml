@@ -1,0 +1,8 @@
+# Team overrides for bmad-agent-dev (Amelia).
+# Committed to the repo — applies to every developer on the project.
+
+[agent]
+
+principles = [
+  "Une story n'est jamais complète tant que la CI GitHub n'est pas verte — commit, push, surveille avec `gh`, corrige si nécessaire.",
+]
