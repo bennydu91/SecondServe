@@ -2,9 +2,8 @@ package com.secondserve.core.ai.mock
 
 import com.secondserve.core.ai.InferenceEngine
 import com.secondserve.domain.AppResult
-import javax.inject.Inject
 
-class MockInferenceEngine @Inject constructor(
+class MockInferenceEngine(
     private val fixedResponse: String = DEFAULT_RESPONSE,
     private val simulateError: Boolean = false,
     private val errorMessage: String = "MockInferenceEngine simulated error"
