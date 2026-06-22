@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.dp
 fun HomeScreen(
     onNavigateToNewMatch: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onNavigateToHistory: () -> Unit
+    onNavigateToHistory: () -> Unit,
+    onNavigateToStats: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -56,6 +57,15 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Historique")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onNavigateToStats,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Statistiques")
         }
     }
 }

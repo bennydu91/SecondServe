@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.secondserve.HomeScreen
 import com.secondserve.feature.history.HistoryScreen
 import com.secondserve.feature.history.SessionDetailScreen
+import com.secondserve.feature.history.StatsScreen
 import com.secondserve.feature.match.MatchScreen
 import com.secondserve.feature.match.NewMatchScreen
 import com.secondserve.feature.profile.ProfileScreen
@@ -22,7 +23,8 @@ fun AppNavGraph() {
             HomeScreen(
                 onNavigateToNewMatch = { navController.navigate("new_match") },
                 onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHistory = { navController.navigate("history") }
+                onNavigateToHistory = { navController.navigate("history") },
+                onNavigateToStats = { navController.navigate("stats") }
             )
         }
         composable("new_match") {
@@ -71,6 +73,9 @@ fun AppNavGraph() {
             SessionDetailScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
+        }
+        composable("stats") {
+            StatsScreen(onNavigateBack = { navController.popBackStack() })
         }
     }
 }
