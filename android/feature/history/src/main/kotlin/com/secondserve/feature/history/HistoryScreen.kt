@@ -16,6 +16,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,6 +43,7 @@ private val sessionDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
 fun HistoryScreen(
     onNavigateToDetail: (Long) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToAddRetroSession: () -> Unit,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -62,6 +64,11 @@ fun HistoryScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNavigateToAddRetroSession) {
+                Text("+")
+            }
         }
     ) { padding ->
         when (val s = state) {

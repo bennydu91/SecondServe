@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.secondserve.HomeScreen
+import com.secondserve.feature.history.AddRetroSessionScreen
 import com.secondserve.feature.history.HistoryScreen
 import com.secondserve.feature.history.SessionDetailScreen
 import com.secondserve.feature.history.StatsScreen
@@ -63,8 +64,12 @@ fun AppNavGraph() {
         composable("history") {
             HistoryScreen(
                 onNavigateToDetail = { sessionId -> navController.navigate("session_detail/$sessionId") },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddRetroSession = { navController.navigate("add_retro_session") }
             )
+        }
+        composable("add_retro_session") {
+            AddRetroSessionScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable(
             route = "session_detail/{sessionId}",

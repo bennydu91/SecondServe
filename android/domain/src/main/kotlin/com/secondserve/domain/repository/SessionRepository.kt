@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface SessionRepository {
     suspend fun createSession(session: Session): AppResult<Session>
+    suspend fun createCompletedSession(session: Session): AppResult<Session>
     fun getAllSessions(): Flow<List<Session>>
     suspend fun getSessionById(id: Long): Session?
     suspend fun closeSession(

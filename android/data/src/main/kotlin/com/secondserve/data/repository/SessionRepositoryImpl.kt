@@ -32,6 +32,23 @@ class SessionRepositoryImpl @Inject constructor(
         AppResult.Error(e)
     }
 
+    override suspend fun createCompletedSession(session: Session): AppResult<Session> = try {
+        val now = System.currentTimeMillis()
+        database.withTransaction {
+            val id = dao.insert(session.toEntity())
+            syncQueueDao.insert(SyncQueueEntity(
+                entityType = SyncQueueEntity.ENTITY_TYPE_SESSION,
+                entityId = id,
+                operation = SyncQueueEntity.OPERATION_UPSERT,
+                createdAt = now
+            ))
+            AppResult.Success(session.copy(id = id))
+        }
+    } catch (e: Exception) {
+        Timber.e(e, "SessionRepository: createCompletedSession failed")
+        AppResult.Error(e)
+    }
+
     override fun getAllSessions(): Flow<List<Session>> =
         dao.getAllSessions().map { entities ->
             entities.mapNotNull { entity ->
