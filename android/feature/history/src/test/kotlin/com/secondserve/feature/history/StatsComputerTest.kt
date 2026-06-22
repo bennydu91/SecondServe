@@ -141,4 +141,18 @@ class StatsComputerTest {
         assertEquals("Clay", stats.winRateBySurface[0].surface)
         assertEquals("Hard", stats.winRateBySurface[1].surface)
     }
+
+    @Test
+    fun `INTERRUPTED session with DEFEAT result breaks a victory streak`() {
+        val sessions = listOf(
+            fakeSession(1, status = SessionStatus.INTERRUPTED, result = "DEFEAT", createdAt = 3000L),
+            fakeSession(2, result = "VICTORY", createdAt = 2000L),
+            fakeSession(3, result = "VICTORY", createdAt = 1000L)
+        )
+        val stats = computeStats(sessions)
+        assertTrue(stats.activeStreak is ActiveStreak.Defeats)
+        assertEquals(1, (stats.activeStreak as ActiveStreak.Defeats).count)
+        assertEquals(2, stats.completedMatchSessions)
+        assertEquals(1.0f, stats.winRateGlobal)
+    }
 }

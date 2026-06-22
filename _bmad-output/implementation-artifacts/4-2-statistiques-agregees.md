@@ -4,7 +4,7 @@ baseline_commit: 8304fb8
 
 # Story 4.2: Statistiques agrégées
 
-Status: review
+Status: done
 
 ## Story
 
@@ -57,6 +57,23 @@ So that I can track my progression at a glance without needing to count manually
 - [x] **T5 — Tests unitaires** (AC: 1–4)
   - [x] T5.1 `StatsViewModelTest.kt` : état Loading → Content, win rate calculé, Error state
   - [x] T5.2 `StatsComputerTest.kt` : cas de bord du calcul de stats (0 sessions, surface < 3 matchs, streak)
+
+### Review Findings
+
+- [x] [Review][Patch] P0 — AC-4 : streak élargie à toutes sessions MATCH avec result in [VICTORY, DEFEAT] (statut INTERRUPTED inclus) — décision : utiliser `allWithResult` au lieu de `scored` dans `computeStreak` [StatsComputer.kt:33]
+- [x] [Review][Patch] P1 — Exception dans `collect{}` non attrapée par `.catch` → ViewModel bloqué sur Loading [StatsViewModel.kt:24]
+- [x] [Review][Patch] P2 — Streak non déterministe quand deux sessions ont le même `createdAt` [StatsComputer.kt:33]
+- [x] [Review][Patch] P3 — Surface vide `""` produit une ligne avec label vide dans la card "Par surface" [StatsComputer.kt:21]
+- [x] [Review][Patch] P4 — Troncature float : `toInt()` → `roundToInt()` pour l'affichage du win rate [StatsScreen.kt:86,107]
+- [x] [Review][Patch] P5 — AC-3 : card Sessions affiche deux lignes `Text` séparées au lieu de `"Matchs : X | Entraînements : Y"` [StatsScreen.kt:130]
+- [x] [Review][Patch] P6 — État Error : `Text` aligné en haut à gauche au lieu d'être centré comme Loading [StatsScreen.kt:68]
+- [x] [Review][Defer] D1 — `computeStats()` appelée sur le thread principal — borné par NFR-P3 (<200 sessions) [StatsViewModel.kt:23] — deferred, bounded by spec
+- [x] [Review][Defer] D2 — Normalisation de casse des surfaces (ex. "Clay" vs "clay") — problème de qualité de données pré-existant [StatsComputer.kt] — deferred, pre-existing
+- [x] [Review][Defer] D3 — Pas de mécanisme retry après Error (Flow terminé) — hors scope MVP, pas dans les AC [StatsViewModel.kt+StatsScreen.kt] — deferred, pre-existing
+- [x] [Review][Defer] D4 — Message d'exception brut exposé dans l'UI (`e.message`) — pattern cohérent avec le reste du projet [StatsViewModel.kt:22] — deferred, pre-existing
+- [x] [Review][Defer] D5 — `StatsViewModelTest` accède à `container.stateFlow` directement — fragilité potentielle sur changement Orbit [StatsViewModelTest.kt] — deferred, pre-existing
+- [x] [Review][Defer] D6 — Route `"stats"` en magic string définie à 3 endroits — pattern pré-existant du projet [AppNavGraph.kt] — deferred, pre-existing
+- [x] [Review][Defer] D7 — `computeStreak` accepte `List<Session>` non filtrée — précondition non enforced par le type [StatsComputer.kt:48] — deferred, pre-existing
 
 ---
 

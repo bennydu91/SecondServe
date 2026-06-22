@@ -209,3 +209,13 @@
 - **getProbablePatterns — 7 appels InferenceEngine séquentiels sans borne totale** — Le prefetch génère jusqu'à 7 prompts en séquence dans `prefetchScope`. Latence totale non bornée (7 × latence GeminiNano). Surveillance batterie/CPU à envisager si profiling révèle un impact. [`CoachingCachePrefetcher.kt — refreshPostChangeover`]
 - **withTimeout(3000L) n'annule pas l'InferenceEngine si non coopérativement cancellable** — Si `inferenceEngine.generate()` n'a pas de points de suspension intermédiaires, la coroutine interne continue après le timeout. Ressource CPU/GPU non libérée jusqu'à complétion. Dépend de l'implémentation `GeminiNanoEngine`. [`CoachingResolver.kt — withTimeout block`]
 - **CoachingResolverTest manque un test tryEmit buffer overflow** — Aucun test ne couvre le cas où un 2e game_over arrive avant que le 1er soit consommé. À compléter après résolution de la décision sur la politique de buffer. [`CoachingResolverTest.kt`]
+
+## Deferred from: code review of 4-2-statistiques-agregees (2026-06-22)
+
+- **D1 — computeStats() sur thread principal** — `computeStats()` est appelée dans `collect {}` sur `Dispatchers.Main.immediate`. Borné par NFR-P3 (<200 sessions) donc acceptable pour le MVP. À revisiter si le nombre de sessions croît significativement. [`StatsViewModel.kt:23`]
+- **D2 — Normalisation casse des surfaces** — Deux entrées `"Clay"` et `"clay"` produiraient des buckets séparés dans `groupBy { it.surface }`. Problème de qualité de données pré-existant (saisie surface en Story 2.3). [`StatsComputer.kt`]
+- **D3 — Pas de retry après Error (Flow terminé)** — Une fois que `.catch` absorbe l'erreur, la collection s'arrête. L'utilisateur doit naviguer en arrière et revenir. Hors scope MVP, non prescrit dans les AC. [`StatsViewModel.kt + StatsScreen.kt`]
+- **D4 — Message d'exception brut dans l'UI** — `e.message` peut exposer des détails internes Room. Pattern identique aux autres ViewModels du projet. [`StatsViewModel.kt:22`]
+- **D5 — StatsViewModelTest accède à container.stateFlow directement** — Dépendance à l'implémentation interne Orbit, potentiellement fragile sur changement de version. [`StatsViewModelTest.kt`]
+- **D6 — Route "stats" en magic string** — Définie en 3 endroits (navigate, composable, import). Pattern pré-existant du projet (toutes les routes sont des strings). [`AppNavGraph.kt`]
+- **D7 — computeStreak précondition non enforced par le type** — La fonction accepte `List<Session>` mais attend des sessions déjà filtrées VICTORY/DEFEAT. Branche `else -> null` actuellement dead code. [`StatsComputer.kt:48`]

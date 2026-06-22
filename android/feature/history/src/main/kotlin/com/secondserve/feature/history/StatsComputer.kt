@@ -18,7 +18,7 @@ internal fun computeStats(sessions: List<Session>): AggregatedStats {
                         else victories.toFloat() / scored.size
 
     val bySurface = scored
-        .groupBy { it.surface }
+        .groupBy { it.surface.ifBlank { "Inconnue" } }
         .map { (surface, list) ->
             val v = list.count { it.result == "VICTORY" }
             SurfaceWinRate(
@@ -30,8 +30,10 @@ internal fun computeStats(sessions: List<Session>): AggregatedStats {
         }
         .sortedByDescending { it.matchCount }
 
-    val sortedScored = scored.sortedByDescending { it.createdAt }
-    val streak = computeStreak(sortedScored)
+    val allWithResult = allMatch
+        .filter { it.result in listOf("VICTORY", "DEFEAT") }
+        .sortedWith(compareByDescending<Session> { it.createdAt }.thenByDescending { it.id })
+    val streak = computeStreak(allWithResult)
 
     return AggregatedStats(
         totalMatchSessions = allMatch.size,

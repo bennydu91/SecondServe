@@ -22,8 +22,12 @@ class StatsViewModel @Inject constructor(
             sessionRepository.getAllSessions()
                 .catch { e -> intent { reduce { StatsUiState.Error(e.message ?: "Erreur de chargement") } } }
                 .collect { sessions ->
-                    val stats = computeStats(sessions)
-                    intent { reduce { StatsUiState.Content(stats) } }
+                    try {
+                        val stats = computeStats(sessions)
+                        intent { reduce { StatsUiState.Content(stats) } }
+                    } catch (e: Exception) {
+                        intent { reduce { StatsUiState.Error(e.message ?: "Erreur de chargement") } }
+                    }
                 }
         }
     }

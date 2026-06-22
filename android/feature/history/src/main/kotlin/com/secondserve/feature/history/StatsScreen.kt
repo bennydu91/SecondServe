@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlin.math.roundToInt
 import org.orbitmvi.orbit.compose.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,12 +55,17 @@ fun StatsScreen(
                 contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
 
-            is StatsUiState.Error -> Text(
-                text = s.message,
-                modifier = Modifier
-                    .padding(padding)
-                    .padding(16.dp)
-            )
+            is StatsUiState.Error -> Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = s.message,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
 
             is StatsUiState.Content -> StatsContent(
                 stats = s.stats,
@@ -83,7 +89,7 @@ private fun StatsContent(stats: AggregatedStats, modifier: Modifier = Modifier) 
                 if (stats.winRateGlobal != null) {
                     Text("${stats.victories} victoires / ${stats.completedMatchSessions} matchs")
                     Text(
-                        "${(stats.winRateGlobal * 100).toInt()}%",
+                        "${(stats.winRateGlobal * 100).roundToInt()}%",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 } else {
@@ -104,7 +110,7 @@ private fun StatsContent(stats: AggregatedStats, modifier: Modifier = Modifier) 
                         ) {
                             Text(surfaceStat.surface)
                             if (surfaceStat.winRate != null) {
-                                Text("${(surfaceStat.winRate * 100).toInt()}% (${surfaceStat.matchCount} matchs)")
+                                Text("${(surfaceStat.winRate * 100).roundToInt()}% (${surfaceStat.matchCount} matchs)")
                             } else {
                                 Text("Données insuffisantes")
                             }
@@ -127,8 +133,7 @@ private fun StatsContent(stats: AggregatedStats, modifier: Modifier = Modifier) 
 
         item {
             StatsCard(title = "Sessions") {
-                Text("Matchs : ${stats.totalMatchSessions}")
-                Text("Entraînements : ${stats.totalTrainingSessions}")
+                Text("Matchs : ${stats.totalMatchSessions} | Entraînements : ${stats.totalTrainingSessions}")
             }
         }
     }
