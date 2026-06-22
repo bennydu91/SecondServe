@@ -850,6 +850,8 @@ claude-sonnet-4-6
 ### Debug Log References
 
 - `:domain:testDebugUnitTest` absent → task correcte = `:domain:test` (module pure Kotlin, pas Android library)
+- CI run 1 — Hilt : `MockInferenceEngine @Inject constructor` avec valeurs par défaut génère 2 constructeurs JVM → Hilt refuse. Fix : supprimer `@Inject`, passer `debug/AiModule` de `@Binds abstract class` à `@Provides object`.
+- CI run 2 — `MatchViewModelTest` : nouveau paramètre `coachingCachePrefetcher` non passé. Fix : ajouter `mockk(relaxed = true)` dans le setup du test.
 
 ### Completion Notes List
 
@@ -892,3 +894,4 @@ claude-sonnet-4-6
 
 - 2026-06-22 : Création story 3.3 — OfflineCoachingCache, init match & détection de pattern.
 - 2026-06-22 : Implémentation complète — 10 nouveaux fichiers, 5 fichiers modifiés. MatchPattern (20 patterns), CoachingPatternDetector (object déterministe), Room migration v5→v6, CoachingCachePrefetcher (fire-and-forget), MatchViewModel mis à jour. 18 tests verts, Hilt graph valide debug+release.
+- 2026-06-22 : Fix CI — `MockInferenceEngine` @Inject supprimé, `debug/AiModule` converti en `@Provides object`, `MatchViewModelTest` mis à jour avec mock `CoachingCachePrefetcher`. CI verte (run #27946843675).
