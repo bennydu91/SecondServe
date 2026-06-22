@@ -3,6 +3,8 @@ package com.secondserve.feature.match
 import androidx.lifecycle.SavedStateHandle
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.event.DataLayerEventBus
+import com.secondserve.domain.model.CoachingResult
+import com.secondserve.domain.model.CoachingSource
 import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.model.SetResult
 import com.secondserve.domain.repository.ScoreRepository
@@ -40,6 +42,7 @@ class MatchViewModelTest {
     private lateinit var syncScheduler: SyncScheduler
     private lateinit var dataLayerEventBus: DataLayerEventBus
     private lateinit var coachingCachePrefetcher: CoachingCachePrefetcher
+    private lateinit var coachingResolver: CoachingResolver
     private lateinit var viewModel: MatchViewModel
 
     private val scoreFlow = MutableStateFlow<MatchScore?>(null)
@@ -52,6 +55,7 @@ class MatchViewModelTest {
         syncScheduler = mockk(relaxed = true)
         dataLayerEventBus = DataLayerEventBus()
         coachingCachePrefetcher = mockk(relaxed = true)
+        coachingResolver = mockk()
 
         every { scoreRepository.latestScore } returns scoreFlow
 
@@ -61,6 +65,7 @@ class MatchViewModelTest {
             syncScheduler = syncScheduler,
             dataLayerEventBus = dataLayerEventBus,
             coachingCachePrefetcher = coachingCachePrefetcher,
+            coachingResolver = coachingResolver,
             savedStateHandle = SavedStateHandle(mapOf("sessionId" to 10L))
         )
     }
@@ -182,5 +187,28 @@ class MatchViewModelTest {
         sideEffectDeferred.await()
 
         coVerify { closeMatchUseCase(any(), any(), any(), null) }
+    }
+
+    @Test
+    fun `gameOver event triggers resolve and updates coachingAdvice`() = runTest {
+        val score = MatchScore(currentSetGamesA = 1, currentSetGamesB = 0)
+        val expected = CoachingResult("Bravo pour ce jeu.", CoachingSource.CACHE)
+        coEvery { coachingResolver.resolve(10L, score) } returns expected
+
+        dataLayerEventBus.emitGameOver(score)
+
+        val state = viewModel.container.stateFlow.first { it.coachingAdvice != null }
+        assertEquals(expected, state.coachingAdvice)
+    }
+
+    @Test
+    fun `gameOver with isMatchOver=true does not update coachingAdvice`() = runTest {
+        val score = MatchScore(isMatchOver = true)
+        coEvery { coachingResolver.resolve(10L, score) } returns null
+
+        dataLayerEventBus.emitGameOver(score)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.container.stateFlow.value.coachingAdvice)
     }
 }

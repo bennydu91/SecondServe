@@ -2,8 +2,11 @@ package com.secondserve.feature.match
 
 import com.secondserve.core.ai.InferenceEngine
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.engine.CoachingPatternDetector
 import com.secondserve.domain.model.MatchContextProfile
 import com.secondserve.domain.model.MatchPattern
+import com.secondserve.domain.model.MatchScore
+import com.secondserve.domain.model.MatchStateSnapshot
 import com.secondserve.domain.repository.CoachingRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.SessionRepository
@@ -68,6 +71,53 @@ class CoachingCachePrefetcher @Inject constructor(
                 Timber.e(e, "CoachingCachePrefetcher: initMatch failed for session=%d", sessionId)
             }
         }
+    }
+
+    fun refreshPostChangeover(sessionId: Long, score: MatchScore) {
+        if (sessionId <= 0L) return
+        prefetchScope.launch {
+            try {
+                coachingRepository.markMatchEntriesStale(sessionId)
+                Timber.d("CoachingCachePrefetcher: entries marked stale for session=%d", sessionId)
+
+                val currentPattern = CoachingPatternDetector.detect(MatchStateSnapshot(score))
+                val patterns = getProbablePatterns(currentPattern)
+
+                val session = sessionRepository.getSessionById(sessionId) ?: return@launch
+                val contextProfile = playerProfileRepository.buildMatchContextProfile()
+
+                patterns.forEach { pattern ->
+                    val prompt = buildPrompt(pattern, contextProfile, session.surface)
+                    when (val result = inferenceEngine.generate(prompt)) {
+                        is AppResult.Success -> {
+                            coachingRepository.saveAdvice(sessionId, pattern, result.data)
+                            Timber.d("CoachingCachePrefetcher: refreshed %s", pattern)
+                        }
+                        is AppResult.Error -> {
+                            Timber.d("CoachingCachePrefetcher: refresh failed for %s, keeping stale", pattern)
+                        }
+                        AppResult.Loading -> {}
+                    }
+                }
+                Timber.d("CoachingCachePrefetcher: refreshPostChangeover done, session=%d", sessionId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "CoachingCachePrefetcher: refreshPostChangeover failed for session=%d", sessionId)
+            }
+        }
+    }
+
+    private fun getProbablePatterns(currentPattern: MatchPattern): List<MatchPattern> {
+        return listOf(
+            currentPattern,
+            MatchPattern.NEUTRAL_TRANSITION,
+            MatchPattern.SERVICE_HELD_EASY,
+            MatchPattern.SERVICE_HELD_UNDER_PRESSURE,
+            MatchPattern.SERVICE_BROKEN,
+            MatchPattern.BREAK_CONFIRMED,
+            MatchPattern.BREAK_LOST_AFTER_HOLD
+        ).distinct()
     }
 
     private fun buildPrompt(

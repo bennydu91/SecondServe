@@ -95,7 +95,8 @@ class DataLayerListener : WearableListenerService() {
             val score = payload.scoreSnapshot.toDomain()
             serviceScope.launch {
                 withContext(NonCancellable) { scoreRepository.updateScore(score) }
-                Timber.d("DataLayerListener: ScoreRepository updated via game_over")
+                dataLayerEventBus.emitGameOver(score)
+                Timber.d("DataLayerListener: score updated and gameOver emitted")
             }
         } catch (e: Exception) {
             Timber.e(e, "DataLayerListener: failed to handle game_over")

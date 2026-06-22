@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-22 (story 3.1 done, story 3.3 done)
+last_updated: 2026-06-22 (story 3.4 review)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -67,7 +67,7 @@ development_status:
   3-1-inferenceengine-interface-mockinferenceengine: done
   3-2-geminananoengine-coaching-on-device: done
   3-3-offlinecoachingcache-init-match-detection-de-pattern: done
-  3-4-coachingresolver-affichage-conseil-sur-telephone: backlog
+  3-4-coachingresolver-affichage-conseil-sur-telephone: review
   epic-3-retrospective: optional
 
   # ─── Epic 4: Historique & Statistiques ──────────────────────────────────────

@@ -4,7 +4,7 @@ baseline_commit: 3e1474c537860e8c290df76f6c423cc346a2a4ef
 
 # Story 3.1: InferenceEngine Interface + MockInferenceEngine
 
-Status: review
+Status: done
 
 ## Story
 
@@ -262,6 +262,15 @@ tasks.withType<Test> {
 
 - [x] **Task AI-7** — Lancer `:core:ai:testDebugUnitTest` — tous les tests doivent passer (pas de device, pas d'AICore)
 - [x] **Task AI-8** — Lancer `:app:hiltJavaCompileDebug` (ou `:app:kspDebugKotlin`) — aucun conflit Hilt
+
+### Review Findings
+
+- [x] [Review][Decision] ~~Scope Story 3.2 bundlé dans Story 3.1~~ — **dismissed** : GeminiNanoEngine, split debug/release AiModule et mlkit.genai.prompt sont du travail Story 3.2 correctement livré en avance. Story 3.2 est `done`. État accepté.
+- [x] [Review][Patch] Package incorrect dans MockInferenceEngineTest — déclaré `com.secondserve.core.ai` au lieu de `com.secondserve.core.ai.mock` [android/core/ai/src/test/kotlin/com/secondserve/core/ai/MockInferenceEngineTest.kt:1]
+- [x] [Review][Patch] `javax.inject:javax.inject:1` hardcodé en string Maven au lieu d'un alias version catalog [android/domain/build.gradle.kts] → alias `javax-inject` ajouté dans `libs.versions.toml`
+- [x] [Review][Defer] `:wear` app manque un `AiModule` — aucun binding `InferenceEngine` pour Wear OS — deferred, pré-existant (bloquant Hilt dès la première injection dans `:wear`)
+- [x] [Review][Defer] `GeminiNanoEngine` manque l'annotation `@Singleton` directe — scoped uniquement via `@Binds @Singleton` dans le module — deferred, pré-existant
+- [x] [Review][Defer] `MockInferenceEngine` n'expose pas `lastPrompt` — impossible d'asserter le prompt transmis dans les tests d'intégration — deferred, gap de test-utility
 
 ---
 

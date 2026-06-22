@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.event.DataLayerEventBus
+import com.secondserve.domain.model.CoachingResult
 import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.repository.ScoreRepository
 import com.secondserve.domain.sync.SyncScheduler
@@ -23,6 +24,7 @@ class MatchViewModel @Inject constructor(
     private val syncScheduler: SyncScheduler,
     private val dataLayerEventBus: DataLayerEventBus,
     private val coachingCachePrefetcher: CoachingCachePrefetcher,
+    private val coachingResolver: CoachingResolver,
     savedStateHandle: SavedStateHandle
 ) : ViewModel(), ContainerHost<MatchUiState, MatchSideEffect> {
 
@@ -38,6 +40,16 @@ class MatchViewModel @Inject constructor(
         viewModelScope.launch {
             dataLayerEventBus.closeSessionRequests.collect {
                 onCloseRequested()
+            }
+        }
+
+        viewModelScope.launch {
+            dataLayerEventBus.gameOverEvents.collect { score ->
+                val result = coachingResolver.resolve(sessionId, score)
+                result?.let { advice ->
+                    intent { reduce { state.copy(coachingAdvice = advice) } }
+                    coachingCachePrefetcher.refreshPostChangeover(sessionId, score)
+                }
             }
         }
     }
@@ -90,7 +102,8 @@ data class MatchUiState(
     val showCloseDialog: Boolean = false,
     val feelingRating: Int? = null,
     val feelingComment: String = "",
-    val isClosing: Boolean = false
+    val isClosing: Boolean = false,
+    val coachingAdvice: CoachingResult? = null
 )
 
 sealed class MatchSideEffect {
