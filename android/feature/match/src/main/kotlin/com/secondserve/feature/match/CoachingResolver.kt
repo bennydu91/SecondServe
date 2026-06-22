@@ -39,6 +39,7 @@ class CoachingResolver @Inject constructor(
         val geminiResult = try {
             withTimeout(3_000L) {
                 val session = sessionRepository.getSessionById(sessionId)
+                if (session == null) Timber.w("CoachingResolver: session not found for id=%d, prompt will use empty surface", sessionId)
                 val context = playerProfileRepository.buildMatchContextProfile()
                 val prompt = buildPrompt(pattern, context, session?.surface ?: "")
                 inferenceEngine.generate(prompt)

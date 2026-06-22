@@ -4,7 +4,7 @@ baseline_commit: b2d95c1
 
 # Story 3.4: CoachingResolver & affichage Conseil sur téléphone
 
-Status: review
+Status: done
 
 ## Story
 
@@ -772,6 +772,17 @@ Aucun blocage rencontré. Toutes les signatures de méthodes (CoachingRepository
 - `android/feature/match/src/main/kotlin/com/secondserve/feature/match/MatchScreen.kt` (MODIFIED)
 - `android/feature/match/src/test/kotlin/com/secondserve/feature/match/CoachingResolverTest.kt` (NEW)
 - `android/feature/match/src/test/kotlin/com/secondserve/feature/match/MatchViewModelTest.kt` (MODIFIED)
+
+### Review Findings
+
+- [ ] [Review][Decision] tryEmit peut dropper un game_over silencieusement — `_gameOverEvents` avec `extraBufferCapacity=1` : si un 2e `game_over` arrive avant que le ViewModel ait consommé le 1er, `tryEmit` retourne `false` sans log ni retry. Un conseil de changement de côté est perdu silencieusement. Choix : augmenter le buffer, utiliser `emit` (suspend + conflation), ou accepter la perte.
+- [ ] [Review][Decision] coachingAdvice jamais effacé → conseil affiché pendant tout le jeu suivant jusqu'au prochain changeover. Affiché en fin de match si `isMatchOver` → le dernier conseil reste visible sur l'écran de clôture. Choix : effacer `coachingAdvice` au début de chaque collecte de score, ou à la fermeture de session, ou accepter l'affichage persistant.
+- [ ] [Review][Decision] AC3 — profil vide → aucun contexte réel dans le prompt (surface="", fftSeries=null, playStyle=null, activeWorkAxes=[], coachInstructions=[]) : le prompt se réduit à la description du pattern et `"Surface : ."`, sans les 4 éléments listés dans AC3. Choix : ne pas appeler le resolver si le profil est insuffisant, ou ajouter un guard dans buildPrompt, ou accepter ce cas.
+- [x] [Review][Patch] session==null → surface="" sans Timber.w → prompt dégradé invisible [`CoachingResolver.kt` — `val prompt = buildPrompt(pattern, context, session?.surface ?: "")`]
+- [x] [Review][Defer] refreshPostChangeover ne se déclenche pas si resolve() retourne null — couplage implicite fragile pour les futurs états null [MatchViewModel.kt] — deferred, pre-existing
+- [x] [Review][Defer] getProbablePatterns génère 7 appels inferenceEngine séquentiels sans borne de durée totale — consommation batterie [CoachingCachePrefetcher.kt] — deferred, pre-existing
+- [x] [Review][Defer] withTimeout(3000L) n'annule pas l'InferenceEngine si non coopérativement cancellable — fuite CPU/GPU potentielle [CoachingResolver.kt] — deferred, pre-existing
+- [x] [Review][Defer] CoachingResolverTest ne teste pas le buffer overflow de tryEmit (dépend de la résolution du finding tryEmit) [CoachingResolverTest.kt] — deferred, pre-existing
 
 ## Change Log
 

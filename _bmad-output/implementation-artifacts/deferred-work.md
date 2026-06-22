@@ -189,3 +189,10 @@
 - **`@Singleton` + cycle de vie `Generation.getClient()`** — ML Kit ContentProvider pattern est safe par design. À re-évaluer si ML Kit exige un `close()` explicite en basse mémoire. [`GeminiNanoEngine.kt`]
 - **`FeatureStatus` non exhaustif** — `DOWNLOADING` et `UNAVAILABLE` retournent le même `INFERENCE_FAILED`. Différenciation (retry logic pour DOWNLOADING) à considérer en Story 3.3/3.4. [`GeminiNanoEngine.kt:19`]
 - **Pas de `withTimeout(3000)` pour NFR latence ≤ 3s** — AC6 = validation manuelle sur Pixel 9 Pro. À considérer en Story 3.4 (CoachingResolver) pour garantir le timeout côté appelant. [`GeminiNanoEngine.kt`]
+
+## Deferred from: code review of 3-4-coachingresolver-affichage-conseil-sur-telephone (2026-06-22)
+
+- **refreshPostChangeover non déclenché si resolve()=null** — Couplage implicite : `refreshPostChangeover` est conditionnel à `result != null` dans MatchViewModel. Toute future extension de `resolve()` pouvant retourner null (ex. guard sur sessionId) désactivera silencieusement le prefetch. [`MatchViewModel.kt:49-53`]
+- **getProbablePatterns — 7 appels InferenceEngine séquentiels sans borne totale** — Le prefetch génère jusqu'à 7 prompts en séquence dans `prefetchScope`. Latence totale non bornée (7 × latence GeminiNano). Surveillance batterie/CPU à envisager si profiling révèle un impact. [`CoachingCachePrefetcher.kt — refreshPostChangeover`]
+- **withTimeout(3000L) n'annule pas l'InferenceEngine si non coopérativement cancellable** — Si `inferenceEngine.generate()` n'a pas de points de suspension intermédiaires, la coroutine interne continue après le timeout. Ressource CPU/GPU non libérée jusqu'à complétion. Dépend de l'implémentation `GeminiNanoEngine`. [`CoachingResolver.kt — withTimeout block`]
+- **CoachingResolverTest manque un test tryEmit buffer overflow** — Aucun test ne couvre le cas où un 2e game_over arrive avant que le 1er soit consommé. À compléter après résolution de la décision sur la politique de buffer. [`CoachingResolverTest.kt`]
