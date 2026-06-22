@@ -148,6 +148,11 @@ class MatchViewModelTest {
     }
 
     @Test
+    fun `initMatch is called with sessionId on ViewModel init`() {
+        verify(exactly = 1) { coachingCachePrefetcher.initMatch(10L) }
+    }
+
+    @Test
     fun `confirmClose uses session id from SavedStateHandle`() = runTest {
         scoreFlow.value = MatchScore()
         coEvery { closeMatchUseCase(10L, any(), any(), any()) } returns AppResult.Success(Unit)

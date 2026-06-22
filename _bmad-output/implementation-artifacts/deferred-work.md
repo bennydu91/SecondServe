@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 3-3-offlinecoachingcache-init-match-detection-de-pattern (2026-06-22)
+
+- **Aucun test d'intégration Room pour MIGRATION_5_6 / CoachingCacheDao** — La migration SQL (CREATE TABLE + CREATE UNIQUE INDEX), le DAO et le repository n'ont aucune couverture via `MigrationTestHelper`. Risque de corruption data en production. Hors scope story 3.3. [`android/data/`]
+- **Frontière SET_WON_CLOSE inclut 6-4 (diff=2)** — Un score 6-4 tombe dans `SET_WON_CLOSE` ("7-5, 7-6") alors que c'est un set remporté confortablement. Choix de design. [`android/domain/src/main/kotlin/com/secondserve/domain/engine/CoachingPatternDetector.kt`]
+- **Injection prompt possible via `coachInstructions`/`surface` dans `buildPrompt()`** — Champs utilisateur interpolés sans sanitisation. Risque acceptable pour LLM on-device MVP, à adresser avant tout passage vers un moteur distant. [`android/feature/match/src/main/kotlin/com/secondserve/feature/match/CoachingCachePrefetcher.kt`]
+- **`detect()` non gardé pour l'état `isMatchOver=true`** — Retourne `MATCH_POINT_APPROACHING` de manière trompeuse si appelé après fin de match. Story 3.4 devra gérer cela. [`android/domain/src/main/kotlin/com/secondserve/domain/engine/CoachingPatternDetector.kt`]
+- **`markMatchEntriesStale()` jamais appelé dans le code feature** — Infrastructure de staleness wired côté data mais aucun code ne l'appelle. Story 3.4 déclenchera le marquage stale au changeover. [`android/feature/match/src/main/kotlin/com/secondserve/feature/match/MatchViewModel.kt`]
+
 ## Deferred from: code review of 2-6-cloture-de-session-match-syncworker (2026-06-20)
 
 - **`DataLayerEventBus` dual-singleton** — `WearDataModule` crée une instance distincte dans `:wear` qui n'est jamais consommée ; `DataLayerListener` passe correctement par l'instance `:app` via `EntryPointAccessors`. Architecture dead code non bloquante, risque futur si un composant wear injecte directement `DataLayerEventBus`. [`android/wear/src/main/kotlin/com/secondserve/wear/di/WearDataModule.kt`]
@@ -168,6 +176,12 @@
 - **allowBackup sans règles de backup** — Définir `android:dataExtractionRules` ou `android:fullBackupContent` avant la mise en production, surtout une fois Room ajouté. [`android/app/src/main/AndroidManifest.xml:7`]
 - **InferenceEngine sans binding Hilt** — `AppModule` vide, aucun `@Binds` pour `InferenceEngine`. Toute injection déclenchera `[Dagger/MissingBinding]`. À adresser en Story 3.1. [`android/app/src/main/kotlin/com/secondserve/di/AppModule.kt`]
 - **Permissions Wear manquantes** — `BODY_SENSORS` et `ACTIVITY_RECOGNITION` absents du manifest Wear. À ajouter dans les stories concernant la capture de données capteurs. [`android/wear/src/main/AndroidManifest.xml`]
+
+## Deferred from: code review of 3-1-inferenceengine-interface-mockinferenceengine (2026-06-22)
+
+- **`:wear` app manque un `AiModule`** — Aucun binding `InferenceEngine` pour Wear OS. Pas encore bloquant (aucun composant Wear n'injecte `InferenceEngine`), mais deviendra un BLOCKER Hilt à la première injection dans `:wear`. [`android/wear/` — aucun `AiModule` dans debug/ ou release/`]
+- **`GeminiNanoEngine` manque l'annotation `@Singleton` directe** — Scoped via `@Binds @Singleton` dans `release/AiModule.kt`, non sur la classe elle-même. Confusant : une injection directe de `GeminiNanoEngine` en dehors du module obtiendrait une instance non-scoped. [`android/core/ai/src/main/kotlin/com/secondserve/core/ai/gemini/GeminiNanoEngine.kt`]
+- **`MockInferenceEngine` n'expose pas `lastPrompt`** — Impossible d'asserter le prompt transmis depuis les callers dans les tests d'intégration. Gap de test-utility à combler si les tests d'intégration en aval ont besoin de vérifier le prompt généré. [`android/core/ai/src/main/kotlin/com/secondserve/core/ai/mock/MockInferenceEngine.kt`]
 
 ## Deferred from: code review of 3-2-geminananoengine-coaching-on-device (2026-06-21)
 

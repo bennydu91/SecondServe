@@ -23,7 +23,7 @@ data class CoachingCacheEntity(
 fun CoachingCacheEntity.toDomain(): CoachingCacheEntry = CoachingCacheEntry(
     id = id,
     matchId = matchId,
-    pattern = MatchPattern.valueOf(pattern),
+    pattern = MatchPattern.entries.firstOrNull { it.name == pattern } ?: MatchPattern.NEUTRAL_TRANSITION,
     content = content,
     generatedAt = generatedAt,
     isStale = isStale

@@ -1,4 +1,4 @@
-package com.secondserve.core.ai
+package com.secondserve.core.ai.mock
 
 import com.secondserve.core.ai.mock.MockInferenceEngine
 import com.secondserve.domain.AppResult

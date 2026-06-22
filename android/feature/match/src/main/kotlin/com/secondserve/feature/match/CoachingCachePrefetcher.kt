@@ -10,6 +10,7 @@ import com.secondserve.domain.repository.SessionRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -24,9 +25,15 @@ class CoachingCachePrefetcher @Inject constructor(
     private val sessionRepository: SessionRepository
 ) {
     private val prefetchScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var prefetchJob: Job? = null
 
     fun initMatch(sessionId: Long) {
-        prefetchScope.launch {
+        if (sessionId <= 0L) {
+            Timber.e("CoachingCachePrefetcher: invalid sessionId=%d, abort", sessionId)
+            return
+        }
+        if (prefetchJob?.isActive == true) return
+        prefetchJob = prefetchScope.launch {
             try {
                 val session = sessionRepository.getSessionById(sessionId)
                     ?: run {
@@ -47,7 +54,11 @@ class CoachingCachePrefetcher @Inject constructor(
                             val fallback = MatchPattern.GENERIC_FALLBACK_TEXTS[pattern] ?: return@forEach
                             coachingRepository.saveAdvice(sessionId, pattern, fallback)
                         }
-                        AppResult.Loading -> {}
+                        AppResult.Loading -> {
+                            Timber.w("CoachingCachePrefetcher: unexpected Loading for %s, using fallback", pattern)
+                            val fallback = MatchPattern.GENERIC_FALLBACK_TEXTS[pattern] ?: return@forEach
+                            coachingRepository.saveAdvice(sessionId, pattern, fallback)
+                        }
                     }
                 }
                 Timber.d("CoachingCachePrefetcher: initMatch done, session=%d", sessionId)

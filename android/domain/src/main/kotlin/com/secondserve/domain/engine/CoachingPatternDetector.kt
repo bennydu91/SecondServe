@@ -22,9 +22,6 @@ object CoachingPatternDetector {
             val oppSetGames = lastSet.gamesB
             val diff = abs(mySetGames - oppSetGames)
 
-            val setsWon = score.completedSets.count { it.gamesA > it.gamesB }
-            if (setsWon >= 2) return MatchPattern.MATCH_POINT_APPROACHING
-
             return when {
                 mySetGames > oppSetGames && diff >= 3 -> MatchPattern.SET_WON_DOMINANT
                 mySetGames > oppSetGames             -> MatchPattern.SET_WON_CLOSE
@@ -39,14 +36,17 @@ object CoachingPatternDetector {
             return if (myGames == 1) MatchPattern.FIRST_GAME_WON else MatchPattern.FIRST_GAME_LOST
         }
 
-        if (myGames - oppGames >= 3) return MatchPattern.DOMINANT_LEAD
-        if (oppGames - myGames >= 3) return MatchPattern.DOUBLE_BREAK_ADVANTAGE
-
-        if (myGames == oppGames && myGames in 2..4) return MatchPattern.EQUAL_MIDSET
+        val setsWon = score.completedSets.count { it.gamesA > it.gamesB }
+        if (setsWon == 1 && myGames - oppGames >= 2) return MatchPattern.MATCH_POINT_APPROACHING
 
         val previousSetLost = score.completedSets.any { it.gamesA < it.gamesB }
         val currentlyLeading = myGames > oppGames
         if (previousSetLost && currentlyLeading) return MatchPattern.COMEBACK_IN_PROGRESS
+
+        if (myGames - oppGames >= 3) return MatchPattern.DOMINANT_LEAD
+        if (myGames - oppGames == 2) return MatchPattern.DOUBLE_BREAK_ADVANTAGE
+
+        if (myGames == oppGames && myGames in 2..4) return MatchPattern.EQUAL_MIDSET
 
         return MatchPattern.NEUTRAL_TRANSITION
     }

@@ -64,11 +64,21 @@ class CoachingPatternDetectorTest {
     }
 
     @Test
-    fun `detect MATCH_POINT_APPROACHING when 2 sets won`() {
+    fun `detect SET_WON_DOMINANT after winning second set 6-2`() {
         val score = MatchScore(
             completedSets = listOf(SetResult(6, 3), SetResult(6, 2)),
             currentSetGamesA = 0,
             currentSetGamesB = 0
+        )
+        assertEquals(MatchPattern.SET_WON_DOMINANT, CoachingPatternDetector.detect(snap(score)))
+    }
+
+    @Test
+    fun `detect MATCH_POINT_APPROACHING when 1 set won and leading by 2 games`() {
+        val score = MatchScore(
+            completedSets = listOf(SetResult(6, 3)),
+            currentSetGamesA = 4,
+            currentSetGamesB = 2
         )
         assertEquals(MatchPattern.MATCH_POINT_APPROACHING, CoachingPatternDetector.detect(snap(score)))
     }
@@ -98,8 +108,8 @@ class CoachingPatternDetectorTest {
     }
 
     @Test
-    fun `detect DOUBLE_BREAK_ADVANTAGE when opponent ahead by 3 games`() {
-        val score = MatchScore(currentSetGamesA = 1, currentSetGamesB = 4)
+    fun `detect DOUBLE_BREAK_ADVANTAGE when player leads by exactly 2 games`() {
+        val score = MatchScore(currentSetGamesA = 3, currentSetGamesB = 1)
         assertEquals(MatchPattern.DOUBLE_BREAK_ADVANTAGE, CoachingPatternDetector.detect(snap(score)))
     }
 
@@ -141,8 +151,8 @@ class CoachingPatternDetectorTest {
     }
 
     @Test
-    fun `detect TIEBREAK_APPROACHING when games are 6-6 not yet tiebreak`() {
-        val score = MatchScore(currentSetGamesA = 6, currentSetGamesB = 6, isTieBreak = false)
-        assertEquals(MatchPattern.TIEBREAK_APPROACHING, CoachingPatternDetector.detect(snap(score)))
+    fun `detect NEUTRAL_TRANSITION when opponent leads by 3 games`() {
+        val score = MatchScore(currentSetGamesA = 1, currentSetGamesB = 4)
+        assertEquals(MatchPattern.NEUTRAL_TRANSITION, CoachingPatternDetector.detect(snap(score)))
     }
 }

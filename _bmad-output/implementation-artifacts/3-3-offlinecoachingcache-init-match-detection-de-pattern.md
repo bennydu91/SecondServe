@@ -4,7 +4,7 @@ baseline_commit: 83d9ae6
 
 # Story 3.3: OfflineCoachingCache — Init match & détection de pattern
 
-Status: review
+Status: done
 
 ## Story
 
@@ -889,6 +889,22 @@ claude-sonnet-4-6
 - `android/feature/match/build.gradle.kts` (MODIFIED)
 - `android/feature/match/src/main/kotlin/com/secondserve/feature/match/CoachingCachePrefetcher.kt` (NEW)
 - `android/feature/match/src/main/kotlin/com/secondserve/feature/match/MatchViewModel.kt` (MODIFIED)
+
+### Review Findings
+
+- [ ] [Review][Decision] DOUBLE_BREAK_ADVANTAGE condition inversée : `oppGames - myGames >= 3` → conseil "Position excellente" quand le joueur est en déficit de 3 jeux. Options : A) renommer en `DOUBLE_BREAK_DOWN` + maj description/fallback, B) conserver le nom et corriger la condition pour déclencher quand le joueur mène (ex: myGames-oppGames >= 2, à calibrer vs DOMINANT_LEAD)
+- [ ] [Review][Decision] MATCH_POINT_APPROACHING se déclenche quand le match est déjà terminé (`setsWon >= 2 && totalGames == 0` en best-of-3 = victoire acquise, pas en approche). Options : A) accepter (conseil pertinent à la clôture), B) déplacer la condition plus tôt dans le set, C) déférer à Story 3.4 qui gérera `isMatchOver`
+- [ ] [Review][Patch] `MatchPattern.valueOf()` throw non attrapé dans `toDomain()` — crash si nom stocké inconnu de l'enum [CoachingCacheEntity.kt:toDomain()]
+- [ ] [Review][Patch] `initMatch()` multi-appels sans déduplication sur le `@Singleton` — deux ViewModel successifs lancent 2×20 inférences concurrentes [CoachingCachePrefetcher.kt]
+- [ ] [Review][Patch] Test `detect TIEBREAK_APPROACHING when games are 6-6 not yet tiebreak` valide un état tennis impossible (6-6 avec isTieBreak=false) [CoachingPatternDetectorTest.kt:144]
+- [ ] [Review][Patch] `MatchViewModelTest` : pas de `verify { coachingCachePrefetcher.initMatch(10L) }` — l'appel n'est pas asserté [MatchViewModelTest.kt]
+- [ ] [Review][Patch] `sessionId = 0L` par défaut sans garde dans `initMatch()` — déclenche un appel IO inutile si SavedStateHandle incomplet [MatchViewModel.kt:29 + CoachingCachePrefetcher.kt]
+- [ ] [Review][Patch] `AppResult.Loading` → no-op silencieux sans fallback ni log dans `initMatch()` [CoachingCachePrefetcher.kt]
+- [x] [Review][Defer] Aucun test d'intégration Room pour MIGRATION_5_6 / CoachingCacheDao — déféré, hors scope story 3.3
+- [x] [Review][Defer] Frontière SET_WON_CLOSE inclut 6-4 (diff=2) — déféré, choix de design
+- [x] [Review][Defer] Injection prompt possible via coachInstructions/surface dans buildPrompt() — déféré, risque acceptable pour LLM on-device MVP
+- [x] [Review][Defer] detect() non gardé pour isMatchOver=true — déféré, Story 3.4 concern
+- [x] [Review][Defer] markMatchEntriesStale() jamais appelé dans le code feature — déféré, Story 3.4 concern
 
 ## Change Log
 
