@@ -4,7 +4,7 @@ baseline_commit: e04d252
 
 # Story 4.1: Historique des Sessions
 
-Status: review
+Status: done
 
 ## Story
 
@@ -495,3 +495,27 @@ claude-sonnet-4-6
 ## Change Log
 
 - 2026-06-22 : Implémentation complète story 4.1 — historique des sessions. Migration Room v6→v7 (`score_text`), écran `HistoryScreen` + `SessionDetailScreen`, navigation depuis `HomeScreen`, 9 nouveaux tests unitaires.
+
+---
+
+### Review Findings
+
+<!-- Code review du 2026-06-22 — 3 couches : Blind Hunter, Edge Case Hunter, Acceptance Auditor -->
+
+- [x] [Review][Patch] HistoryViewModel: gestion d'erreur manquante — `.catch {}` ajouté + test `Error state when getAllSessions flow throws exception` ajouté [`HistoryViewModel.kt`, `HistoryViewModelTest.kt`]
+- [x] [Review][Patch] SessionDetailViewModel: exception non catchée dans `load()` — `try/catch` ajouté autour de `getSessionById` + `getAdvicesForSession` [`SessionDetailViewModel.kt`]
+- [x] [Review][Patch] SessionDetailViewModel: `checkNotNull` → `savedStateHandle.get<Long>("sessionId") ?: -1L` [`SessionDetailViewModel.kt`]
+- [x] [Review][Patch] États `Loading` — `CircularProgressIndicator()` affiché dans les deux écrans [`HistoryScreen.kt`, `SessionDetailScreen.kt`]
+- [x] [Review][Patch] `SimpleDateFormat` — déplacé en constante module-level `sessionDateFormat` / `sessionDetailDateFormat` [`HistoryScreen.kt`, `SessionDetailScreen.kt`]
+- [x] [Review][Patch] `resultLabel()` — extraite en `internal fun` dans `HistoryUiState.kt`, retirée des deux écrans [`HistoryUiState.kt`]
+- [x] [Review][Patch] `HistoryScreen`: bouton retour `TextButton("← Retour")` ajouté dans la `TopAppBar` [`HistoryScreen.kt`]
+- [x] [Review][Defer] Anti-pattern Orbit MVI (`viewModelScope.launch` externe + `intent` interne) [`HistoryViewModel.kt:20`] — deferred, pattern prescrit explicitement par la spec dev notes
+- [x] [Review][Defer] `MIGRATION_6_7` non idempotente (ALTER TABLE sans protection double-run) [`SecondServeDatabase.kt:141`] — deferred, Room garantit qu'une migration ne s'exécute qu'une fois via le versioning
+- [x] [Review][Defer] Test réactivité `HistoryViewModelTest` fragile — `first { size == 2 }` peut se bloquer sans Turbine [`HistoryViewModelTest.kt`] — deferred, tests actuellement verts, amélioration future
+- [x] [Review][Defer] `object` au lieu de `data object` dans sealed classes [`HistoryUiState.kt`, `SessionDetailUiState.kt`] — deferred, style Kotlin 1.9+, non bloquant
+- [x] [Review][Defer] DB version > 7 après rollback APK — crash Room au démarrage [`DataModule.kt`] — deferred, cas extrême, problème architectural pré-existant
+- [x] [Review][Defer] Paths de migration v1→v6 non testés via `MigrationTestHelper` — deferred, pre-existing, hors scope story 4.1
+- [x] [Review][Defer] Fallback silencieux `MatchPattern.NEUTRAL_TRANSITION` sur pattern inconnu — deferred, pre-existing dans `CoachingCacheEntity`
+- [x] [Review][Defer] `scoreText` absent du `SyncSessionDto` — perte silencieuse lors de la synchronisation réseau [`Mappers.kt`] — deferred, sync réseau hors scope story 4.1
+- [x] [Review][Defer] `createdAt = 0L` affiche "01/01/1970" [`HistoryScreen.kt:157`, `SessionDetailScreen.kt:84`] — deferred, données invalides non produites par l'app en conditions normales
+- [x] [Review][Defer] `SetResult` avec valeurs négatives dans `toScoreText()` [`CloseMatchUseCase.kt:23`] — deferred, validation en amont lors de la saisie du score

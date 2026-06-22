@@ -1,6 +1,7 @@
 package com.secondserve.feature.history
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +31,8 @@ import org.orbitmvi.orbit.compose.collectAsState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private val sessionDetailDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +55,12 @@ fun SessionDetailScreen(
         }
     ) { padding ->
         when (val s = state) {
-            is SessionDetailUiState.Loading -> Unit
+            is SessionDetailUiState.Loading -> Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
             is SessionDetailUiState.Error -> Text(
                 text = s.message,
                 modifier = Modifier.padding(padding).padding(16.dp)
@@ -81,7 +91,7 @@ private fun SessionDetailContent(
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text("Session", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    DetailRow("Date", SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE).format(Date(session.createdAt)))
+                    DetailRow("Date", sessionDetailDateFormat.format(Date(session.createdAt)))
                     DetailRow("Surface", session.surface)
                     DetailRow("Format", session.format.matchFormat.name)
                     session.opponent?.let { DetailRow("Adversaire", it) }
@@ -128,12 +138,4 @@ private fun DetailRow(label: String, value: String) {
         Text(text = label, style = MaterialTheme.typography.labelSmall)
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
-}
-
-private fun Session.resultLabel(): String = when (result) {
-    "VICTORY" -> "Victoire"
-    "DEFEAT" -> "Défaite"
-    "DRAW" -> "Nul"
-    "ABANDONED" -> "Abandonné"
-    else -> "N/A"
 }

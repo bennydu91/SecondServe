@@ -1,5 +1,18 @@
 # Deferred Work
 
+## Deferred from: code review of 4-1-historique-des-sessions (2026-06-22)
+
+- **Anti-pattern Orbit MVI (`viewModelScope.launch` + `intent` imbriqué)** — Pattern prescrit par la spec dev notes, non bloquant. [`HistoryViewModel.kt:20`]
+- **`MIGRATION_6_7` non idempotente (ALTER TABLE sans protection)** — Room garantit exécution unique via versioning ; risque théorique de crash en cas de test mal isolé. [`SecondServeDatabase.kt:141`]
+- **Test réactivité `HistoryViewModelTest` fragile (sans Turbine)** — `first { size == 2 }` peut bloquer indéfiniment ; amélioration future avec `turbine`. [`HistoryViewModelTest.kt`]
+- **`object` au lieu de `data object` dans sealed classes** — Kotlin 1.9+ recommande `data object` pour `toString()`/`equals()` corrects. [`HistoryUiState.kt`, `SessionDetailUiState.kt`]
+- **DB version > 7 après rollback APK** — `IllegalStateException` Room au démarrage si l'utilisateur downgrade puis upgrade. Problème architectural pré-existant à traiter avant release. [`DataModule.kt`]
+- **Paths de migration v1→v6 non testés via `MigrationTestHelper`** — Risque de corruption schéma non détecté avant production. Pre-existing hors scope story 4.1. [`android/data/`]
+- **Fallback silencieux `MatchPattern.NEUTRAL_TRANSITION` sur pattern inconnu** — Corruption de données masquée sans log Timber. Pre-existing dans `CoachingCacheEntity`.
+- **`scoreText` absent du `SyncSessionDto`** — Le score n'est jamais envoyé au backend lors de la synchronisation réseau. À corriger dans la story de sync (Epic 5+). [`android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt`]
+- **`createdAt = 0L` affiche "01/01/1970"** — Données corrompues ou créées avec timestamp par défaut s'affichent sans message d'erreur. [`HistoryScreen.kt:157`, `SessionDetailScreen.kt:84`]
+- **`SetResult` avec valeurs négatives dans `toScoreText()`** — Aucune validation ; scoreText `"-1-6"` stockable en DB. Validation en amont de la saisie à renforcer. [`CloseMatchUseCase.kt:23`]
+
 ## Deferred from: code review of 3-3-offlinecoachingcache-init-match-detection-de-pattern (2026-06-22)
 
 - **Aucun test d'intégration Room pour MIGRATION_5_6 / CoachingCacheDao** — La migration SQL (CREATE TABLE + CREATE UNIQUE INDEX), le DAO et le repository n'ont aucune couverture via `MigrationTestHelper`. Risque de corruption data en production. Hors scope story 3.3. [`android/data/`]

@@ -14,6 +14,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -92,6 +93,16 @@ class HistoryViewModelTest {
             it is HistoryUiState.Content && it.sessions.size == 2
         }
         assertEquals(2, (state as HistoryUiState.Content).sessions.size)
+    }
+
+    @Test
+    fun `Error state when getAllSessions flow throws exception`() = runTest {
+        every { sessionRepository.getAllSessions() } returns flow { throw RuntimeException("DB error") }
+
+        viewModel = HistoryViewModel(sessionRepository)
+
+        val state = viewModel.container.stateFlow.first { it is HistoryUiState.Error }
+        assertTrue(state is HistoryUiState.Error)
     }
 
     @Test

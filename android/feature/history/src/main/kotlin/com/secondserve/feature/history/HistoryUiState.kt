@@ -11,3 +11,11 @@ sealed class HistoryUiState {
 sealed class HistorySideEffect {
     data class NavigateToDetail(val sessionId: Long) : HistorySideEffect()
 }
+
+internal fun Session.resultLabel(): String = when (result) {
+    "VICTORY" -> "Victoire"
+    "DEFEAT" -> "Défaite"
+    "DRAW" -> "Nul"
+    "ABANDONED" -> "Abandonné"
+    else -> "N/A"
+}

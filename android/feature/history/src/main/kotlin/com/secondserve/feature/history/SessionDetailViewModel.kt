@@ -16,7 +16,7 @@ class SessionDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel(), ContainerHost<SessionDetailUiState, Nothing> {
 
-    private val sessionId: Long = checkNotNull(savedStateHandle["sessionId"])
+    private val sessionId: Long = savedStateHandle.get<Long>("sessionId") ?: -1L
 
     override val container = container<SessionDetailUiState, Nothing>(SessionDetailUiState.Loading)
 
@@ -25,12 +25,16 @@ class SessionDetailViewModel @Inject constructor(
     }
 
     private fun load() = intent {
-        val session = sessionRepository.getSessionById(sessionId)
-        if (session == null) {
-            reduce { SessionDetailUiState.Error("Session introuvable") }
-            return@intent
+        try {
+            val session = sessionRepository.getSessionById(sessionId)
+            if (session == null) {
+                reduce { SessionDetailUiState.Error("Session introuvable") }
+                return@intent
+            }
+            val advices = coachingRepository.getAdvicesForSession(sessionId)
+            reduce { SessionDetailUiState.Content(session, advices) }
+        } catch (e: Exception) {
+            reduce { SessionDetailUiState.Error(e.message ?: "Erreur de chargement") }
         }
-        val advices = coachingRepository.getAdvicesForSession(sessionId)
-        reduce { SessionDetailUiState.Content(session, advices) }
     }
 }
