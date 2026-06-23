@@ -2,6 +2,7 @@ package com.secondserve.feature.profile
 
 import androidx.lifecycle.ViewModel
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.model.AxisSuggestion
 import com.secondserve.domain.model.MAX_WORK_AXES
 import com.secondserve.domain.model.WorkAxis
 import com.secondserve.domain.repository.WorkAxisRepository
@@ -19,6 +20,8 @@ class WorkAxesViewModel @Inject constructor(
 
     init {
         collectWorkAxes()
+        collectSuggestions()
+        tryGenerateSuggestionsIfNeeded()
     }
 
     private fun collectWorkAxes() = intent {
@@ -29,6 +32,26 @@ class WorkAxesViewModel @Inject constructor(
                     isAtMaxCapacity = axes.size >= MAX_WORK_AXES
                 )
             }
+        }
+    }
+
+    private fun collectSuggestions() = intent {
+        workAxisRepository.observePendingSuggestions().collect { suggestions ->
+            reduce { state.copy(pendingSuggestions = suggestions) }
+        }
+    }
+
+    private fun tryGenerateSuggestionsIfNeeded() = intent {
+        if (workAxisRepository.hasPendingSuggestions()) return@intent
+        reduce { state.copy(isGeneratingSuggestions = true, suggestionsError = null) }
+        try {
+            val result = workAxisRepository.generateAndSaveSuggestions()
+            if (result is AppResult.Error) {
+                val isNoData = result.exception.message == "No coaching data available"
+                if (!isNoData) reduce { state.copy(suggestionsError = "Suggestions IA indisponibles") }
+            }
+        } finally {
+            reduce { state.copy(isGeneratingSuggestions = false) }
         }
     }
 
@@ -83,17 +106,37 @@ class WorkAxesViewModel @Inject constructor(
             AppResult.Loading -> {}
         }
     }
+
+    fun acceptSuggestion(id: Long) = intent {
+        if (state.isAtMaxCapacity) {
+            postSideEffect(WorkAxesSideEffect.ShowError("Maximum $MAX_WORK_AXES axes actifs atteint"))
+            return@intent
+        }
+        when (workAxisRepository.acceptSuggestion(id)) {
+            is AppResult.Success -> postSideEffect(WorkAxesSideEffect.SuggestionAccepted)
+            is AppResult.Error -> postSideEffect(WorkAxesSideEffect.ShowError("Erreur lors de l'acceptation"))
+            AppResult.Loading -> Unit
+        }
+    }
+
+    fun ignoreSuggestion(id: Long) = intent {
+        workAxisRepository.ignoreSuggestion(id)
+    }
 }
 
 data class WorkAxesUiState(
     val workAxes: List<WorkAxis> = emptyList(),
     val isAtMaxCapacity: Boolean = false,
-    val isSaving: Boolean = false
+    val isSaving: Boolean = false,
+    val pendingSuggestions: List<AxisSuggestion> = emptyList(),
+    val isGeneratingSuggestions: Boolean = false,
+    val suggestionsError: String? = null
 )
 
 sealed class WorkAxesSideEffect {
     data object WorkAxisCreated : WorkAxesSideEffect()
     data object WorkAxisUpdated : WorkAxesSideEffect()
     data object WorkAxisDeleted : WorkAxesSideEffect()
+    data object SuggestionAccepted : WorkAxesSideEffect()
     data class ShowError(val message: String) : WorkAxesSideEffect()
 }

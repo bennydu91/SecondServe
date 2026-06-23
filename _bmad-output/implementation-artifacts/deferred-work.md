@@ -1,5 +1,14 @@
 # Deferred Work
 
+## Deferred from: code review of 5-3-synthese-ia-multi-matchs (2026-06-23)
+
+- **D1 — Navigation route `"coaching"` via String hardcodée** — Pattern pré-existant dans `AppNavGraph.kt`. Toutes les routes du projet utilisent des string literals. À centraliser dans un objet `Routes` global si la navigation grossit. [`AppNavGraph.kt`]
+- **D2 — Aucun timeout sur `vpsMistralEngine.generate()` dans `generateNow()`** — Le spinner `synthesisInProgress` peut rester actif indéfiniment si le VPS ne répond pas. Pattern pré-existant avec l'`InferenceEngine`. À adresser via un `withTimeout()` ou annulation Orbit. [`CoachingViewModel.kt`]
+- **D3 — Table `coaching_syntheses` sans politique de purge** — `OnConflictStrategy.REPLACE` sur insert ne supprime pas les anciennes lignes (id AUTOINCREMENT). La table grossit sans borne. À adresser avec une limite de N synthèses conservées si le stockage devient un enjeu. [`CoachingSynthesisDao.kt`]
+- **D4 — Condition `>` stricte sur `updated_at` exclut sessions à même ms que `generatedAt`** — `WHERE updated_at > :afterMs` exclut les sessions avec `updated_at == lastSynthesis.generatedAt`. Edge case infime (résolution ms) mais techniquement incorrect. Pourrait devenir `>=` pour inclusion stricte. [`SessionDao.kt`]
+- **D5 — Sessions avec surface/result null produisent prompt avec "inconnu"/"?"** — `buildSynthesisPrompt` gère les nulls avec des fallbacks string. Pour V1 mono-utilisateur acceptable ; à améliorer si la qualité des synthèses doit être garantie. [`SynthesisWorker.kt`]
+- **D6 — Aucun test de migration Room instrumenté** — Migration 8→9 non couverte par un test `MigrationTestHelper`. Tests instrumentés hors scope story. À créer dans un sprint dédié qualité. [`SecondServeDatabase.kt`]
+
 ## Deferred from: code review of 5-1-vpsmistralengine-routing-mistral-via-vps (2026-06-23)
 
 - **Circuit breaker VPS absent en match** — 5s × N appels consécutifs = latence cumulative si VPS dégradé. À adresser quand le volume d'appels coaching justifie un mécanisme de court-circuit.

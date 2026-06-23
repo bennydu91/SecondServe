@@ -33,6 +33,8 @@ class WorkAxesViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
         every { repository.getWorkAxes() } returns flowOf(emptyList())
+        every { repository.observePendingSuggestions() } returns flowOf(emptyList())
+        coEvery { repository.hasPendingSuggestions() } returns true
     }
 
     @AfterEach

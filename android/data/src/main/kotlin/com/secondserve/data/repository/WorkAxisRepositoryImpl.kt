@@ -1,11 +1,18 @@
 package com.secondserve.data.repository
 
+import com.secondserve.core.ai.InferenceEngine
+import com.secondserve.core.ai.di.VpsMistralEngine
+import com.secondserve.data.local.dao.AxisSuggestionDao
+import com.secondserve.data.local.dao.CoachingAnalysisDao
+import com.secondserve.data.local.dao.CoachingSynthesisDao
 import com.secondserve.data.local.dao.WorkAxisDao
+import com.secondserve.data.local.db.entity.AxisSuggestionEntity
 import com.secondserve.data.local.db.entity.WorkAxisEntity
 import com.secondserve.data.local.db.entity.toDomain
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.api.dto.WorkAxisRequest
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.model.AxisSuggestion
 import com.secondserve.domain.model.WorkAxis
 import com.secondserve.domain.repository.WorkAxisRepository
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +21,11 @@ import timber.log.Timber
 
 class WorkAxisRepositoryImpl(
     private val dao: WorkAxisDao,
-    private val vpsApiService: VpsApiService
+    private val suggestionDao: AxisSuggestionDao,
+    private val analysisDao: CoachingAnalysisDao,
+    private val synthesisDao: CoachingSynthesisDao,
+    private val vpsApiService: VpsApiService,
+    @VpsMistralEngine private val vpsMistralEngine: InferenceEngine
 ) : WorkAxisRepository {
 
     override fun getWorkAxes(): Flow<List<WorkAxis>> =
@@ -62,4 +73,78 @@ class WorkAxisRepositoryImpl(
 
     override suspend fun getActiveWorkAxesTitles(): List<String> =
         dao.getAllTitles()
+
+    override fun observePendingSuggestions(): Flow<List<AxisSuggestion>> =
+        suggestionDao.observePending().map { list ->
+            list.mapNotNull { runCatching { it.toDomain() }.getOrNull() }
+        }
+
+    override suspend fun hasPendingSuggestions(): Boolean =
+        try { suggestionDao.countPending() > 0 } catch (e: Exception) { false }
+
+    override suspend fun generateAndSaveSuggestions(): AppResult<Unit> {
+        val latestContent = try {
+            synthesisDao.getLatest()?.content ?: analysisDao.getMostRecent()?.content
+        } catch (e: Exception) {
+            return AppResult.Error(e)
+        }
+        if (latestContent == null) return AppResult.Error(IllegalStateException("No coaching data available"))
+
+        val currentAxes = try { dao.getAllTitles() } catch (e: Exception) { emptyList() }
+        val prompt = buildSuggestionsPrompt(latestContent, currentAxes)
+
+        return when (val result = vpsMistralEngine.generate(prompt)) {
+            is AppResult.Success -> {
+                val titles = parseSuggestionsResponse(result.data)
+                if (titles.isEmpty()) return AppResult.Error(IllegalStateException("No suggestions parsed"))
+                try {
+                    val now = System.currentTimeMillis()
+                    suggestionDao.insertAll(titles.map { AxisSuggestionEntity(title = it, generatedAt = now) })
+                    AppResult.Success(Unit)
+                } catch (e: Exception) {
+                    AppResult.Error(e)
+                }
+            }
+            is AppResult.Error -> AppResult.Error(result.exception)
+            AppResult.Loading -> AppResult.Error(IllegalStateException("Unexpected loading state"))
+        }
+    }
+
+    override suspend fun acceptSuggestion(id: Long): AppResult<Unit> = try {
+        val suggestion = suggestionDao.getById(id)
+            ?: return AppResult.Error(IllegalStateException("Suggestion $id not found"))
+        val result = createWorkAxis(suggestion.title)
+        if (result is AppResult.Success) suggestionDao.updateStatus(id, "ACCEPTED")
+        result
+    } catch (e: Exception) {
+        AppResult.Error(e)
+    }
+
+    override suspend fun ignoreSuggestion(id: Long) {
+        try { suggestionDao.updateStatus(id, "IGNORED") }
+        catch (e: Exception) { Timber.e(e, "Failed to ignore suggestion $id") }
+    }
+
+    private fun buildSuggestionsPrompt(sourceContent: String, currentAxes: List<String>): String {
+        val axesText = currentAxes.joinToString(", ").ifEmpty { "aucun" }
+        return """
+Tu es un coach tennis. Basé sur l'analyse ci-dessous, suggère 2 ou 3 axes de travail concrets et actionnables.
+
+Analyse récente :
+${sourceContent.take(500)}
+
+Axes de travail actuels : $axesText
+
+Réponds UNIQUEMENT avec les titres des axes suggérés, un par ligne, en 3 à 8 mots chacun. Exemples : "Montée au filet après service gagnant", "Constance du revers long de ligne". Ne duplique pas les axes déjà existants. Pas d'explication, pas de numérotation.
+        """.trimIndent()
+    }
+
+    private fun parseSuggestionsResponse(response: String): List<String> =
+        response.lines()
+            .map { it.trim().trimStart('-', '*', '•', '1', '2', '3', '4', '5', '.', ' ').trim() }
+            .filter { it.isNotBlank() && it.length in 3..150 }
+            .take(3)
 }
+
+private fun AxisSuggestionEntity.toDomain(): AxisSuggestion =
+    AxisSuggestion(id = id, title = title, status = status, generatedAt = generatedAt)

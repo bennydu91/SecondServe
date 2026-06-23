@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.secondserve.domain.model.CoachingAnalysis
 import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,12 +41,6 @@ fun CoachingScreen(
     viewModel: CoachingViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
-
-    viewModel.collectSideEffect { effect ->
-        when (effect) {
-            is CoachingSideEffect.ShowError -> { /* handled via state.error */ }
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -87,8 +80,9 @@ fun CoachingScreen(
                             Column(Modifier.padding(12.dp)) {
                                 Text(synth.content, style = MaterialTheme.typography.bodyMedium)
                                 Spacer(Modifier.height(4.dp))
+                                val dateStr = if (synth.generatedAt > 0L) synthDateFormat.format(Date(synth.generatedAt)) else "date inconnue"
                                 Text(
-                                    "${synth.sessionCount} matchs · ${synthDateFormat.format(Date(synth.generatedAt))}",
+                                    "${synth.sessionCount} matchs · $dateStr",
                                     style = MaterialTheme.typography.labelSmall
                                 )
                             }
@@ -138,8 +132,9 @@ private fun AnalysisItem(analysis: CoachingAnalysis) {
         Column(Modifier.padding(12.dp)) {
             Text(analysis.content, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(4.dp))
+            val dateStr = if (analysis.generatedAt > 0L) synthDateFormat.format(Date(analysis.generatedAt)) else "date inconnue"
             Text(
-                synthDateFormat.format(Date(analysis.generatedAt)),
+                dateStr,
                 style = MaterialTheme.typography.labelSmall
             )
         }

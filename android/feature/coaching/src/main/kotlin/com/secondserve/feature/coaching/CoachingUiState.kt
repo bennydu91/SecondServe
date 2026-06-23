@@ -11,6 +11,4 @@ data class CoachingUiState(
     val error: String? = null
 )
 
-sealed class CoachingSideEffect {
-    data class ShowError(val message: String) : CoachingSideEffect()
-}
+sealed class CoachingSideEffect

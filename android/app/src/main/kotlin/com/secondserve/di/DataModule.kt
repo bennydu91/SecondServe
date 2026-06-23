@@ -2,7 +2,10 @@ package com.secondserve.di
 
 import android.content.Context
 import androidx.room.Room
+import com.secondserve.core.ai.InferenceEngine
+import com.secondserve.core.ai.di.VpsMistralEngine
 import com.secondserve.data.local.PlayerDataStore
+import com.secondserve.data.local.dao.AxisSuggestionDao
 import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
 import com.secondserve.data.local.dao.CoachingSynthesisDao
@@ -50,7 +53,8 @@ object DataModule {
             SecondServeDatabase.MIGRATION_5_6,
             SecondServeDatabase.MIGRATION_6_7,
             SecondServeDatabase.MIGRATION_7_8,
-            SecondServeDatabase.MIGRATION_8_9
+            SecondServeDatabase.MIGRATION_8_9,
+            SecondServeDatabase.MIGRATION_9_10
         )
         .build()
 
@@ -91,6 +95,11 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideAxisSuggestionDao(db: SecondServeDatabase): AxisSuggestionDao =
+        db.axisSuggestionDao()
+
+    @Provides
+    @Singleton
     fun provideDataLayerEventBus(): DataLayerEventBus = DataLayerEventBus()
 
     @Provides
@@ -117,9 +126,13 @@ object DataModule {
     @Singleton
     fun provideWorkAxisRepository(
         dao: WorkAxisDao,
-        vpsApiService: VpsApiService
+        suggestionDao: AxisSuggestionDao,
+        analysisDao: CoachingAnalysisDao,
+        synthesisDao: CoachingSynthesisDao,
+        vpsApiService: VpsApiService,
+        @VpsMistralEngine vpsMistralEngine: InferenceEngine
     ): WorkAxisRepository =
-        WorkAxisRepositoryImpl(dao, vpsApiService)
+        WorkAxisRepositoryImpl(dao, suggestionDao, analysisDao, synthesisDao, vpsApiService, vpsMistralEngine)
 
     @Provides
     @Singleton

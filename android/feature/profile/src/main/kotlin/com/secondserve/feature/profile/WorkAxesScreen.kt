@@ -1,21 +1,30 @@
 package com.secondserve.feature.profile
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.domain.model.AxisSuggestion
 import com.secondserve.domain.model.MAX_WORK_AXES
 import com.secondserve.domain.model.WorkAxis
 import kotlinx.coroutines.launch
@@ -68,6 +78,7 @@ fun WorkAxesScreen(
                 editTitle = ""
             }
             WorkAxesSideEffect.WorkAxisDeleted -> {}
+            WorkAxesSideEffect.SuggestionAccepted -> {}
             is WorkAxesSideEffect.ShowError ->
                 scope.launch { snackbarHostState.showSnackbar(effect.message) }
         }
@@ -137,6 +148,35 @@ fun WorkAxesScreen(
                 }
             }
 
+            if (state.isGeneratingSuggestions || state.pendingSuggestions.isNotEmpty()) {
+                item {
+                    Text(
+                        "Suggestions IA",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                    )
+                }
+                if (state.isGeneratingSuggestions) {
+                    item { CircularProgressIndicator(Modifier.padding(vertical = 8.dp)) }
+                } else {
+                    items(state.pendingSuggestions, key = { "suggestion_${it.id}" }) { suggestion ->
+                        SuggestionCard(
+                            suggestion = suggestion,
+                            isAcceptDisabled = state.isAtMaxCapacity,
+                            onAccept = { viewModel.acceptSuggestion(suggestion.id) },
+                            onIgnore = { viewModel.ignoreSuggestion(suggestion.id) }
+                        )
+                    }
+                }
+                state.suggestionsError?.let { err ->
+                    item {
+                        Text(err, color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
+            }
+
             items(state.workAxes, key = { it.id }) { axis ->
                 WorkAxisCard(
                     axis = axis,
@@ -197,6 +237,43 @@ fun WorkAxesScreen(
                 TextButton(onClick = { editingAxis = null; editTitle = "" }) { Text("Annuler") }
             }
         )
+    }
+}
+
+@Composable
+private fun SuggestionCard(
+    suggestion: AxisSuggestion,
+    isAcceptDisabled: Boolean,
+    onAccept: () -> Unit,
+    onIgnore: () -> Unit
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.AutoAwesome,
+                    contentDescription = "Suggestion IA",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(suggestion.title, style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = onIgnore) { Text("Ignorer") }
+                Spacer(Modifier.width(4.dp))
+                Button(onClick = onAccept, enabled = !isAcceptDisabled) { Text("Accepter") }
+            }
+            if (isAcceptDisabled) {
+                Text(
+                    "Maximum $MAX_WORK_AXES axes actifs atteint",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
 

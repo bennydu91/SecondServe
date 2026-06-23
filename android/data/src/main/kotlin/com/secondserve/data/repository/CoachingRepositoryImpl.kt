@@ -67,16 +67,19 @@ class CoachingRepositoryImpl @Inject constructor(
     override fun observeAnalysisForSession(sessionId: Long): Flow<CoachingAnalysis?> =
         analysisDao.observeBySessionId(sessionId).map { it?.toDomain() }
 
-    override suspend fun saveSynthesis(content: String, sessionCount: Int): AppResult<CoachingSynthesis> = try {
-        val entity = CoachingSynthesisEntity(
-            content = content,
-            sessionCount = sessionCount,
-            generatedAt = System.currentTimeMillis()
-        )
-        val id = synthesisDao.insert(entity)
-        AppResult.Success(entity.copy(id = id).toDomain())
-    } catch (e: Exception) {
-        AppResult.Error(e)
+    override suspend fun saveSynthesis(content: String, sessionCount: Int): AppResult<CoachingSynthesis> {
+        if (content.isBlank()) return AppResult.Error(IllegalStateException("Synthesis content is blank"))
+        return try {
+            val entity = CoachingSynthesisEntity(
+                content = content,
+                sessionCount = sessionCount,
+                generatedAt = System.currentTimeMillis()
+            )
+            val id = synthesisDao.insert(entity)
+            AppResult.Success(entity.copy(id = id).toDomain())
+        } catch (e: Exception) {
+            AppResult.Error(e)
+        }
     }
 
     override suspend fun getLatestSynthesis(): CoachingSynthesis? =
@@ -86,5 +89,5 @@ class CoachingRepositoryImpl @Inject constructor(
         synthesisDao.observeLatest().map { it?.toDomain() }
 
     override fun observeAllAnalyses(): Flow<List<CoachingAnalysis>> =
-        analysisDao.getAllAnalyses().map { list -> list.map { it.toDomain() } }
+        analysisDao.getAllAnalyses().map { list -> list.mapNotNull { runCatching { it.toDomain() }.getOrNull() } }
 }

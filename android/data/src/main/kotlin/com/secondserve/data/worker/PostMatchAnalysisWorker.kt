@@ -70,7 +70,11 @@ class PostMatchAnalysisWorker @AssistedInject constructor(
                 when (val saveResult = coachingRepository.saveAnalysis(sessionId, result.data)) {
                     is AppResult.Success -> {
                         Timber.d("PostMatchAnalysisWorker: analysis saved for session %d", sessionId)
-                        synthesisScheduler.schedule()
+                        try {
+                            synthesisScheduler.schedule()
+                        } catch (e: Exception) {
+                            Timber.e(e, "PostMatchAnalysisWorker: synthesisScheduler.schedule() failed — analysis still saved")
+                        }
                         Result.success()
                     }
                     is AppResult.Error -> {

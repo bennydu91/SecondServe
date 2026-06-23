@@ -30,7 +30,12 @@ class SynthesisWorker @AssistedInject constructor(
     override suspend fun doWork(): Result = runWork()
 
     internal suspend fun runWork(): Result {
-        val lastSynthesis = coachingRepository.getLatestSynthesis()
+        val lastSynthesis = try {
+            coachingRepository.getLatestSynthesis()
+        } catch (e: Exception) {
+            Timber.e(e, "SynthesisWorker: getLatestSynthesis failed")
+            return Result.retry()
+        }
         val afterMs = lastSynthesis?.generatedAt ?: 0L
 
         val count = try {
@@ -50,6 +55,11 @@ class SynthesisWorker @AssistedInject constructor(
         } catch (e: Exception) {
             Timber.e(e, "SynthesisWorker: getCompletedSince failed")
             return Result.retry()
+        }
+
+        if (sessions.size < 3) {
+            Timber.d("SynthesisWorker: only %d valid sessions after filtering, skipping (need 3)", sessions.size)
+            return Result.success()
         }
 
         val profile = try {
@@ -79,7 +89,7 @@ class SynthesisWorker @AssistedInject constructor(
                 Timber.e(result.exception, "SynthesisWorker: VPS error — will retry")
                 Result.retry()
             }
-            AppResult.Loading -> Result.failure()
+            AppResult.Loading -> Result.retry()
         }
     }
 }

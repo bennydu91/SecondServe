@@ -38,11 +38,12 @@ class CoachingViewModel @Inject constructor(
                 CoachingUiState(isLoading = false, synthesis = synthesis, analyses = analyses)
             }
             .catch { e -> intent { reduce { state.copy(isLoading = false, error = e.message) } } }
-            .collect { newState -> intent { reduce { newState } } }
+            .collect { newState -> intent { reduce { state.copy(isLoading = false, synthesis = newState.synthesis, analyses = newState.analyses) } } }
         }
     }
 
     fun generateNow() = intent {
+        if (state.synthesisInProgress) return@intent
         reduce { state.copy(synthesisInProgress = true, error = null) }
         try {
             val lastSynthesis = coachingRepository.getLatestSynthesis()
@@ -51,10 +52,19 @@ class CoachingViewModel @Inject constructor(
             if (sessions.isEmpty()) {
                 sessions = sessionRepository.getCompletedSince(0L).takeLast(3)
             }
+            if (sessions.isEmpty()) {
+                reduce { state.copy(error = "Aucune session disponible pour la synthèse") }
+                return@intent
+            }
             val profile = playerProfileRepository.buildMatchContextProfile()
             val prompt = buildSynthesisPrompt(sessions, profile, lastSynthesis)
             when (val result = vpsMistralEngine.generate(prompt)) {
-                is AppResult.Success -> coachingRepository.saveSynthesis(result.data, sessions.size)
+                is AppResult.Success -> {
+                    val saveResult = coachingRepository.saveSynthesis(result.data, sessions.size)
+                    if (saveResult is AppResult.Error) {
+                        reduce { state.copy(error = "Sauvegarde échouée — réessayez") }
+                    }
+                }
                 is AppResult.Error -> reduce { state.copy(error = "Génération échouée — vérifiez la connexion") }
                 AppResult.Loading -> Unit
             }

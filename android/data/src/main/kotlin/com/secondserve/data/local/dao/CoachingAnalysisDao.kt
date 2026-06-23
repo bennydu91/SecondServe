@@ -20,4 +20,7 @@ interface CoachingAnalysisDao {
 
     @Query("SELECT * FROM coaching_analyses ORDER BY generated_at DESC")
     fun getAllAnalyses(): Flow<List<CoachingAnalysisEntity>>
+
+    @Query("SELECT * FROM coaching_analyses ORDER BY generated_at DESC LIMIT 1")
+    suspend fun getMostRecent(): CoachingAnalysisEntity?
 }

@@ -4,7 +4,7 @@ baseline_commit: 30be0f8
 
 # Story 5.3: Synthèse IA multi-matchs
 
-Status: review
+Status: done
 
 ## Story
 
@@ -302,6 +302,27 @@ so that I can spot recurring patterns in my game that I can't see match by match
   - [x] T18.1 `SynthesisWorkerTest.kt` : via `TestListenableWorkerBuilder` — seuil < 3 (vérifie `Result.success()` sans appel VPS), seuil ≥ 3 (vérifie `saveSynthesis` appelé), erreur VPS (vérifie `Result.retry()`)
   - [x] T18.2 `CoachingRepositoryImplTest.kt` : ajouter tests `saveSynthesis`, `getLatestSynthesis`, `observeLatestSynthesis`, `observeAllAnalyses`
   - [x] T18.3 `PostMatchAnalysisWorkerTest.kt` : ajouter mock `SynthesisScheduler`, vérifier `schedule()` appelé après succès, NOT appelé après échec
+
+### Review Findings
+
+- [x] [Review][Patch] P1 — State overwrite : le Flow `combine` écrase `synthesisInProgress=true` mi-génération [CoachingViewModel.kt:38-41]
+- [x] [Review][Patch] P2 — `saveSynthesis()` retourné ignoré dans `generateNow()` — perte silencieuse si DB échoue [CoachingViewModel.kt:57]
+- [x] [Review][Patch] P3 — Prompt envoyé avec liste de sessions vide si `getCompletedSince(0L)` retourne `[]` [CoachingViewModel.kt:51-53]
+- [x] [Review][Patch] P4 — Double-tap sur "Générer maintenant" lance deux requêtes VPS concurrentes [CoachingViewModel.kt:45-65]
+- [x] [Review][Patch] P5 — `AppResult.Loading` → `Result.failure()` dans `SynthesisWorker` : job abandonné définitivement au lieu de retry [SynthesisWorker.kt:78-80]
+- [x] [Review][Patch] P6 — `getLatestSynthesis()` non protégé contre exception DB → crash WorkManager non contrôlé [SynthesisWorker.kt:33]
+- [x] [Review][Patch] P7 — `synthesisScheduler.schedule()` peut crasher (WorkManager non initialisé) et empêcher `Result.success()` [PostMatchAnalysisWorker.kt:73]
+- [x] [Review][Patch] P8 — `countCompletedSince` retourne 3 mais `getCompletedSince` peut en retourner 2 après `mapNotNull` [SynthesisWorker.kt:43-46]
+- [x] [Review][Patch] P9 — Une analyse corrompue dans `observeAllAnalyses()` vide la liste entière [CoachingRepositoryImpl.kt:88-89]
+- [x] [Review][Patch] P10 — `CoachingSideEffect.ShowError` déclaré mais jamais émis via `postSideEffect` (dead code) [CoachingViewModel.kt / CoachingScreen.kt]
+- [x] [Review][Patch] P11 — Date epoch `01/01/1970` affichée si `generatedAt=0L` [CoachingScreen.kt:91]
+- [x] [Review][Patch] P12 — Contenu vide/blank retourné par le VPS sauvegardé sans validation [CoachingRepositoryImpl.kt:70]
+- [x] [Review][Defer] D1 — Navigation route `"coaching"` via String hardcodée (pattern pré-existant) [AppNavGraph.kt] — deferred, pre-existing
+- [x] [Review][Defer] D2 — Aucun timeout sur `vpsMistralEngine.generate()` dans `generateNow()` — spinner indéfini si VPS lent [CoachingViewModel.kt] — deferred, pre-existing
+- [x] [Review][Defer] D3 — Table `coaching_syntheses` sans politique de purge — croît sans borne [CoachingSynthesisDao.kt] — deferred, pre-existing
+- [x] [Review][Defer] D4 — Condition `>` stricte sur `updated_at` exclut sessions à même milliseconde que `generatedAt` [SessionDao.kt] — deferred, pre-existing
+- [x] [Review][Defer] D5 — Sessions avec surface/result null produisent prompt avec "inconnu"/"?" (comportement V1 acceptable) [SynthesisWorker.kt] — deferred, pre-existing
+- [x] [Review][Defer] D6 — Aucun test de migration Room instrumenté (hors scope story, tests instrumented) [SecondServeDatabase.kt] — deferred, pre-existing
 
 ## Dev Notes
 

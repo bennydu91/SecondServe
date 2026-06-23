@@ -1,6 +1,10 @@
 package com.secondserve.data.repository
 
 import app.cash.turbine.test
+import com.secondserve.core.ai.InferenceEngine
+import com.secondserve.data.local.dao.AxisSuggestionDao
+import com.secondserve.data.local.dao.CoachingAnalysisDao
+import com.secondserve.data.local.dao.CoachingSynthesisDao
 import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.entity.WorkAxisEntity
 import com.secondserve.data.remote.api.VpsApiService
@@ -23,13 +27,17 @@ class WorkAxisRepositoryImplTest {
 
     private lateinit var dao: WorkAxisDao
     private lateinit var vpsApiService: VpsApiService
+    private val suggestionDao: AxisSuggestionDao = mockk(relaxed = true)
+    private val analysisDao: CoachingAnalysisDao = mockk(relaxed = true)
+    private val synthesisDao: CoachingSynthesisDao = mockk(relaxed = true)
+    private val vpsMistralEngine: InferenceEngine = mockk(relaxed = true)
     private lateinit var repository: WorkAxisRepositoryImpl
 
     @BeforeEach
     fun setup() {
         dao = mockk()
         vpsApiService = mockk()
-        repository = WorkAxisRepositoryImpl(dao, vpsApiService)
+        repository = WorkAxisRepositoryImpl(dao, suggestionDao, analysisDao, synthesisDao, vpsApiService, vpsMistralEngine)
     }
 
     private fun axisEntity(
