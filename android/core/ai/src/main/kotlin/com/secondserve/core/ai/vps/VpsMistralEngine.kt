@@ -21,36 +21,18 @@ import javax.inject.Named
 import javax.inject.Singleton
 
 @Singleton
-class VpsMistralEngine private constructor(
-    private val client: OkHttpClient,
-    baseUrl: String,
+class VpsMistralEngine @Inject constructor(
+    okHttpClient: OkHttpClient,
+    @Named("vps_base_url") baseUrl: String,
     private val moshi: Moshi
 ) : InferenceEngine {
-
-    @Inject constructor(
-        okHttpClient: OkHttpClient,
-        @Named("vps_base_url") baseUrl: String,
-        moshi: Moshi
-    ) : this(
-        okHttpClient.newBuilder().callTimeout(20, TimeUnit.SECONDS).build(),
-        baseUrl,
-        moshi
-    )
-
-    internal constructor(
-        okHttpClient: OkHttpClient,
-        baseUrl: String,
-        moshi: Moshi,
-        callTimeoutSeconds: Long
-    ) : this(
-        okHttpClient.newBuilder().callTimeout(callTimeoutSeconds, TimeUnit.SECONDS).build(),
-        baseUrl,
-        moshi
-    )
 
     private val analyzeUrl = baseUrl.trimEnd('/') + "/api/v1/coaching/analyze"
     private val requestAdapter = moshi.adapter(AnalyzeRequest::class.java)
     private val responseAdapter = moshi.adapter(AnalyzeResponse::class.java)
+    private val client = okHttpClient.newBuilder()
+        .callTimeout(20, TimeUnit.SECONDS)
+        .build()
 
     override suspend fun generate(prompt: String): AppResult<String> = withContext(Dispatchers.IO) {
         try {

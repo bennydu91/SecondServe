@@ -27,11 +27,13 @@ class VpsMistralEngineTest {
         server = MockWebServer()
         server.start()
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+        // readTimeout(1s) est hérité par le newBuilder() de VpsMistralEngine et se déclenche
+        // avant callTimeout(20s) sur NO_RESPONSE — le test est déterministe en ~1s
         val client = OkHttpClient.Builder()
             .connectTimeout(1, TimeUnit.SECONDS)
             .readTimeout(1, TimeUnit.SECONDS)
             .build()
-        engine = VpsMistralEngine(client, server.url("/").toString(), moshi, callTimeoutSeconds = 2L)
+        engine = VpsMistralEngine(client, server.url("/").toString(), moshi)
     }
 
     @AfterEach
