@@ -32,12 +32,16 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.timber)
     implementation(libs.mlkit.genai.prompt)
+    implementation(libs.okhttp)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
 
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.coroutines.test)
     testImplementation(kotlin("test"))
+    testImplementation(libs.okhttp.mockwebserver)
 }
 
 tasks.withType<Test> {

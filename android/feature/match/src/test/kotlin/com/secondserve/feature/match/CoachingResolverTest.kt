@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 
 class CoachingResolverTest {
     private lateinit var inferenceEngine: InferenceEngine
+    private lateinit var vpsEngine: InferenceEngine
     private lateinit var coachingRepository: CoachingRepository
     private lateinit var playerProfileRepository: PlayerProfileRepository
     private lateinit var sessionRepository: SessionRepository
@@ -33,16 +34,18 @@ class CoachingResolverTest {
     @BeforeEach
     fun setup() {
         inferenceEngine = mockk()
+        vpsEngine = mockk()
         coachingRepository = mockk()
         playerProfileRepository = mockk()
         sessionRepository = mockk()
-        resolver = CoachingResolver(inferenceEngine, coachingRepository, playerProfileRepository, sessionRepository)
+        resolver = CoachingResolver(inferenceEngine, vpsEngine, coachingRepository, playerProfileRepository, sessionRepository)
 
         coEvery { playerProfileRepository.buildMatchContextProfile() } returns MatchContextProfile(
             fftSeries = null, playStyle = null, activeWorkAxes = emptyList(), coachInstructions = emptyList()
         )
         coEvery { sessionRepository.getSessionById(any()) } returns null
         coEvery { coachingRepository.getCachedAdvice(any(), any()) } returns null
+        coEvery { vpsEngine.generate(any()) } returns AppResult.Error(RuntimeException("VPS disabled in tests"))
     }
 
     @Test
@@ -61,8 +64,19 @@ class CoachingResolverTest {
     }
 
     @Test
-    fun `resolve falls back to CACHE when GeminiNano fails`() = runTest {
+    fun `resolve returns VPS_MISTRAL when Gemini fails and VPS succeeds`() = runTest {
+        coEvery { inferenceEngine.generate(any()) } returns AppResult.Error(RuntimeException("Gemini error"))
+        coEvery { vpsEngine.generate(any()) } returns AppResult.Success("Conseil VPS")
+        val result = resolver.resolve(1L, neutralScore)
+        assertNotNull(result)
+        assertEquals(CoachingSource.VPS_MISTRAL, result!!.source)
+        assertEquals("Conseil VPS", result.text)
+    }
+
+    @Test
+    fun `resolve falls back to CACHE when Gemini and VPS fail`() = runTest {
         coEvery { inferenceEngine.generate(any()) } returns AppResult.Error(RuntimeException("LLM error"))
+        coEvery { vpsEngine.generate(any()) } returns AppResult.Error(RuntimeException("VPS error"))
         val cached = CoachingCacheEntry(
             matchId = 1L,
             pattern = MatchPattern.NEUTRAL_TRANSITION,
@@ -76,8 +90,9 @@ class CoachingResolverTest {
     }
 
     @Test
-    fun `resolve falls back to STATIC when both Gemini and cache fail`() = runTest {
+    fun `resolve falls back to STATIC when Gemini, VPS and cache all fail`() = runTest {
         coEvery { inferenceEngine.generate(any()) } returns AppResult.Error(RuntimeException())
+        coEvery { vpsEngine.generate(any()) } returns AppResult.Error(RuntimeException())
         coEvery { coachingRepository.getCachedAdvice(any(), any()) } returns null
         val result = resolver.resolve(1L, neutralScore)
         assertEquals(CoachingSource.STATIC, result!!.source)
