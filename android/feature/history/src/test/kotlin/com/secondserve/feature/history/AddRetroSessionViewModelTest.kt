@@ -3,6 +3,7 @@ package com.secondserve.feature.history
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.Session
+import com.secondserve.domain.model.ThirdSetRule
 import com.secondserve.domain.model.SessionFormat
 import com.secondserve.domain.model.SessionStatus
 import com.secondserve.domain.model.SurfaceConstants
@@ -19,6 +20,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -120,5 +122,28 @@ class AddRetroSessionViewModelTest {
             deferred.await()
         }
         assertTrue(effect is AddRetroSessionSideEffect.ShowError)
+    }
+
+    @Test
+    fun `submit with BEST_OF_3 and thirdSetRule selected stores correct SessionFormat`() = runTest {
+        var capturedSession: Session? = null
+        coEvery { sessionRepository.createCompletedSession(any()) } answers {
+            capturedSession = firstArg()
+            AppResult.Success(fakeSession())
+        }
+
+        val vm = AddRetroSessionViewModel(sessionRepository)
+        vm.onSurfaceSelected(SurfaceConstants.CLAY)
+        vm.onMatchFormatSelected(MatchFormat.BEST_OF_3)
+        vm.onThirdSetRuleSelected(ThirdSetRule.SUPER_TIE_BREAK_10)
+        vm.onResultSelected("VICTORY")
+        vm.onMatchDateSelected(1_700_000_000_000L)
+
+        coroutineScope {
+            val deferred = async { vm.container.sideEffectFlow.first() }
+            vm.submit()
+            deferred.await()
+        }
+        assertEquals(ThirdSetRule.SUPER_TIE_BREAK_10, capturedSession?.format?.thirdSetRule)
     }
 }

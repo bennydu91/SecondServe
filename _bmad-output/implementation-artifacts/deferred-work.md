@@ -219,3 +219,14 @@
 - **D5 — StatsViewModelTest accède à container.stateFlow directement** — Dépendance à l'implémentation interne Orbit, potentiellement fragile sur changement de version. [`StatsViewModelTest.kt`]
 - **D6 — Route "stats" en magic string** — Définie en 3 endroits (navigate, composable, import). Pattern pré-existant du projet (toutes les routes sont des strings). [`AppNavGraph.kt`]
 - **D7 — computeStreak précondition non enforced par le type** — La fonction accepte `List<Session>` mais attend des sessions déjà filtrées VICTORY/DEFEAT. Branche `else -> null` actuellement dead code. [`StatsComputer.kt:48`]
+
+## Deferred from: code review of 4-3-saisie-manuelle-retrospective (2026-06-23)
+
+- **W1 — DatePicker stocke minuit UTC — décalage d'un jour pour fuseaux UTC−** — `selectedDateMillis` retourne minuit UTC ; formaté en local sur device UTC−N, affiche le jour précédent. Risque minimal pour l'audience française (UTC+1/+2). [`AddRetroSessionScreen.kt`]
+- **W2 — `createCompletedSession` n'impose pas `session.status == COMPLETED` en interne** — L'appelant doit passer une session déjà COMPLETED. Pattern pré-existant (même conception dans `createSession`). [`SessionRepositoryImpl.kt`]
+- **W3 — `selectedResult` est un `String` et non une sealed class/enum** — Pas de validation domaine à la frontière ViewModel/Repository. Design pré-existant du modèle `Session`. [`AddRetroSessionUiState.kt`]
+- **W4 — Valeur retour de `dao.insert()` non vérifiée pour -1L** — Si `OnConflictStrategy.IGNORE` est utilisé, un -1L silencieux irait dans `SyncQueueEntity.entityId`. Pattern pré-existant dans tous les repositories. [`SessionRepositoryImpl.kt`]
+- **W5 — `scoreText` sans limite de longueur** — Pas de `maxLines` ni de troncature. La spec ne définit pas de longueur max. [`AddRetroSessionScreen.kt`]
+- **W6 — `popBackStack()` sur une pile vide** — Retourne `false` et ne fait rien ; l'utilisateur pourrait être bloqué si l'écran est atteint par deep link. Pattern système pré-existant dans toute la navigation. [`AppNavGraph.kt`]
+- **W7 — Message d'erreur générique quand la transaction est rollbackée** — `AppResult.Error` retourné sans distinguer "session non créée" vs "sync non enqueued". Pattern de reporting pré-existant. [`SessionRepositoryImpl.kt`]
+- **W8 — Timestamp `now` capturé avant `withTransaction`** — Léger décalage possible entre capture et exécution réelle de l'insert. Impact négligeable. Pattern pré-existant. [`SessionRepositoryImpl.kt`]

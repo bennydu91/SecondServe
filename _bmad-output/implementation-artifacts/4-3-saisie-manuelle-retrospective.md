@@ -4,7 +4,7 @@
 baseline_commit: afed98969a2d76711a700f60ac841f16c14a0b01
 ---
 
-Status: review
+Status: done
 
 ## Story
 
@@ -49,6 +49,25 @@ So that my history and statistics are complete even for matches played before or
 
 - [x] **T5 — Tests unitaires** (AC: 2, 3, 5)
   - [x] T5.1 `AddRetroSessionViewModelTest.kt` : validation formulaire, soumission succès, soumission erreur
+
+### Review Findings
+
+- [x] [Review][Decision] Dates futures autorisées → **patché** : `onMatchDateSelected` rejette `epochMillis > System.currentTimeMillis()` + `SelectableDates` sur le DatePicker
+- [x] [Review][Decision] Libellé du FAB `Text("+")` → **dismissé** : "+" acceptable, titre d'écran couvre AC1
+- [x] [Review][Patch] `AppResult.Loading` silencieusement ignoré → `reduce { state.copy(isLoading = false) }` ajouté [AddRetroSessionViewModel.kt]
+- [x] [Review][Patch] Race condition double-soumission → `if (state.isLoading) return@intent` + `!isLoading` dans `canSubmit` [AddRetroSessionViewModel.kt, AddRetroSessionUiState.kt]
+- [x] [Review][Patch] Fallback `thirdSetRule ?: FULL_ADVANTAGE` → `?: return@intent` [AddRetroSessionViewModel.kt]
+- [x] [Review][Patch] Bouton "← Retour" actif pendant chargement → `enabled = !state.isLoading` [AddRetroSessionScreen.kt]
+- [x] [Review][Patch] FAB sans `contentDescription` → `Modifier.semantics { contentDescription = "Ajouter un match passé" }` [HistoryScreen.kt]
+- [x] [Review][Patch] Test manquant `BEST_OF_3` + `thirdSetRule` → test ajouté, vérifie `SessionFormat.thirdSetRule` [AddRetroSessionViewModelTest.kt]
+- [x] [Review][Defer] DatePicker stocke minuit UTC — décalage d'un jour pour les fuseaux UTC− [AddRetroSessionScreen.kt] — deferred, risque minimal pour l'audience française (UTC+1/+2)
+- [x] [Review][Defer] `createCompletedSession` n'impose pas `session.status == COMPLETED` en interne [SessionRepositoryImpl.kt] — deferred, pattern pré-existant (identique à `createSession`)
+- [x] [Review][Defer] `selectedResult` est un `String` et non une sealed class — pas de validation domaine [AddRetroSessionUiState.kt] — deferred, design domaine pré-existant
+- [x] [Review][Defer] Valeur retour de `dao.insert()` non vérifiée (pourrait être -1L avec OnConflictStrategy.IGNORE) [SessionRepositoryImpl.kt] — deferred, pattern pré-existant
+- [x] [Review][Defer] `scoreText` sans limite de longueur [AddRetroSessionScreen.kt] — deferred, spec n'en définit pas
+- [x] [Review][Defer] `popBackStack()` sur une pile vide — l'utilisateur pourrait être bloqué [AppNavGraph.kt] — deferred, pattern système utilisé partout dans la navigation
+- [x] [Review][Defer] Message d'erreur générique quand la transaction est rollbackée [SessionRepositoryImpl.kt] — deferred, pattern de reporting pré-existant
+- [x] [Review][Defer] Timestamp `now` capturé avant `withTransaction` — léger décalage dans `SyncQueueEntity.createdAt` [SessionRepositoryImpl.kt] — deferred, pattern pré-existant
 
 ## Dev Notes
 

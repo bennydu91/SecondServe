@@ -28,6 +28,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,7 +60,12 @@ fun AddRetroSessionScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                utcTimeMillis <= System.currentTimeMillis()
+        }
+    )
     val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE) }
 
     viewModel.collectSideEffect { effect ->
@@ -92,7 +98,7 @@ fun AddRetroSessionScreen(
             TopAppBar(
                 title = { Text("Ajouter un match passé") },
                 navigationIcon = {
-                    TextButton(onClick = onNavigateBack) { Text("← Retour") }
+                    TextButton(onClick = onNavigateBack, enabled = !state.isLoading) { Text("← Retour") }
                 }
             )
         },

@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.secondserve.domain.model.Session
@@ -66,7 +68,10 @@ fun HistoryScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToAddRetroSession) {
+            FloatingActionButton(
+                onClick = onNavigateToAddRetroSession,
+                modifier = Modifier.semantics { contentDescription = "Ajouter un match passé" }
+            ) {
                 Text("+")
             }
         }

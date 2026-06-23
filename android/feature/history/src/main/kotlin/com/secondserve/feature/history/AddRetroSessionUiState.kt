@@ -16,6 +16,7 @@ data class AddRetroSessionUiState(
     val isLoading: Boolean = false
 ) {
     val canSubmit: Boolean get() =
+        !isLoading &&
         selectedSurface != null &&
         selectedMatchFormat != null &&
         (selectedMatchFormat == MatchFormat.BEST_OF_1 || selectedThirdSetRule != null) &&

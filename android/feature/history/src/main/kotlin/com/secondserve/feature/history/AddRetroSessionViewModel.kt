@@ -61,17 +61,19 @@ class AddRetroSessionViewModel @Inject constructor(
     }
 
     fun onMatchDateSelected(epochMillis: Long) = intent {
+        if (epochMillis > System.currentTimeMillis()) return@intent
         reduce { state.copy(matchDateMillis = epochMillis) }
     }
 
     fun submit() = intent {
+        if (state.isLoading) return@intent
         val surface = state.selectedSurface ?: return@intent
         val matchFormat = state.selectedMatchFormat ?: return@intent
         val result = state.selectedResult ?: return@intent
         val dateMillis = state.matchDateMillis ?: return@intent
 
         val thirdSetRule = if (matchFormat == MatchFormat.BEST_OF_3)
-            state.selectedThirdSetRule ?: ThirdSetRule.FULL_ADVANTAGE
+            state.selectedThirdSetRule ?: return@intent
         else ThirdSetRule.FULL_ADVANTAGE
 
         reduce { state.copy(isLoading = true) }
@@ -98,7 +100,7 @@ class AddRetroSessionViewModel @Inject constructor(
                 reduce { state.copy(isLoading = false) }
                 postSideEffect(AddRetroSessionSideEffect.ShowError("Impossible d'enregistrer la session"))
             }
-            AppResult.Loading -> {}
+            AppResult.Loading -> reduce { state.copy(isLoading = false) }
         }
     }
 }
