@@ -132,7 +132,9 @@ fun SettingsScreen(
                                 set(year, month, day, 23, 59, 59)
                                 set(Calendar.MILLISECOND, 999)
                             }
-                            viewModel.onSilentModeUntilChanged(picked.timeInMillis)
+                            if (picked.timeInMillis > System.currentTimeMillis()) {
+                                viewModel.onSilentModeUntilChanged(picked.timeInMillis)
+                            }
                         },
                         cal.get(Calendar.YEAR),
                         cal.get(Calendar.MONTH),

@@ -16,6 +16,7 @@ class NotificationRepositoryImpl(
             "EVERY_2_DAYS" -> notificationScheduler.scheduleEvery2Days()
             "WEEKLY" -> notificationScheduler.scheduleWeekly()
             "DISABLED" -> notificationScheduler.cancel()
+            else -> notificationScheduler.cancel()
         }
     }
     override fun getSilentModeUntil() = playerDataStore.getSilentModeUntil()

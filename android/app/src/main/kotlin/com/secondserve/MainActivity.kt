@@ -1,6 +1,7 @@
 package com.secondserve
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -39,7 +40,18 @@ class MainActivity : ComponentActivity() {
                     this, Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Conseils de coaching")
+                        .setMessage("SecondServe vous envoie un conseil de tennis personnalisé selon votre fréquence choisie. Activez les notifications pour ne pas les manquer.")
+                        .setPositiveButton("Autoriser") { _, _ ->
+                            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        .setNegativeButton("Plus tard", null)
+                        .show()
+                } else {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             }
         }
         setContent {

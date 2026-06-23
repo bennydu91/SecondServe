@@ -1,7 +1,6 @@
 package com.secondserve.data.worker
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
@@ -88,7 +87,12 @@ class NotificationWorker @AssistedInject constructor(
 
         if (sourceContent != null) {
             val prompt = buildPrompt(sourceContent, surface, axes)
-            val result = vpsMistralEngine.generate(prompt)
+            val result = try {
+                vpsMistralEngine.generate(prompt)
+            } catch (e: Exception) {
+                Timber.e(e, "NotificationWorker: VPS call threw exception")
+                null
+            }
             if (result is AppResult.Success && result.data.isNotBlank()) {
                 return result.data
             }
@@ -113,12 +117,12 @@ class NotificationWorker @AssistedInject constructor(
     ): String? {
         val parts = mutableListOf<String>()
         if (!surface.isNullOrBlank()) parts.add("Surface : $surface")
-        if (axes.isNotEmpty()) parts.add("Axe du moment : ${axes.first()}")
+        val firstAxis = axes.firstOrNull { it.isNotBlank() }
+        if (firstAxis != null) parts.add("Axe du moment : $firstAxis")
         if (!recentResult.isNullOrBlank()) parts.add("Résultat récent : $recentResult")
         return if (parts.isNotEmpty()) parts.joinToString(" | ") else null
     }
 
-    @SuppressLint("MissingPermission")
     private fun postNotification(content: String) {
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -133,8 +137,12 @@ class NotificationWorker @AssistedInject constructor(
             applicationContext, Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
         if (granted) {
-            NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
-            Timber.d("NotificationWorker: notification posted")
+            try {
+                NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
+                Timber.d("NotificationWorker: notification posted")
+            } catch (e: SecurityException) {
+                Timber.w(e, "NotificationWorker: permission revoked between check and notify")
+            }
         } else {
             Timber.d("NotificationWorker: POST_NOTIFICATIONS not granted")
         }

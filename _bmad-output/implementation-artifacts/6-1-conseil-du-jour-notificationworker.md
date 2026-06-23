@@ -4,7 +4,7 @@ baseline_commit: 6f9b682
 
 # Story 6.1: Conseil du jour — NotificationWorker
 
-Status: review
+Status: done
 
 ## Story
 
@@ -460,6 +460,23 @@ So that I stay engaged with my game between matches without being spammed.
       4. `doWork_whenVpsSucceeds_postsNotification` — synthesis non null, VPS retourne `AppResult.Success("conseil")`
       5. `doWork_whenVpsFails_usesLocalFallback` — VPS retourne `AppResult.Error(...)`, `preferredSurfaces = "Terre battue"`, axes non vides → contenu fallback non null
       6. `doWork_whenNoCoachingDataAndNoProfile_skipsNotification` — synthesis=null, analysis=null, surface=null, axes=empty → aucune notification
+
+### Review Findings
+
+- [x] [Review][Decision→Patch] `shouldShowRequestPermissionRationale` non vérifié avant relance — AlertDialog rationale ajouté dans MainActivity.kt, résolu.
+- [x] [Review][Patch] Pas de branche `else` dans `when(frequency)` — `else -> notificationScheduler.cancel()` ajouté [NotificationRepositoryImpl.kt:13]
+- [x] [Review][Patch] `vpsMistralEngine.generate()` sans try-catch — enveloppé dans try-catch Exception [NotificationWorker.kt:93]
+- [x] [Review][Patch] `axes.first()` peut être blank — remplacé par `axes.firstOrNull { it.isNotBlank() }` [NotificationWorker.kt:130]
+- [x] [Review][Patch] `@SuppressLint("MissingPermission")` supprimé + try-catch `SecurityException` ajouté autour de `notify()` [NotificationWorker.kt:134]
+- [x] [Review][Patch] `DatePickerDialog` — validation ajoutée : date ignorée si dans le passé [SettingsScreen.kt:102]
+- [x] [Review][Defer] `setFrequency` persiste avant de planifier — échec partiel possible sans rollback [NotificationRepositoryImpl.kt:12] — deferred, pre-existing
+- [x] [Review][Defer] `buildPrompt` injecte le contenu brut de la DB dans le prompt LLM — risque prompt injection faible mais réel [NotificationWorker.kt:110] — deferred, pre-existing
+- [x] [Review][Defer] Race silentMode reset avant postNotification — fenêtre extrêmement étroite [NotificationWorker.kt:57] — deferred, pre-existing
+- [x] [Review][Defer] Icône `android.R.drawable.ic_dialog_info` — non recommandée pour les notifications, validée en MVP par le spec [NotificationWorker.kt:137] — deferred, pre-existing
+- [x] [Review][Defer] Frequency strings magiques — pas d'enum/sealed class pour typer les valeurs [multiple fichiers] — deferred, pre-existing
+- [x] [Review][Defer] Crash init SettingsViewModel si SharedPreferences throw — peu probable mais non protégé [SettingsViewModel.kt:20] — deferred, pre-existing
+- [x] [Review][Defer] Aucune contrainte réseau sur le WorkRequest — comportement fonctionnel correct via fallback [NotificationSchedulerImpl.kt:22] — deferred, pre-existing
+- [x] [Review][Defer] Pas de test cas réseau indisponible distinct — cas VPS Error couvre le comportement en pratique [NotificationWorkerTest.kt] — deferred, pre-existing
 
 ## Dev Notes
 
