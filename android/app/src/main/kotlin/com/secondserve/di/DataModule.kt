@@ -17,12 +17,16 @@ import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.repository.PlayerProfileRepositoryImpl
 import com.secondserve.data.repository.WorkAxisRepositoryImpl
+import com.secondserve.data.repository.NotificationRepositoryImpl
 import com.secondserve.data.worker.AnalysisSchedulerImpl
+import com.secondserve.data.worker.NotificationSchedulerImpl
 import com.secondserve.data.worker.SynthesisSchedulerImpl
 import com.secondserve.data.worker.SyncSchedulerImpl
 import com.secondserve.domain.analysis.AnalysisScheduler
+import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.synthesis.SynthesisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
+import com.secondserve.domain.repository.NotificationRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.WorkAxisRepository
 import com.secondserve.domain.sync.SyncScheduler
@@ -142,5 +146,18 @@ object DataModule {
         workAxisRepository: WorkAxisRepository
     ): PlayerProfileRepository =
         PlayerProfileRepositoryImpl(dao, vpsApiService, workAxisRepository)
+
+    @Provides
+    @Singleton
+    fun provideNotificationScheduler(@ApplicationContext context: Context): NotificationScheduler =
+        NotificationSchedulerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        playerDataStore: PlayerDataStore,
+        notificationScheduler: NotificationScheduler
+    ): NotificationRepository =
+        NotificationRepositoryImpl(playerDataStore, notificationScheduler)
 
 }

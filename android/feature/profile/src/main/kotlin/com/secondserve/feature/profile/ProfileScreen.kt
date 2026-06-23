@@ -27,9 +27,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,10 +57,12 @@ import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import java.util.Date
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
     onNavigateToWorkAxes: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -76,73 +84,85 @@ fun ProfileScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (state.isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    RankingSummaryCard(
-                        currentSeries = state.currentSeries,
-                        currentPoints = state.currentPoints
-                    )
-                }
-                item {
-                    RankingInputSection(
-                        isSaving = state.isSaving,
-                        onSave = viewModel::saveRanking
-                    )
-                }
-                item {
-                    Text(
-                        text = "Historique",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                    HorizontalDivider()
-                }
-                items(state.rankingHistory) { entry ->
-                    RankingHistoryItem(entry = entry, dateFormat = dateFormat)
-                }
-                item {
-                    PlayStyleSection(
-                        matchSessionCount = state.matchSessionCount,
-                        currentPlayStyle = state.playStyle,
-                        isSaving = state.isDetailsSaving,
-                        currentSurfaces = state.preferredSurfaces,
-                        coachInstruction1 = state.coachInstruction1,
-                        coachInstruction2 = state.coachInstruction2,
-                        coachInstruction3 = state.coachInstruction3,
-                        onSaveDetails = viewModel::saveProfileDetails
-                    )
-                }
-                item {
-                    OutlinedButton(
-                        onClick = onNavigateToWorkAxes,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Text("Gérer mes axes de travail")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Profil") },
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Paramètres")
                     }
                 }
-                item {
-                    FftLicenseSection(
-                        currentLicense = state.fftLicenseNumber,
-                        onSaveLicense = viewModel::saveFftLicense
-                    )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)) {
+            if (state.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        RankingSummaryCard(
+                            currentSeries = state.currentSeries,
+                            currentPoints = state.currentPoints
+                        )
+                    }
+                    item {
+                        RankingInputSection(
+                            isSaving = state.isSaving,
+                            onSave = viewModel::saveRanking
+                        )
+                    }
+                    item {
+                        Text(
+                            text = "Historique",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        HorizontalDivider()
+                    }
+                    items(state.rankingHistory) { entry ->
+                        RankingHistoryItem(entry = entry, dateFormat = dateFormat)
+                    }
+                    item {
+                        PlayStyleSection(
+                            matchSessionCount = state.matchSessionCount,
+                            currentPlayStyle = state.playStyle,
+                            isSaving = state.isDetailsSaving,
+                            currentSurfaces = state.preferredSurfaces,
+                            coachInstruction1 = state.coachInstruction1,
+                            coachInstruction2 = state.coachInstruction2,
+                            coachInstruction3 = state.coachInstruction3,
+                            onSaveDetails = viewModel::saveProfileDetails
+                        )
+                    }
+                    item {
+                        OutlinedButton(
+                            onClick = onNavigateToWorkAxes,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text("Gérer mes axes de travail")
+                        }
+                    }
+                    item {
+                        FftLicenseSection(
+                            currentLicense = state.fftLicenseNumber,
+                            onSaveLicense = viewModel::saveFftLicense
+                        )
+                    }
                 }
             }
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 }
 

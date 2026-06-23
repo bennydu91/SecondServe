@@ -34,7 +34,21 @@ class PlayerDataStore(private val context: Context) {
         prefs.edit().remove(KEY_FFT_LICENSE).apply()
     }
 
+    fun saveNotificationFrequency(frequency: String) =
+        prefs.edit().putString(KEY_NOTIF_FREQUENCY, frequency).apply()
+
+    fun getNotificationFrequency(): String =
+        prefs.getString(KEY_NOTIF_FREQUENCY, "DAILY") ?: "DAILY"
+
+    fun saveSilentModeUntil(epochMs: Long) =
+        prefs.edit().putLong(KEY_SILENT_MODE_UNTIL, epochMs).apply()
+
+    fun getSilentModeUntil(): Long =
+        prefs.getLong(KEY_SILENT_MODE_UNTIL, 0L)
+
     companion object {
         private const val KEY_FFT_LICENSE = "fft_license"
+        private const val KEY_NOTIF_FREQUENCY = "notification_frequency"
+        private const val KEY_SILENT_MODE_UNTIL = "silent_mode_until"
     }
 }

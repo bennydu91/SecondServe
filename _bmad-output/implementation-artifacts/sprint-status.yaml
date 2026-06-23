@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-23 (code review done)
+last_updated: 2026-06-23 (story 6.1 review)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -86,7 +86,7 @@ development_status:
   epic-5-retrospective: optional
 
   # ─── Epic 6: Notifications coaching contextualisées ─────────────────────────
-  epic-6: backlog
-  6-1-conseil-du-jour-notificationworker: backlog
+  epic-6: in-progress
+  6-1-conseil-du-jour-notificationworker: review
   6-2-rappel-pre-match-apscheduler-vps: backlog
   epic-6-retrospective: optional

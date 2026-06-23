@@ -15,6 +15,7 @@ import com.secondserve.feature.history.StatsScreen
 import com.secondserve.feature.match.MatchScreen
 import com.secondserve.feature.match.NewMatchScreen
 import com.secondserve.feature.profile.ProfileScreen
+import com.secondserve.feature.profile.SettingsScreen
 import com.secondserve.feature.profile.WorkAxesScreen
 
 @Composable
@@ -58,8 +59,12 @@ fun AppNavGraph() {
         composable("profile") {
             ProfileScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToWorkAxes = { navController.navigate("work_axes") }
+                onNavigateToWorkAxes = { navController.navigate("work_axes") },
+                onNavigateToSettings = { navController.navigate("settings") }
             )
+        }
+        composable("settings") {
+            SettingsScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable("work_axes") {
             WorkAxesScreen(
