@@ -2,12 +2,15 @@ package com.secondserve.data.repository
 
 import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
+import com.secondserve.data.local.dao.CoachingSynthesisDao
 import com.secondserve.data.local.db.entity.CoachingAnalysisEntity
 import com.secondserve.data.local.db.entity.CoachingCacheEntity
+import com.secondserve.data.local.db.entity.CoachingSynthesisEntity
 import com.secondserve.data.local.db.entity.toDomain
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.CoachingAnalysis
 import com.secondserve.domain.model.CoachingCacheEntry
+import com.secondserve.domain.model.CoachingSynthesis
 import com.secondserve.domain.model.MatchPattern
 import com.secondserve.domain.repository.CoachingRepository
 import kotlinx.coroutines.flow.Flow
@@ -16,7 +19,8 @@ import javax.inject.Inject
 
 class CoachingRepositoryImpl @Inject constructor(
     private val dao: CoachingCacheDao,
-    private val analysisDao: CoachingAnalysisDao
+    private val analysisDao: CoachingAnalysisDao,
+    private val synthesisDao: CoachingSynthesisDao
 ) : CoachingRepository {
 
     override suspend fun getCachedAdvice(matchId: Long, pattern: MatchPattern): CoachingCacheEntry? =
@@ -62,4 +66,25 @@ class CoachingRepositoryImpl @Inject constructor(
 
     override fun observeAnalysisForSession(sessionId: Long): Flow<CoachingAnalysis?> =
         analysisDao.observeBySessionId(sessionId).map { it?.toDomain() }
+
+    override suspend fun saveSynthesis(content: String, sessionCount: Int): AppResult<CoachingSynthesis> = try {
+        val entity = CoachingSynthesisEntity(
+            content = content,
+            sessionCount = sessionCount,
+            generatedAt = System.currentTimeMillis()
+        )
+        val id = synthesisDao.insert(entity)
+        AppResult.Success(entity.copy(id = id).toDomain())
+    } catch (e: Exception) {
+        AppResult.Error(e)
+    }
+
+    override suspend fun getLatestSynthesis(): CoachingSynthesis? =
+        synthesisDao.getLatest()?.toDomain()
+
+    override fun observeLatestSynthesis(): Flow<CoachingSynthesis?> =
+        synthesisDao.observeLatest().map { it?.toDomain() }
+
+    override fun observeAllAnalyses(): Flow<List<CoachingAnalysis>> =
+        analysisDao.getAllAnalyses().map { list -> list.map { it.toDomain() } }
 }

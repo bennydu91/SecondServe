@@ -74,6 +74,17 @@ class SessionRepositoryImpl @Inject constructor(
         return Pair(self, opponent)
     }
 
+    override suspend fun countCompletedSince(afterMs: Long): Int =
+        dao.countCompletedSince(afterMs)
+
+    override suspend fun getCompletedSince(afterMs: Long): List<Session> =
+        dao.getCompletedSince(afterMs).mapNotNull { entity ->
+            runCatching { entity.toDomain() }.getOrElse { e ->
+                Timber.e(e, "SessionRepository: skipping corrupted session id=${entity.id}")
+                null
+            }
+        }
+
     override suspend fun closeSession(
         sessionId: Long,
         result: String,

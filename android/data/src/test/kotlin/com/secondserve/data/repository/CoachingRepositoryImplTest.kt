@@ -3,9 +3,12 @@ package com.secondserve.data.repository
 import app.cash.turbine.test
 import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
+import com.secondserve.data.local.dao.CoachingSynthesisDao
 import com.secondserve.data.local.db.entity.CoachingAnalysisEntity
+import com.secondserve.data.local.db.entity.CoachingSynthesisEntity
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.CoachingAnalysis
+import com.secondserve.domain.model.CoachingSynthesis
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -21,14 +24,23 @@ class CoachingRepositoryImplTest {
 
     private lateinit var cacheDao: CoachingCacheDao
     private lateinit var analysisDao: CoachingAnalysisDao
+    private lateinit var synthesisDao: CoachingSynthesisDao
     private lateinit var repository: CoachingRepositoryImpl
 
     @BeforeEach
     fun setup() {
         cacheDao = mockk(relaxed = true)
         analysisDao = mockk(relaxed = true)
-        repository = CoachingRepositoryImpl(cacheDao, analysisDao)
+        synthesisDao = mockk(relaxed = true)
+        repository = CoachingRepositoryImpl(cacheDao, analysisDao, synthesisDao)
     }
+
+    private fun aSynthesisEntity() = CoachingSynthesisEntity(
+        id = 5L,
+        content = "Patterns récurrents : bon service.",
+        sessionCount = 3,
+        generatedAt = 9_000_000L
+    )
 
     private fun anAnalysisEntity(sessionId: Long = 1L) = CoachingAnalysisEntity(
         id = 10L,
@@ -111,5 +123,81 @@ class CoachingRepositoryImplTest {
         assertIs<AppResult.Success<CoachingAnalysis>>(result)
         assertEquals(10L, result.data.id)
         assertEquals("Points forts : bon service. Points faibles : retour.", result.data.content)
+    }
+
+    @Test
+    fun `saveSynthesis inserts entity and returns Success with domain model`() = runTest {
+        coEvery { synthesisDao.insert(any()) } returns 5L
+
+        val result = repository.saveSynthesis("Patterns récurrents : bon service.", 3)
+
+        assertIs<AppResult.Success<CoachingSynthesis>>(result)
+        assertEquals(5L, result.data.id)
+        assertEquals("Patterns récurrents : bon service.", result.data.content)
+        assertEquals(3, result.data.sessionCount)
+        coVerify(exactly = 1) { synthesisDao.insert(any()) }
+    }
+
+    @Test
+    fun `saveSynthesis returns Error when dao throws`() = runTest {
+        coEvery { synthesisDao.insert(any()) } throws RuntimeException("DB error")
+
+        val result = repository.saveSynthesis("content", 3)
+
+        assertIs<AppResult.Error>(result)
+    }
+
+    @Test
+    fun `getLatestSynthesis returns domain model when found`() = runTest {
+        coEvery { synthesisDao.getLatest() } returns aSynthesisEntity()
+
+        val result = repository.getLatestSynthesis()
+
+        assertEquals(5L, result?.id)
+        assertEquals("Patterns récurrents : bon service.", result?.content)
+        assertEquals(3, result?.sessionCount)
+    }
+
+    @Test
+    fun `getLatestSynthesis returns null when not found`() = runTest {
+        coEvery { synthesisDao.getLatest() } returns null
+
+        val result = repository.getLatestSynthesis()
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `observeLatestSynthesis emits domain model when entity present`() = runTest {
+        coEvery { synthesisDao.observeLatest() } returns flowOf(aSynthesisEntity())
+
+        repository.observeLatestSynthesis().test {
+            val item = awaitItem()
+            assertEquals(5L, item?.id)
+            assertEquals("Patterns récurrents : bon service.", item?.content)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `observeLatestSynthesis emits null when no entity`() = runTest {
+        coEvery { synthesisDao.observeLatest() } returns flowOf(null)
+
+        repository.observeLatestSynthesis().test {
+            assertNull(awaitItem())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `observeAllAnalyses emits mapped domain list`() = runTest {
+        coEvery { analysisDao.getAllAnalyses() } returns flowOf(listOf(anAnalysisEntity()))
+
+        repository.observeAllAnalyses().test {
+            val list = awaitItem()
+            assertEquals(1, list.size)
+            assertEquals(10L, list[0].id)
+            awaitComplete()
+        }
     }
 }

@@ -24,4 +24,10 @@ interface SessionDao {
 
     @Query("SELECT scorer, COUNT(*) as cnt FROM points WHERE session_id = :sessionId GROUP BY scorer")
     suspend fun getPointCountsByScorer(sessionId: Long): List<ScorerCount>
+
+    @Query("SELECT COUNT(*) FROM sessions WHERE status = 'COMPLETED' AND updated_at > :afterMs")
+    suspend fun countCompletedSince(afterMs: Long): Int
+
+    @Query("SELECT * FROM sessions WHERE status = 'COMPLETED' AND updated_at > :afterMs ORDER BY updated_at DESC")
+    suspend fun getCompletedSince(afterMs: Long): List<SessionEntity>
 }

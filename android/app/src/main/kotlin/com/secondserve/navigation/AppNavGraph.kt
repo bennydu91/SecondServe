@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.secondserve.HomeScreen
+import com.secondserve.feature.coaching.CoachingScreen
 import com.secondserve.feature.history.AddRetroSessionScreen
 import com.secondserve.feature.history.HistoryScreen
 import com.secondserve.feature.history.SessionDetailScreen
@@ -25,8 +26,12 @@ fun AppNavGraph() {
                 onNavigateToNewMatch = { navController.navigate("new_match") },
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToHistory = { navController.navigate("history") },
-                onNavigateToStats = { navController.navigate("stats") }
+                onNavigateToStats = { navController.navigate("stats") },
+                onNavigateToCoaching = { navController.navigate("coaching") }
             )
+        }
+        composable("coaching") {
+            CoachingScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable("new_match") {
             NewMatchScreen(

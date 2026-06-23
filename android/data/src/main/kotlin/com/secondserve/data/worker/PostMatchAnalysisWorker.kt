@@ -12,6 +12,7 @@ import com.secondserve.domain.model.Session
 import com.secondserve.domain.repository.CoachingRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.SessionRepository
+import com.secondserve.domain.synthesis.SynthesisScheduler
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import timber.log.Timber
@@ -23,7 +24,8 @@ class PostMatchAnalysisWorker @AssistedInject constructor(
     private val sessionRepository: SessionRepository,
     private val playerProfileRepository: PlayerProfileRepository,
     private val coachingRepository: CoachingRepository,
-    @VpsMistralEngine private val vpsMistralEngine: InferenceEngine
+    @VpsMistralEngine private val vpsMistralEngine: InferenceEngine,
+    private val synthesisScheduler: SynthesisScheduler
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -68,6 +70,7 @@ class PostMatchAnalysisWorker @AssistedInject constructor(
                 when (val saveResult = coachingRepository.saveAnalysis(sessionId, result.data)) {
                     is AppResult.Success -> {
                         Timber.d("PostMatchAnalysisWorker: analysis saved for session %d", sessionId)
+                        synthesisScheduler.schedule()
                         Result.success()
                     }
                     is AppResult.Error -> {

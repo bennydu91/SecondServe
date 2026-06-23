@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
+import com.secondserve.data.local.dao.CoachingSynthesisDao
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
@@ -14,8 +15,10 @@ import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.repository.PlayerProfileRepositoryImpl
 import com.secondserve.data.repository.WorkAxisRepositoryImpl
 import com.secondserve.data.worker.AnalysisSchedulerImpl
+import com.secondserve.data.worker.SynthesisSchedulerImpl
 import com.secondserve.data.worker.SyncSchedulerImpl
 import com.secondserve.domain.analysis.AnalysisScheduler
+import com.secondserve.domain.synthesis.SynthesisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.WorkAxisRepository
@@ -46,7 +49,8 @@ object DataModule {
             SecondServeDatabase.MIGRATION_4_5,
             SecondServeDatabase.MIGRATION_5_6,
             SecondServeDatabase.MIGRATION_6_7,
-            SecondServeDatabase.MIGRATION_7_8
+            SecondServeDatabase.MIGRATION_7_8,
+            SecondServeDatabase.MIGRATION_8_9
         )
         .build()
 
@@ -82,6 +86,11 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideCoachingSynthesisDao(db: SecondServeDatabase): CoachingSynthesisDao =
+        db.coachingSynthesisDao()
+
+    @Provides
+    @Singleton
     fun provideDataLayerEventBus(): DataLayerEventBus = DataLayerEventBus()
 
     @Provides
@@ -93,6 +102,11 @@ object DataModule {
     @Singleton
     fun provideAnalysisScheduler(@ApplicationContext context: Context): AnalysisScheduler =
         AnalysisSchedulerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideSynthesisScheduler(@ApplicationContext context: Context): SynthesisScheduler =
+        SynthesisSchedulerImpl(context)
 
     @Provides
     @Singleton

@@ -20,7 +20,8 @@ fun HomeScreen(
     onNavigateToNewMatch: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToHistory: () -> Unit,
-    onNavigateToStats: () -> Unit
+    onNavigateToStats: () -> Unit,
+    onNavigateToCoaching: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -66,6 +67,15 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Statistiques")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onNavigateToCoaching,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Coaching IA")
         }
     }
 }

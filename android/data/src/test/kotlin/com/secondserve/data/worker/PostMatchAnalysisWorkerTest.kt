@@ -14,10 +14,12 @@ import com.secondserve.domain.model.ThirdSetRule
 import com.secondserve.domain.repository.CoachingRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.SessionRepository
+import com.secondserve.domain.synthesis.SynthesisScheduler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -30,6 +32,7 @@ class PostMatchAnalysisWorkerTest {
     private lateinit var playerProfileRepository: PlayerProfileRepository
     private lateinit var coachingRepository: CoachingRepository
     private lateinit var vpsMistralEngine: InferenceEngine
+    private lateinit var synthesisScheduler: SynthesisScheduler
 
     @BeforeEach
     fun setup() {
@@ -37,6 +40,7 @@ class PostMatchAnalysisWorkerTest {
         playerProfileRepository = mockk()
         coachingRepository = mockk(relaxed = true)
         vpsMistralEngine = mockk()
+        synthesisScheduler = mockk(relaxed = true)
 
         coEvery { playerProfileRepository.buildMatchContextProfile() } returns MatchContextProfile()
         coEvery { sessionRepository.getPointSummaryForSession(any()) } returns Pair(10, 8)
@@ -59,7 +63,8 @@ class PostMatchAnalysisWorkerTest {
         sessionRepository = sessionRepository,
         playerProfileRepository = playerProfileRepository,
         coachingRepository = coachingRepository,
-        vpsMistralEngine = vpsMistralEngine
+        vpsMistralEngine = vpsMistralEngine,
+        synthesisScheduler = synthesisScheduler
     )
 
     @Test
@@ -136,6 +141,40 @@ class PostMatchAnalysisWorkerTest {
         val result = makeWorker().runWork(1L)
 
         assertEquals(androidx.work.ListenableWorker.Result.failure(), result)
+    }
+
+    @Test
+    fun `doWork calls synthesisScheduler schedule after successful save`() = runTest {
+        coEvery { sessionRepository.getSessionById(1L) } returns aSession()
+        coEvery { vpsMistralEngine.generate(any()) } returns AppResult.Success("Bonne analyse.")
+        coEvery { coachingRepository.saveAnalysis(1L, "Bonne analyse.") } returns AppResult.Success(
+            CoachingAnalysis(id = 1L, sessionId = 1L, content = "Bonne analyse.", generatedAt = 0L)
+        )
+
+        makeWorker().runWork(1L)
+
+        verify(exactly = 1) { synthesisScheduler.schedule() }
+    }
+
+    @Test
+    fun `doWork does NOT call synthesisScheduler schedule when VPS fails`() = runTest {
+        coEvery { sessionRepository.getSessionById(1L) } returns aSession()
+        coEvery { vpsMistralEngine.generate(any()) } returns AppResult.Error(RuntimeException("VPS down"))
+
+        makeWorker().runWork(1L)
+
+        verify(exactly = 0) { synthesisScheduler.schedule() }
+    }
+
+    @Test
+    fun `doWork does NOT call synthesisScheduler schedule when saveAnalysis fails`() = runTest {
+        coEvery { sessionRepository.getSessionById(1L) } returns aSession()
+        coEvery { vpsMistralEngine.generate(any()) } returns AppResult.Success("Bonne analyse.")
+        coEvery { coachingRepository.saveAnalysis(any(), any()) } returns AppResult.Error(RuntimeException("DB error"))
+
+        makeWorker().runWork(1L)
+
+        verify(exactly = 0) { synthesisScheduler.schedule() }
     }
 
     @Test

@@ -17,4 +17,7 @@ interface CoachingAnalysisDao {
 
     @Query("SELECT * FROM coaching_analyses WHERE session_id = :sessionId LIMIT 1")
     fun observeBySessionId(sessionId: Long): Flow<CoachingAnalysisEntity?>
+
+    @Query("SELECT * FROM coaching_analyses ORDER BY generated_at DESC")
+    fun getAllAnalyses(): Flow<List<CoachingAnalysisEntity>>
 }

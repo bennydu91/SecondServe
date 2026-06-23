@@ -3,6 +3,7 @@ package com.secondserve.domain.repository
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.CoachingAnalysis
 import com.secondserve.domain.model.CoachingCacheEntry
+import com.secondserve.domain.model.CoachingSynthesis
 import com.secondserve.domain.model.MatchPattern
 import kotlinx.coroutines.flow.Flow
 
@@ -14,4 +15,8 @@ interface CoachingRepository {
     suspend fun saveAnalysis(sessionId: Long, content: String): AppResult<CoachingAnalysis>
     suspend fun getAnalysisForSession(sessionId: Long): CoachingAnalysis?
     fun observeAnalysisForSession(sessionId: Long): Flow<CoachingAnalysis?>
+    suspend fun saveSynthesis(content: String, sessionCount: Int): AppResult<CoachingSynthesis>
+    suspend fun getLatestSynthesis(): CoachingSynthesis?
+    fun observeLatestSynthesis(): Flow<CoachingSynthesis?>
+    fun observeAllAnalyses(): Flow<List<CoachingAnalysis>>
 }
