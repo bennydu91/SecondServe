@@ -4,7 +4,7 @@ baseline_commit: e25e4127fac18c5eb8f249eb439b93b42d11427f
 
 # Story 5.1: VpsMistralEngine & routing Mistral via VPS
 
-Status: review
+Status: done
 
 ## Story
 
@@ -82,6 +82,23 @@ so that the Mistral API key never appears in the Android app.
   - [x] T12.1 `android/core/ai/src/test/kotlin/com/secondserve/core/ai/vps/VpsMistralEngineTest.kt` : MockWebServer — success 200, erreur 500, timeout
   - [x] T12.2 `backend/tests/unit/test_coaching_service.py` : mock `mistral_client.generate()` — success, timeout, erreur Mistral
   - [x] T12.3 `backend/tests/integration/test_coaching_api.py` : mock `mistral_client` — POST /analyze success (200), mock MISTRAL_API_KEY absente (503)
+
+### Review Findings
+
+- [x] [Review][Patch] analyzeUrl construite sans normalisation de la barre oblique finale — URL silencieusement invalide si VPS_BASE_URL sans `/` [android/core/ai/src/main/kotlin/com/secondserve/core/ai/vps/VpsMistralEngine.kt:144]
+- [x] [Review][Patch] JsonDataException (Moshi) non catchée dans VpsMistralEngine — propagation crash si réponse JSON malformée [android/core/ai/src/main/kotlin/com/secondserve/core/ai/vps/VpsMistralEngine.kt]
+- [x] [Review][Patch] Test generate-timeout non-déterministe — callTimeout(2s) du client de test écrasé à 20s par le constructeur de VpsMistralEngine [android/core/ai/src/test/kotlin/com/secondserve/core/ai/vps/VpsMistralEngineTest.kt]
+- [x] [Review][Patch] httpx.ConnectError et exceptions réseau non-httpx non catchées — propagation en 500 non structuré au lieu de SecondServeException 503 [backend/app/features/coaching/mistral_client.py]
+- [x] [Review][Patch] response.json() KeyError si Mistral retourne un format inattendu (choices manquant, message manquant) — 500 non structuré [backend/app/features/coaching/mistral_client.py]
+- [x] [Review][Patch] Test Python MISTRAL_API_KEY absente manquant — explicitement requis par les Dev Notes (T12.3 dit "mock MISTRAL_API_KEY absente") [backend/tests/integration/test_coaching_api.py]
+- [x] [Review][Patch] BuildConfig.VPS_BASE_URL vide non vérifié à l'initialisation — toutes les requêtes VPS échouent silencieusement avec URL invalide [android/app/src/release/kotlin/com/secondserve/di/AiModule.kt]
+- [x] [Review][Patch] getSessionById/buildMatchContextProfile déplacés hors du withTimeout Gemini — DB calls sans protection timeout, régression vs code original [android/feature/match/src/main/kotlin/com/secondserve/feature/match/CoachingResolver.kt]
+- [x] [Review][Defer] Circuit breaker absent pour VPS en match — 5s × N appels consécutifs = latence cumulative en cas de VPS dégradé — deferred, amélioration post-MVP
+- [x] [Review][Defer] MISTRAL_API_KEY passée en paramètre de fonction — visible dans stack traces Python en cas d'exception non gérée — deferred, risque faible (Python ne loggue pas les args automatiquement)
+- [x] [Review][Defer] MISTRAL_API_KEY vide → erreur opaque MISTRAL_ERROR (401 Mistral) au lieu de MISTRAL_NOT_CONFIGURED — deferred, diagnostic ops
+- [x] [Review][Defer] httpx timeout (15s) > Android withTimeout (5s) — VPS continue à traiter après abandon Android, gaspillage ressources — deferred, architectural
+- [x] [Review][Defer] range(2) fragile pour exprimer "1 retry" — sémantiquement correct mais modifiable sans comprendre l'invariant — deferred, code style
+- [x] [Review][Defer] buildMatchContextProfile() — vérifier qu'il exclut bien les PII (licence FFT, etc.) — deferred, à valider en revue NFR-C3
 
 ## Dev Notes
 

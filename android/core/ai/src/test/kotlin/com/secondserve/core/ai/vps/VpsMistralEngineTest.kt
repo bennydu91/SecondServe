@@ -30,9 +30,8 @@ class VpsMistralEngineTest {
         val client = OkHttpClient.Builder()
             .connectTimeout(1, TimeUnit.SECONDS)
             .readTimeout(1, TimeUnit.SECONDS)
-            .callTimeout(2, TimeUnit.SECONDS)
             .build()
-        engine = VpsMistralEngine(client, server.url("/").toString(), moshi)
+        engine = VpsMistralEngine(client, server.url("/").toString(), moshi, callTimeoutSeconds = 2L)
     }
 
     @AfterEach

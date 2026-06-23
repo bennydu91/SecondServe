@@ -5,6 +5,7 @@ import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.ErrorCode
 import com.secondserve.domain.model.InferenceEngineException
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,18 +21,36 @@ import javax.inject.Named
 import javax.inject.Singleton
 
 @Singleton
-class VpsMistralEngine @Inject constructor(
-    okHttpClient: OkHttpClient,
-    @Named("vps_base_url") baseUrl: String,
+class VpsMistralEngine private constructor(
+    private val client: OkHttpClient,
+    baseUrl: String,
     private val moshi: Moshi
 ) : InferenceEngine {
 
-    private val analyzeUrl = "${baseUrl}api/v1/coaching/analyze"
+    @Inject constructor(
+        okHttpClient: OkHttpClient,
+        @Named("vps_base_url") baseUrl: String,
+        moshi: Moshi
+    ) : this(
+        okHttpClient.newBuilder().callTimeout(20, TimeUnit.SECONDS).build(),
+        baseUrl,
+        moshi
+    )
+
+    internal constructor(
+        okHttpClient: OkHttpClient,
+        baseUrl: String,
+        moshi: Moshi,
+        callTimeoutSeconds: Long
+    ) : this(
+        okHttpClient.newBuilder().callTimeout(callTimeoutSeconds, TimeUnit.SECONDS).build(),
+        baseUrl,
+        moshi
+    )
+
+    private val analyzeUrl = baseUrl.trimEnd('/') + "/api/v1/coaching/analyze"
     private val requestAdapter = moshi.adapter(AnalyzeRequest::class.java)
     private val responseAdapter = moshi.adapter(AnalyzeResponse::class.java)
-    private val client = okHttpClient.newBuilder()
-        .callTimeout(20, TimeUnit.SECONDS)
-        .build()
 
     override suspend fun generate(prompt: String): AppResult<String> = withContext(Dispatchers.IO) {
         try {
@@ -59,6 +78,9 @@ class VpsMistralEngine @Inject constructor(
                     AppResult.Error(InferenceEngineException(ErrorCode.NETWORK_UNAVAILABLE, "Invalid response"))
                 }
             }
+        } catch (e: JsonDataException) {
+            Timber.d("VpsMistralEngine: malformed JSON response: %s", e.message)
+            AppResult.Error(InferenceEngineException(ErrorCode.NETWORK_UNAVAILABLE, "Malformed response", e))
         } catch (e: IOException) {
             Timber.d("VpsMistralEngine: network error: %s", e.message)
             AppResult.Error(InferenceEngineException(ErrorCode.NETWORK_UNAVAILABLE, e.message ?: "Network error", e))

@@ -1,5 +1,14 @@
 # Deferred Work
 
+## Deferred from: code review of 5-1-vpsmistralengine-routing-mistral-via-vps (2026-06-23)
+
+- **Circuit breaker VPS absent en match** — 5s × N appels consécutifs = latence cumulative si VPS dégradé. À adresser quand le volume d'appels coaching justifie un mécanisme de court-circuit.
+- **MISTRAL_API_KEY en paramètre de fonction** — Passée de coaching.py → service.analyze() → mistral_client.generate(). Risque stack-trace faible (Python ne loggue pas les args), mais refactorer pour encapsuler dans le client si un APM est intégré.
+- **MISTRAL_API_KEY vide → erreur opaque** — Un MISTRAL_API_KEY absent retourne MISTRAL_ERROR (401) au lieu de MISTRAL_NOT_CONFIGURED. Ajouter une guard clause dans le service ou endpoint pour un diagnostic rapide en ops.
+- **Décalage timeout httpx vs Android withTimeout** — httpx timeout 15s > Android withTimeout 5s : le VPS continue à traiter après abandon Android, gaspillant ressources Mistral. À aligner quand les coûts API Mistral deviennent significatifs.
+- **range(2) fragile pour "1 retry"** — Correct mais l'invariant est non-évident. Envisager un helper `retry_once(coro)` pour clarifier l'intent.
+- **buildMatchContextProfile() — vérification PII** — Confirmer que buildMatchContextProfile() exclut bien la licence FFT et tout identifiant personnel avant que VPS_MISTRAL soit activé en production (NFR-C3/S5).
+
 ## Deferred from: code review of 4-1-historique-des-sessions (2026-06-22)
 
 - **Anti-pattern Orbit MVI (`viewModelScope.launch` + `intent` imbriqué)** — Pattern prescrit par la spec dev notes, non bloquant. [`HistoryViewModel.kt:20`]

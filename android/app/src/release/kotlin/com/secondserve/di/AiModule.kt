@@ -35,6 +35,9 @@ abstract class AiModule {
     companion object {
         @Provides
         @Named("vps_base_url")
-        fun provideVpsBaseUrl(): String = BuildConfig.VPS_BASE_URL
+        fun provideVpsBaseUrl(): String {
+            require(BuildConfig.VPS_BASE_URL.isNotBlank()) { "BuildConfig.VPS_BASE_URL must be set for release builds" }
+            return BuildConfig.VPS_BASE_URL
+        }
     }
 }

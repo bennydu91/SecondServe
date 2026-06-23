@@ -20,7 +20,12 @@ async def generate(prompt: str, api_key: str) -> str:
             try:
                 response = await client.post(url, json=payload, headers=headers)
                 response.raise_for_status()
-                return response.json()["choices"][0]["message"]["content"]
+                try:
+                    return response.json()["choices"][0]["message"]["content"]
+                except (KeyError, IndexError):
+                    raise SecondServeException(
+                        "MISTRAL_ERROR", "Unexpected Mistral response format", 503
+                    )
             except httpx.TimeoutException:
                 if attempt == 1:
                     raise SecondServeException(
@@ -31,6 +36,12 @@ async def generate(prompt: str, api_key: str) -> str:
                 raise SecondServeException(
                     "MISTRAL_ERROR",
                     f"Mistral API error: {e.response.status_code}",
+                    503,
+                )
+            except httpx.RequestError as e:
+                raise SecondServeException(
+                    "MISTRAL_UNAVAILABLE",
+                    f"Mistral network error: {type(e).__name__}",
                     503,
                 )
 

@@ -37,9 +37,23 @@ class CoachingResolver @Inject constructor(
         }
 
         val pattern = CoachingPatternDetector.detect(MatchStateSnapshot(score))
-        val session = sessionRepository.getSessionById(sessionId)
+        val (session, context) = try {
+            withTimeout(2_000L) {
+                Pair(
+                    sessionRepository.getSessionById(sessionId),
+                    playerProfileRepository.buildMatchContextProfile()
+                )
+            }
+        } catch (e: TimeoutCancellationException) {
+            Timber.w("CoachingResolver: context load timeout for sessionId=%d, falling to static fallback", sessionId)
+            val fallback = MatchPattern.GENERIC_FALLBACK_TEXTS[pattern]
+                ?: MatchPattern.GENERIC_FALLBACK_TEXTS[MatchPattern.NEUTRAL_TRANSITION]
+                ?: "Restez concentré sur chaque point."
+            return CoachingResult(fallback, CoachingSource.STATIC)
+        } catch (e: CancellationException) {
+            throw e
+        }
         if (session == null) Timber.w("CoachingResolver: session not found for id=%d, prompt will use empty surface", sessionId)
-        val context = playerProfileRepository.buildMatchContextProfile()
         val prompt = buildPrompt(pattern, context, session?.surface ?: "")
 
         // 1. GeminiNano avec timeout 3s
