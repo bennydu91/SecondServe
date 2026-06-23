@@ -1,5 +1,7 @@
 package com.secondserve.data.worker
 
+import android.content.Context
+import androidx.work.WorkerParameters
 import com.secondserve.core.ai.InferenceEngine
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.CoachingAnalysis
@@ -15,8 +17,10 @@ import com.secondserve.domain.repository.SessionRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -49,7 +53,9 @@ class PostMatchAnalysisWorkerTest {
         updatedAt = 2_000_000L
     )
 
-    private fun makeWorker() = TestPostMatchAnalysisWorkerHelper(
+    private fun makeWorker() = PostMatchAnalysisWorker(
+        context = mockk(relaxed = true),
+        params = mockk(relaxed = true),
         sessionRepository = sessionRepository,
         playerProfileRepository = playerProfileRepository,
         coachingRepository = coachingRepository,
@@ -64,7 +70,7 @@ class PostMatchAnalysisWorkerTest {
             CoachingAnalysis(id = 1L, sessionId = 1L, content = "Bonne analyse.", generatedAt = 0L)
         )
 
-        val result = makeWorker().doWork(1L)
+        val result = makeWorker().runWork(1L)
 
         assertEquals(androidx.work.ListenableWorker.Result.success(), result)
         coVerify(exactly = 1) { coachingRepository.saveAnalysis(1L, "Bonne analyse.") }
@@ -75,7 +81,7 @@ class PostMatchAnalysisWorkerTest {
         coEvery { sessionRepository.getSessionById(1L) } returns aSession()
         coEvery { vpsMistralEngine.generate(any()) } returns AppResult.Error(RuntimeException("VPS down"))
 
-        val result = makeWorker().doWork(1L)
+        val result = makeWorker().runWork(1L)
 
         assertEquals(androidx.work.ListenableWorker.Result.retry(), result)
         coVerify(exactly = 0) { coachingRepository.saveAnalysis(any(), any()) }
@@ -85,7 +91,7 @@ class PostMatchAnalysisWorkerTest {
     fun `doWork returns failure when session not found`() = runTest {
         coEvery { sessionRepository.getSessionById(99L) } returns null
 
-        val result = makeWorker().doWork(99L)
+        val result = makeWorker().runWork(99L)
 
         assertEquals(androidx.work.ListenableWorker.Result.failure(), result)
         coVerify(exactly = 0) { vpsMistralEngine.generate(any()) }
@@ -94,58 +100,73 @@ class PostMatchAnalysisWorkerTest {
 
     @Test
     fun `doWork returns failure when sessionId is missing`() = runTest {
-        val result = makeWorker().doWork(-1L)
+        val result = makeWorker().runWork(-1L)
 
         assertEquals(androidx.work.ListenableWorker.Result.failure(), result)
         coVerify(exactly = 0) { sessionRepository.getSessionById(any()) }
     }
-}
 
-private class TestPostMatchAnalysisWorkerHelper(
-    private val sessionRepository: SessionRepository,
-    private val playerProfileRepository: PlayerProfileRepository,
-    private val coachingRepository: CoachingRepository,
-    private val vpsMistralEngine: InferenceEngine
-) {
-    suspend fun doWork(sessionId: Long): androidx.work.ListenableWorker.Result {
-        if (sessionId == -1L) return androidx.work.ListenableWorker.Result.failure()
+    @Test
+    fun `doWork returns retry when saveAnalysis fails`() = runTest {
+        coEvery { sessionRepository.getSessionById(1L) } returns aSession()
+        coEvery { vpsMistralEngine.generate(any()) } returns AppResult.Success("Bonne analyse.")
+        coEvery { coachingRepository.saveAnalysis(any(), any()) } returns AppResult.Error(RuntimeException("DB error"))
 
-        val session = sessionRepository.getSessionById(sessionId)
-            ?: return androidx.work.ListenableWorker.Result.failure()
+        val result = makeWorker().runWork(1L)
 
-        val profile = playerProfileRepository.buildMatchContextProfile()
-        val (selfPoints, opponentPoints) = sessionRepository.getPointSummaryForSession(sessionId)
+        assertEquals(androidx.work.ListenableWorker.Result.retry(), result)
+    }
 
-        val axesText = profile.activeWorkAxes.joinToString(", ").ifEmpty { "aucun" }
-        val instructionsLine = if (profile.coachInstructions.isNotEmpty()) {
-            "\n- Instructions coaching : ${profile.coachInstructions.joinToString("; ")}"
-        } else ""
+    @Test
+    fun `doWork returns failure when buildMatchContextProfile throws`() = runTest {
+        coEvery { sessionRepository.getSessionById(1L) } returns aSession()
+        coEvery { playerProfileRepository.buildMatchContextProfile() } throws RuntimeException("Profile unavailable")
 
-        val prompt = """
-Tu es un coach tennis. Analyse ce match de façon concrète et personnalisée. Réponse en 4-6 phrases maximum.
+        val result = makeWorker().runWork(1L)
 
-Match :
-- Surface : ${session.surface}
-- Format : ${session.format.matchFormat.name}
-- Score : ${session.scoreText ?: "inconnu"}
-- Résultat : ${session.result ?: "inconnu"}
-- Points : $selfPoints gagnés / $opponentPoints perdus
+        assertEquals(androidx.work.ListenableWorker.Result.failure(), result)
+        coVerify(exactly = 0) { vpsMistralEngine.generate(any()) }
+    }
 
-Profil joueur :
-- Classement FFT : ${profile.fftSeries ?: "non renseigné"}
-- Style de jeu : ${profile.playStyle ?: "non renseigné"}
-- Axes de travail actifs : $axesText$instructionsLine
+    @Test
+    fun `doWork returns failure when AppResult Loading returned`() = runTest {
+        coEvery { sessionRepository.getSessionById(1L) } returns aSession()
+        coEvery { vpsMistralEngine.generate(any()) } returns AppResult.Loading
 
-Fournis une analyse structurée : points forts observés dans ce match, points faibles, écart avec les axes de travail, et 1-2 recommandations concrètes. Cite le score et la surface. Sois précis, pas générique.
-        """.trimIndent()
+        val result = makeWorker().runWork(1L)
 
-        return when (val result = vpsMistralEngine.generate(prompt)) {
-            is AppResult.Success -> {
-                coachingRepository.saveAnalysis(sessionId, result.data)
-                androidx.work.ListenableWorker.Result.success()
-            }
-            is AppResult.Error -> androidx.work.ListenableWorker.Result.retry()
-            AppResult.Loading -> androidx.work.ListenableWorker.Result.retry()
-        }
+        assertEquals(androidx.work.ListenableWorker.Result.failure(), result)
+    }
+
+    @Test
+    fun `buildPrompt includes all required AC1 fields`() = runTest {
+        val promptSlot = slot<String>()
+        val profile = MatchContextProfile(
+            fftSeries = "15/1",
+            playStyle = "Défensif",
+            activeWorkAxes = listOf("Revers lifté"),
+            coachInstructions = listOf("Attaquer plus tôt")
+        )
+        coEvery { sessionRepository.getSessionById(1L) } returns aSession()
+        coEvery { playerProfileRepository.buildMatchContextProfile() } returns profile
+        coEvery { sessionRepository.getPointSummaryForSession(1L) } returns Pair(15, 12)
+        coEvery { vpsMistralEngine.generate(capture(promptSlot)) } returns AppResult.Success("Analyse.")
+        coEvery { coachingRepository.saveAnalysis(any(), any()) } returns AppResult.Success(
+            CoachingAnalysis(id = 1L, sessionId = 1L, content = "Analyse.", generatedAt = 0L)
+        )
+
+        makeWorker().runWork(1L)
+
+        val prompt = promptSlot.captured
+        assertTrue(prompt.contains("CLAY"), "prompt doit contenir la surface")
+        assertTrue(prompt.contains("BEST_OF_3"), "prompt doit contenir le format")
+        assertTrue(prompt.contains("6/4 6/3"), "prompt doit contenir le score")
+        assertTrue(prompt.contains("VICTORY"), "prompt doit contenir le résultat")
+        assertTrue(prompt.contains("15"), "prompt doit contenir les points gagnés")
+        assertTrue(prompt.contains("12"), "prompt doit contenir les points perdus")
+        assertTrue(prompt.contains("15/1"), "prompt doit contenir le classement FFT")
+        assertTrue(prompt.contains("Défensif"), "prompt doit contenir le style de jeu")
+        assertTrue(prompt.contains("Revers lifté"), "prompt doit contenir les axes de travail")
+        assertTrue(prompt.contains("Attaquer plus tôt"), "prompt doit contenir les instructions coaching")
     }
 }

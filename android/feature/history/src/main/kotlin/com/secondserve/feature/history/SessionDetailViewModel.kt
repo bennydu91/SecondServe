@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import com.secondserve.domain.repository.CoachingRepository
 import com.secondserve.domain.repository.SessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collect
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 import javax.inject.Inject
@@ -32,8 +33,9 @@ class SessionDetailViewModel @Inject constructor(
                 return@intent
             }
             val advices = coachingRepository.getAdvicesForSession(sessionId)
-            val analysis = coachingRepository.getAnalysisForSession(sessionId)
-            reduce { SessionDetailUiState.Content(session, advices, analysis) }
+            coachingRepository.observeAnalysisForSession(sessionId).collect { analysis ->
+                reduce { SessionDetailUiState.Content(session, advices, analysis) }
+            }
         } catch (e: Exception) {
             reduce { SessionDetailUiState.Error(e.message ?: "Erreur de chargement") }
         }

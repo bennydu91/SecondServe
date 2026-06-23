@@ -239,3 +239,9 @@
 - **W6 — `popBackStack()` sur une pile vide** — Retourne `false` et ne fait rien ; l'utilisateur pourrait être bloqué si l'écran est atteint par deep link. Pattern système pré-existant dans toute la navigation. [`AppNavGraph.kt`]
 - **W7 — Message d'erreur générique quand la transaction est rollbackée** — `AppResult.Error` retourné sans distinguer "session non créée" vs "sync non enqueued". Pattern de reporting pré-existant. [`SessionRepositoryImpl.kt`]
 - **W8 — Timestamp `now` capturé avant `withTransaction`** — Léger décalage possible entre capture et exécution réelle de l'insert. Impact négligeable. Pattern pré-existant. [`SessionRepositoryImpl.kt`]
+
+## Deferred from: code review of 5-2-analyse-post-match-individuelle (2026-06-23)
+
+- **Df1 — Aucun cap explicite sur le nombre de retries WorkManager** — `AnalysisSchedulerImpl` configure un backoff exponentiel de 30s mais ne plafonne pas le nombre de tentatives. WorkManager gère nativement via sa propre limite, ce qui est suffisant pour V1. [`AnalysisSchedulerImpl.kt`]
+- **Df2 — Injection de prompt via les champs session/profil non sanitisés** — Les valeurs de `session.surface`, `coachInstructions`, `activeWorkAxes` sont interpolées directement dans le prompt Mistral sans échappement. Risque minimal pour une app mono-utilisateur V1 ; à surveiller si l'app devient multi-tenant. [`PostMatchAnalysisWorker.kt`]
+- **Df3 — Valeurs scorer "SELF"/"OPPONENT" non vérifiées à l'écriture** — `getPointSummaryForSession` cherche exactement "SELF" et "OPPONENT" ; si des stories 2.x écrivent des valeurs différentes, les compteurs retournent 0 silencieusement. Contrainte d'architecture pré-existante. [`SessionRepositoryImpl.kt`]

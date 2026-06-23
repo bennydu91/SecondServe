@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CoachingAnalysisDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: CoachingAnalysisEntity): Long
 
     @Query("SELECT * FROM coaching_analyses WHERE session_id = :sessionId LIMIT 1")

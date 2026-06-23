@@ -7,6 +7,8 @@ import androidx.work.WorkerParameters
 import com.secondserve.core.ai.InferenceEngine
 import com.secondserve.core.ai.di.VpsMistralEngine
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.model.MatchContextProfile
+import com.secondserve.domain.model.Session
 import com.secondserve.domain.repository.CoachingRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.SessionRepository
@@ -30,6 +32,10 @@ class PostMatchAnalysisWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         val sessionId = inputData.getLong(KEY_SESSION_ID, -1L)
+        return runWork(sessionId)
+    }
+
+    internal suspend fun runWork(sessionId: Long): Result {
         if (sessionId == -1L) {
             Timber.e("PostMatchAnalysisWorker: missing session_id")
             return Result.failure()
@@ -41,28 +47,47 @@ class PostMatchAnalysisWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        val profile = playerProfileRepository.buildMatchContextProfile()
-        val (selfPoints, opponentPoints) = sessionRepository.getPointSummaryForSession(sessionId)
+        val profile = try {
+            playerProfileRepository.buildMatchContextProfile()
+        } catch (e: Exception) {
+            Timber.e(e, "PostMatchAnalysisWorker: failed to build context profile")
+            return Result.failure()
+        }
+
+        val (selfPoints, opponentPoints) = try {
+            sessionRepository.getPointSummaryForSession(sessionId)
+        } catch (e: Exception) {
+            Timber.e(e, "PostMatchAnalysisWorker: failed to get point summary")
+            return Result.failure()
+        }
 
         val prompt = buildPrompt(session, profile, selfPoints, opponentPoints)
 
         return when (val result = vpsMistralEngine.generate(prompt)) {
             is AppResult.Success -> {
-                coachingRepository.saveAnalysis(sessionId, result.data)
-                Timber.d("PostMatchAnalysisWorker: analysis saved for session %d", sessionId)
-                Result.success()
+                when (val saveResult = coachingRepository.saveAnalysis(sessionId, result.data)) {
+                    is AppResult.Success -> {
+                        Timber.d("PostMatchAnalysisWorker: analysis saved for session %d", sessionId)
+                        Result.success()
+                    }
+                    is AppResult.Error -> {
+                        Timber.e(saveResult.exception, "PostMatchAnalysisWorker: DB write failed — will retry")
+                        Result.retry()
+                    }
+                    AppResult.Loading -> Result.retry()
+                }
             }
             is AppResult.Error -> {
                 Timber.e(result.exception, "PostMatchAnalysisWorker: VPS error — will retry")
                 Result.retry()
             }
-            AppResult.Loading -> Result.retry()
+            AppResult.Loading -> Result.failure()
         }
     }
 
     private fun buildPrompt(
-        session: com.secondserve.domain.model.Session,
-        profile: com.secondserve.domain.model.MatchContextProfile,
+        session: Session,
+        profile: MatchContextProfile,
         selfPoints: Int,
         opponentPoints: Int
     ): String {

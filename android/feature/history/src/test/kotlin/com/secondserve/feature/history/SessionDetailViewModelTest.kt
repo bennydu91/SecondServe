@@ -1,6 +1,7 @@
 package com.secondserve.feature.history
 
 import androidx.lifecycle.SavedStateHandle
+import com.secondserve.domain.model.CoachingAnalysis
 import com.secondserve.domain.model.CoachingCacheEntry
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.MatchPattern
@@ -11,10 +12,12 @@ import com.secondserve.domain.model.ThirdSetRule
 import com.secondserve.domain.repository.CoachingRepository
 import com.secondserve.domain.repository.SessionRepository
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -70,7 +73,7 @@ class SessionDetailViewModelTest {
         val advices = listOf(fakeAdvice())
         coEvery { sessionRepository.getSessionById(10L) } returns session
         coEvery { coachingRepository.getAdvicesForSession(10L) } returns advices
-        coEvery { coachingRepository.getAnalysisForSession(10L) } returns null
+        every { coachingRepository.observeAnalysisForSession(10L) } returns flowOf(null)
 
         val viewModel = SessionDetailViewModel(
             sessionRepository = sessionRepository,
@@ -104,7 +107,7 @@ class SessionDetailViewModelTest {
         val session = fakeSession()
         coEvery { sessionRepository.getSessionById(10L) } returns session
         coEvery { coachingRepository.getAdvicesForSession(10L) } returns emptyList()
-        coEvery { coachingRepository.getAnalysisForSession(10L) } returns null
+        every { coachingRepository.observeAnalysisForSession(10L) } returns flowOf(null)
 
         val viewModel = SessionDetailViewModel(
             sessionRepository = sessionRepository,
@@ -114,5 +117,25 @@ class SessionDetailViewModelTest {
 
         val state = viewModel.container.stateFlow.first { it is SessionDetailUiState.Content }
         assertTrue((state as SessionDetailUiState.Content).advices.isEmpty())
+    }
+
+    @Test
+    fun `Content state includes analysis when present`() = runTest {
+        val session = fakeSession()
+        val analysis = CoachingAnalysis(id = 1L, sessionId = 10L, content = "Bonne analyse.", generatedAt = 0L)
+        coEvery { sessionRepository.getSessionById(10L) } returns session
+        coEvery { coachingRepository.getAdvicesForSession(10L) } returns emptyList()
+        every { coachingRepository.observeAnalysisForSession(10L) } returns flowOf(analysis)
+
+        val viewModel = SessionDetailViewModel(
+            sessionRepository = sessionRepository,
+            coachingRepository = coachingRepository,
+            savedStateHandle = SavedStateHandle(mapOf("sessionId" to 10L))
+        )
+
+        val state = viewModel.container.stateFlow.first {
+            it is SessionDetailUiState.Content && (it as SessionDetailUiState.Content).analysis != null
+        }
+        assertEquals(analysis, (state as SessionDetailUiState.Content).analysis)
     }
 }

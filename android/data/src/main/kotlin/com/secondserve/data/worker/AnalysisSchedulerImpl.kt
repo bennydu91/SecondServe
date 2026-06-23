@@ -25,7 +25,7 @@ class AnalysisSchedulerImpl(private val context: Context) : AnalysisScheduler {
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 "post_match_analysis_$sessionId",
-                ExistingWorkPolicy.REPLACE,
+                ExistingWorkPolicy.KEEP,
                 request
             )
     }

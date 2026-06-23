@@ -4,7 +4,7 @@ baseline_commit: 91bf278d42fc59845b9a6ed8cc7b170f2c9b08c3
 
 # Story 5.2: Analyse post-match individuelle
 
-Status: review
+Status: done
 
 ## Story
 
@@ -306,6 +306,25 @@ android/feature/history/src/main/kotlin/com/secondserve/feature/history/SessionD
 - Backend endpoint analyze (existant, Story 5.1) : `backend/app/api/v1/coaching.py`
 - Epics — Story 5.2, FR-10, NFR-OFF3, NFR-C3 : `_bmad-output/planning-artifacts/epics.md#Story 5.2`
 - Architecture — FR-10, CoachingUiState, GeneratePostMatchAnalysisUseCase, WorkManager : `_bmad-output/planning-artifacts/architecture.md`
+
+### Review Findings
+
+- [x] [Review][Decision] **D1 — One-shot load vs reactive observe dans SessionDetailViewModel** — Résolu : utilisation de `observeAnalysisForSession()` (Flow) dans `SessionDetailViewModel.load()`. [`SessionDetailViewModel.kt`]
+- [x] [Review][Decision] **D2 — ExistingWorkPolicy.REPLACE vs KEEP pour PostMatchAnalysisWorker** — Résolu : `ExistingWorkPolicy.KEEP` appliqué. [`AnalysisSchedulerImpl.kt`]
+- [x] [Review][Decision] **D3 — OnConflictStrategy.REPLACE vs IGNORE pour la persistance de l'analyse** — Résolu : `OnConflictStrategy.IGNORE` appliqué + gestion du cas `-1L` dans `saveAnalysis`. [`CoachingAnalysisDao.kt`, `CoachingRepositoryImpl.kt`]
+
+- [x] [Review][Patch] **P1 — saveAnalysis() return value ignoré** — Résolu : vérification du `AppResult` retourné, `Result.retry()` sur erreur DB. [`PostMatchAnalysisWorker.kt`]
+- [x] [Review][Patch] **P2 — buildMatchContextProfile() et getPointSummaryForSession() sans try-catch** — Résolu : try-catch individuels, `Result.failure()` sur exception. [`PostMatchAnalysisWorker.kt`]
+- [x] [Review][Patch] **P3 — AppResult.Loading retourne Result.retry()** — Résolu : `AppResult.Loading` → `Result.failure()`. [`PostMatchAnalysisWorker.kt`]
+- [x] [Review][Patch] **P4 — TestPostMatchAnalysisWorkerHelper duplique la logique** — Résolu : suppression du helper, extraction de `runWork(sessionId)`, tests sur le vrai worker. [`PostMatchAnalysisWorker.kt`, `PostMatchAnalysisWorkerTest.kt`]
+- [x] [Review][Patch] **P5 — Aucun test vérifie que schedule() n'est PAS appelé quand confirmClose() échoue** — Résolu. [`MatchViewModelTest.kt`]
+- [x] [Review][Patch] **P6 — SessionDetailViewModelTest sans test analysis != null** — Résolu : test `Content state includes analysis when present` ajouté. [`SessionDetailViewModelTest.kt`]
+- [x] [Review][Patch] **P7 — PostMatchAnalysisWorkerTest sans vérification des champs du prompt** — Résolu : test `buildPrompt includes all required AC1 fields` ajouté avec `slot<String>()`. [`PostMatchAnalysisWorkerTest.kt`]
+- [x] [Review][Patch] **P8 — ScorerCount défini dans SessionDao.kt** — Résolu : déplacé dans `ScorerCount.kt` dédié. [`SessionDao.kt`, `ScorerCount.kt`]
+
+- [x] [Review][Defer] **Df1 — Aucun cap explicite sur le nombre de retries WorkManager** [`AnalysisSchedulerImpl.kt`] — deferred, pre-existing (WorkManager gère nativement via backoff exponentiel)
+- [x] [Review][Defer] **Df2 — Injection de prompt via les champs session/profil non sanitisés** [`PostMatchAnalysisWorker.kt`] — deferred, pre-existing (app mono-utilisateur V1, risque minimal)
+- [x] [Review][Defer] **Df3 — Valeurs scorer "SELF"/"OPPONENT" non vérifiées à l'écriture** [`SessionRepositoryImpl.kt`] — deferred, pre-existing (contrainte d'architecture existante des stories 2.x)
 
 ## Dev Agent Record
 

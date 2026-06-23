@@ -100,4 +100,16 @@ class CoachingRepositoryImplTest {
             awaitComplete()
         }
     }
+
+    @Test
+    fun `saveAnalysis returns existing analysis when row already exists (IGNORE strategy)`() = runTest {
+        coEvery { analysisDao.insert(any()) } returns -1L
+        coEvery { analysisDao.getBySessionId(1L) } returns anAnalysisEntity()
+
+        val result = repository.saveAnalysis(1L, "Nouveau contenu ignoré")
+
+        assertIs<AppResult.Success<CoachingAnalysis>>(result)
+        assertEquals(10L, result.data.id)
+        assertEquals("Points forts : bon service. Points faibles : retour.", result.data.content)
+    }
 }

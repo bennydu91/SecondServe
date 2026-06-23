@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-23 (story 5.2 review)
+last_updated: 2026-06-23 (story 5.2 done — code review patches applied)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -80,7 +80,7 @@ development_status:
   # ─── Epic 5: Coaching IA hors match ─────────────────────────────────────────
   epic-5: in-progress
   5-1-vpsmistralengine-routing-mistral-via-vps: done
-  5-2-analyse-post-match-individuelle: review
+  5-2-analyse-post-match-individuelle: done
   5-3-synthese-ia-multi-matchs: backlog
   5-4-axes-de-travail-suggestions-ia: backlog
   epic-5-retrospective: optional

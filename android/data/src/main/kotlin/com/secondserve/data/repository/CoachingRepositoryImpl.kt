@@ -46,7 +46,13 @@ class CoachingRepositoryImpl @Inject constructor(
             generatedAt = System.currentTimeMillis()
         )
         val id = analysisDao.insert(entity)
-        AppResult.Success(entity.copy(id = id).toDomain())
+        if (id == -1L) {
+            // IGNORE strategy: row already exists — return the existing analysis
+            val existing = analysisDao.getBySessionId(sessionId)
+            AppResult.Success((existing ?: entity).toDomain())
+        } else {
+            AppResult.Success(entity.copy(id = id).toDomain())
+        }
     } catch (e: Exception) {
         AppResult.Error(e)
     }

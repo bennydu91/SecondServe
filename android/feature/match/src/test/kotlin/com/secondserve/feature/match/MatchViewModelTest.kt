@@ -140,6 +140,7 @@ class MatchViewModelTest {
         val state = viewModel.container.stateFlow.first { !it.isClosing }
         assertFalse(state.isClosing)
         coVerify(exactly = 0) { syncScheduler.scheduleImmediate() }
+        verify(exactly = 0) { analysisScheduler.schedule(any()) }
     }
 
     @Test
