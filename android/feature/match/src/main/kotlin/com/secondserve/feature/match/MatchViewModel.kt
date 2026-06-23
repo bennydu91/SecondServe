@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.model.CoachingResult
 import com.secondserve.domain.model.MatchScore
@@ -22,6 +23,7 @@ class MatchViewModel @Inject constructor(
     private val scoreRepository: ScoreRepository,
     private val closeMatchUseCase: CloseMatchUseCase,
     private val syncScheduler: SyncScheduler,
+    private val analysisScheduler: AnalysisScheduler,
     private val dataLayerEventBus: DataLayerEventBus,
     private val coachingCachePrefetcher: CoachingCachePrefetcher,
     private val coachingResolver: CoachingResolver,
@@ -82,6 +84,7 @@ class MatchViewModel @Inject constructor(
         when (result) {
             is AppResult.Success -> {
                 syncScheduler.scheduleImmediate()
+                analysisScheduler.schedule(sessionId)
                 postSideEffect(MatchSideEffect.SessionClosed)
             }
             is AppResult.Error -> {

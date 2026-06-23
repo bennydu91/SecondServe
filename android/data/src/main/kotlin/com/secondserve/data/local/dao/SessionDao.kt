@@ -8,6 +8,8 @@ import androidx.room.Update
 import com.secondserve.data.local.db.entity.SessionEntity
 import kotlinx.coroutines.flow.Flow
 
+data class ScorerCount(val scorer: String, val cnt: Int)
+
 @Dao
 interface SessionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -21,4 +23,7 @@ interface SessionDao {
 
     @Update
     suspend fun update(session: SessionEntity)
+
+    @Query("SELECT scorer, COUNT(*) as cnt FROM points WHERE session_id = :sessionId GROUP BY scorer")
+    suspend fun getPointCountsByScorer(sessionId: Long): List<ScorerCount>
 }

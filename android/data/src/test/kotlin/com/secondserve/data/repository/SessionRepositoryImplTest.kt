@@ -19,7 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
-import io.mockk.unmockkStatic
+import io.mockk.unmockkAll
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
@@ -42,17 +42,17 @@ class SessionRepositoryImplTest {
         dao = mockk()
         syncQueueDao = mockk(relaxed = true)
         database = mockk()
-        mockkStatic("androidx.room.RoomDatabaseKt")
-        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+        mockkStatic("androidx.room.RoomDatabaseKt__RoomDatabase_androidKt")
+        coEvery { database.withTransaction<Any?>(any()) } coAnswers {
             @Suppress("UNCHECKED_CAST")
-            (firstArg<suspend () -> Any?>())()
+            secondArg<suspend () -> Any?>().invoke()
         }
         repository = SessionRepositoryImpl(dao, syncQueueDao, database)
     }
 
     @AfterEach
     fun tearDown() {
-        unmockkStatic("androidx.room.RoomDatabaseKt")
+        unmockkAll()
     }
 
     private fun aSession(

@@ -70,6 +70,7 @@ class SessionDetailViewModelTest {
         val advices = listOf(fakeAdvice())
         coEvery { sessionRepository.getSessionById(10L) } returns session
         coEvery { coachingRepository.getAdvicesForSession(10L) } returns advices
+        coEvery { coachingRepository.getAnalysisForSession(10L) } returns null
 
         val viewModel = SessionDetailViewModel(
             sessionRepository = sessionRepository,
@@ -103,6 +104,7 @@ class SessionDetailViewModelTest {
         val session = fakeSession()
         coEvery { sessionRepository.getSessionById(10L) } returns session
         coEvery { coachingRepository.getAdvicesForSession(10L) } returns emptyList()
+        coEvery { coachingRepository.getAnalysisForSession(10L) } returns null
 
         val viewModel = SessionDetailViewModel(
             sessionRepository = sessionRepository,

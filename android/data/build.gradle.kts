@@ -28,8 +28,13 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":core:ai"))
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

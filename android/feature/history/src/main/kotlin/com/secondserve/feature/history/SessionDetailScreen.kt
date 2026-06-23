@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.domain.model.CoachingAnalysis
 import com.secondserve.domain.model.CoachingCacheEntry
 import com.secondserve.domain.model.Session
 import org.orbitmvi.orbit.compose.collectAsState
@@ -68,6 +69,7 @@ fun SessionDetailScreen(
             is SessionDetailUiState.Content -> SessionDetailContent(
                 session = s.session,
                 advices = s.advices,
+                analysis = s.analysis,
                 modifier = Modifier.padding(padding)
             )
         }
@@ -78,6 +80,7 @@ fun SessionDetailScreen(
 private fun SessionDetailContent(
     session: Session,
     advices: List<CoachingCacheEntry>,
+    analysis: CoachingAnalysis?,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -102,6 +105,35 @@ private fun SessionDetailContent(
                     session.feelingRating?.let { DetailRow("Ressenti", "$it/5") }
                     session.feelingComment?.let { DetailRow("Commentaire", it) }
                 }
+            }
+        }
+
+        if (analysis != null) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Analyse IA post-match", style = MaterialTheme.typography.titleMedium)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            }
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(analysis.content, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Générée le ${sessionDetailDateFormat.format(Date(analysis.generatedAt))}",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            }
+        } else {
+            item {
+                Text(
+                    "Analyse IA en cours de génération...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
         }
 

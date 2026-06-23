@@ -16,4 +16,5 @@ interface SessionRepository {
         feelingRating: Int?,
         feelingComment: String?
     ): AppResult<Unit>
+    suspend fun getPointSummaryForSession(sessionId: Long): Pair<Int, Int>
 }

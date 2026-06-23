@@ -32,7 +32,8 @@ class SessionDetailViewModel @Inject constructor(
                 return@intent
             }
             val advices = coachingRepository.getAdvicesForSession(sessionId)
-            reduce { SessionDetailUiState.Content(session, advices) }
+            val analysis = coachingRepository.getAnalysisForSession(sessionId)
+            reduce { SessionDetailUiState.Content(session, advices, analysis) }
         } catch (e: Exception) {
             reduce { SessionDetailUiState.Error(e.message ?: "Erreur de chargement") }
         }

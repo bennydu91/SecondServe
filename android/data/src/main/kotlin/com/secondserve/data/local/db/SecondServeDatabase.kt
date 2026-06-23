@@ -4,11 +4,13 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
 import com.secondserve.data.local.dao.WorkAxisDao
+import com.secondserve.data.local.db.entity.CoachingAnalysisEntity
 import com.secondserve.data.local.db.entity.CoachingCacheEntity
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.PointEntity
@@ -25,9 +27,10 @@ import com.secondserve.data.local.db.entity.WorkAxisEntity
         SessionEntity::class,
         PointEntity::class,
         SyncQueueEntity::class,
-        CoachingCacheEntity::class
+        CoachingCacheEntity::class,
+        CoachingAnalysisEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class SecondServeDatabase : RoomDatabase() {
@@ -36,6 +39,7 @@ abstract class SecondServeDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun syncQueueDao(): SyncQueueDao
     abstract fun coachingCacheDao(): CoachingCacheDao
+    abstract fun coachingAnalysisDao(): CoachingAnalysisDao
 
     companion object {
         const val DB_NAME = "secondserve_db"
@@ -145,6 +149,24 @@ abstract class SecondServeDatabase : RoomDatabase() {
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE sessions ADD COLUMN score_text TEXT")
+            }
+        }
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS coaching_analyses (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        session_id INTEGER NOT NULL,
+                        content TEXT NOT NULL,
+                        generated_at INTEGER NOT NULL,
+                        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_coaching_analyses_session
+                    ON coaching_analyses (session_id)
+                """.trimIndent())
             }
         }
     }

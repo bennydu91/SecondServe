@@ -3,6 +3,7 @@ package com.secondserve.di
 import android.content.Context
 import androidx.room.Room
 import com.secondserve.data.local.PlayerDataStore
+import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
@@ -12,7 +13,9 @@ import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.repository.PlayerProfileRepositoryImpl
 import com.secondserve.data.repository.WorkAxisRepositoryImpl
+import com.secondserve.data.worker.AnalysisSchedulerImpl
 import com.secondserve.data.worker.SyncSchedulerImpl
+import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.WorkAxisRepository
@@ -42,7 +45,8 @@ object DataModule {
             SecondServeDatabase.MIGRATION_3_4,
             SecondServeDatabase.MIGRATION_4_5,
             SecondServeDatabase.MIGRATION_5_6,
-            SecondServeDatabase.MIGRATION_6_7
+            SecondServeDatabase.MIGRATION_6_7,
+            SecondServeDatabase.MIGRATION_7_8
         )
         .build()
 
@@ -73,12 +77,22 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideCoachingAnalysisDao(db: SecondServeDatabase): CoachingAnalysisDao =
+        db.coachingAnalysisDao()
+
+    @Provides
+    @Singleton
     fun provideDataLayerEventBus(): DataLayerEventBus = DataLayerEventBus()
 
     @Provides
     @Singleton
     fun provideSyncScheduler(@ApplicationContext context: Context): SyncScheduler =
         SyncSchedulerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideAnalysisScheduler(@ApplicationContext context: Context): AnalysisScheduler =
+        AnalysisSchedulerImpl(context)
 
     @Provides
     @Singleton

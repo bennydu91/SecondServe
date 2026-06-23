@@ -2,6 +2,7 @@ package com.secondserve.feature.match
 
 import androidx.lifecycle.SavedStateHandle
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.model.CoachingResult
 import com.secondserve.domain.model.CoachingSource
@@ -40,6 +41,7 @@ class MatchViewModelTest {
     private lateinit var scoreRepository: ScoreRepository
     private lateinit var closeMatchUseCase: CloseMatchUseCase
     private lateinit var syncScheduler: SyncScheduler
+    private lateinit var analysisScheduler: AnalysisScheduler
     private lateinit var dataLayerEventBus: DataLayerEventBus
     private lateinit var coachingCachePrefetcher: CoachingCachePrefetcher
     private lateinit var coachingResolver: CoachingResolver
@@ -53,6 +55,7 @@ class MatchViewModelTest {
         scoreRepository = mockk()
         closeMatchUseCase = mockk()
         syncScheduler = mockk(relaxed = true)
+        analysisScheduler = mockk(relaxed = true)
         dataLayerEventBus = DataLayerEventBus()
         coachingCachePrefetcher = mockk(relaxed = true)
         coachingResolver = mockk()
@@ -63,6 +66,7 @@ class MatchViewModelTest {
             scoreRepository = scoreRepository,
             closeMatchUseCase = closeMatchUseCase,
             syncScheduler = syncScheduler,
+            analysisScheduler = analysisScheduler,
             dataLayerEventBus = dataLayerEventBus,
             coachingCachePrefetcher = coachingCachePrefetcher,
             coachingResolver = coachingResolver,
@@ -118,6 +122,7 @@ class MatchViewModelTest {
 
         assertTrue(sideEffectDeferred.getCompleted() is MatchSideEffect.SessionClosed)
         verify(exactly = 1) { syncScheduler.scheduleImmediate() }
+        verify(exactly = 1) { analysisScheduler.schedule(10L) }
     }
 
     @Test

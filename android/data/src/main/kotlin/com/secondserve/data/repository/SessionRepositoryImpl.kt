@@ -67,6 +67,13 @@ class SessionRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun getPointSummaryForSession(sessionId: Long): Pair<Int, Int> {
+        val counts = dao.getPointCountsByScorer(sessionId)
+        val self = counts.firstOrNull { it.scorer == "SELF" }?.cnt ?: 0
+        val opponent = counts.firstOrNull { it.scorer == "OPPONENT" }?.cnt ?: 0
+        return Pair(self, opponent)
+    }
+
     override suspend fun closeSession(
         sessionId: Long,
         result: String,
