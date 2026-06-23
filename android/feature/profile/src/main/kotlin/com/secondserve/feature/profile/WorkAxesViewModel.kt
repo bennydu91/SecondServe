@@ -42,7 +42,9 @@ class WorkAxesViewModel @Inject constructor(
     }
 
     private fun tryGenerateSuggestionsIfNeeded() = intent {
+        if (state.isGeneratingSuggestions) return@intent
         if (workAxisRepository.hasPendingSuggestions()) return@intent
+        if (!workAxisRepository.hasCoachingData()) return@intent
         reduce { state.copy(isGeneratingSuggestions = true, suggestionsError = null) }
         try {
             val result = workAxisRepository.generateAndSaveSuggestions()
@@ -120,7 +122,9 @@ class WorkAxesViewModel @Inject constructor(
     }
 
     fun ignoreSuggestion(id: Long) = intent {
-        workAxisRepository.ignoreSuggestion(id)
+        if (workAxisRepository.ignoreSuggestion(id) is AppResult.Error) {
+            postSideEffect(WorkAxesSideEffect.ShowError("Impossible d'ignorer la suggestion"))
+        }
     }
 }
 

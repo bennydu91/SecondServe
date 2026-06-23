@@ -51,6 +51,7 @@ class WorkAxesViewModelSuggestionsTest {
     @Test
     fun `init whenNoPendingSuggestions triesToGenerate`() = runTest {
         coEvery { repository.hasPendingSuggestions() } returns false
+        coEvery { repository.hasCoachingData() } returns true
         coEvery { repository.generateAndSaveSuggestions() } returns AppResult.Success(Unit)
 
         createViewModel()
@@ -70,6 +71,7 @@ class WorkAxesViewModelSuggestionsTest {
     @Test
     fun `init whenGenerationError setsSuggestionsError`() = runTest {
         coEvery { repository.hasPendingSuggestions() } returns false
+        coEvery { repository.hasCoachingData() } returns true
         coEvery { repository.generateAndSaveSuggestions() } returns AppResult.Error(RuntimeException("VPS down"))
 
         val viewModel = createViewModel()
@@ -78,15 +80,15 @@ class WorkAxesViewModelSuggestionsTest {
     }
 
     @Test
-    fun `init whenNoCoachingDataError doesNotSetSuggestionsError`() = runTest {
+    fun `init whenNoCoachingData doesNotShowSpinnerAndDoesNotGenerate`() = runTest {
         coEvery { repository.hasPendingSuggestions() } returns false
-        coEvery { repository.generateAndSaveSuggestions() } returns AppResult.Error(
-            IllegalStateException("No coaching data available")
-        )
+        coEvery { repository.hasCoachingData() } returns false
 
         val viewModel = createViewModel()
 
+        assertEquals(false, viewModel.container.stateFlow.value.isGeneratingSuggestions)
         assertEquals(null, viewModel.container.stateFlow.value.suggestionsError)
+        coVerify(exactly = 0) { repository.generateAndSaveSuggestions() }
     }
 
     @Test
@@ -124,7 +126,7 @@ class WorkAxesViewModelSuggestionsTest {
     @Test
     fun `ignoreSuggestion callsRepository`() = runTest {
         coEvery { repository.hasPendingSuggestions() } returns true
-        coEvery { repository.ignoreSuggestion(7L) } returns Unit
+        coEvery { repository.ignoreSuggestion(7L) } returns AppResult.Success(Unit)
 
         val viewModel = createViewModel()
         viewModel.ignoreSuggestion(7L)

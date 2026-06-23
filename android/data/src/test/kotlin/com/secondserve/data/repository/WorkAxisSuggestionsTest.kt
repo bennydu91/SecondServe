@@ -126,9 +126,19 @@ class WorkAxisSuggestionsTest {
     fun `ignoreSuggestion marksIgnored`() = runTest {
         coEvery { suggestionDao.updateStatus(3L, "IGNORED") } returns Unit
 
-        repository.ignoreSuggestion(3L)
+        val result = repository.ignoreSuggestion(3L)
 
+        assertIs<AppResult.Success<Unit>>(result)
         coVerify { suggestionDao.updateStatus(3L, "IGNORED") }
+    }
+
+    @Test
+    fun `ignoreSuggestion whenDbFails returnsError`() = runTest {
+        coEvery { suggestionDao.updateStatus(3L, "IGNORED") } throws RuntimeException("DB error")
+
+        val result = repository.ignoreSuggestion(3L)
+
+        assertIs<AppResult.Error>(result)
     }
 
     @Test

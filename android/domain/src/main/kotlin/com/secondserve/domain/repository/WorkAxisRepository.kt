@@ -15,5 +15,6 @@ interface WorkAxisRepository {
     suspend fun hasPendingSuggestions(): Boolean
     suspend fun generateAndSaveSuggestions(): AppResult<Unit>
     suspend fun acceptSuggestion(id: Long): AppResult<Unit>
-    suspend fun ignoreSuggestion(id: Long)
+    suspend fun ignoreSuggestion(id: Long): AppResult<Unit>
+    suspend fun hasCoachingData(): Boolean
 }

@@ -49,6 +49,7 @@ class WorkAxisRepositoryImplTest {
 
     @Test
     fun `createWorkAxis inserts locally and syncs to VPS`() = runTest {
+        coEvery { dao.count() } returns 0
         val entitySlot = slot<WorkAxisEntity>()
         coEvery { dao.insert(capture(entitySlot)) } returns 1L
         coEvery { vpsApiService.createWorkAxis(any()) } returns WorkAxisResponse(1L, "Revers", 1000L, 1000L)
@@ -63,6 +64,7 @@ class WorkAxisRepositoryImplTest {
 
     @Test
     fun `createWorkAxis when VPS fails local save still succeeds`() = runTest {
+        coEvery { dao.count() } returns 0
         coEvery { dao.insert(any()) } returns 1L
         coEvery { vpsApiService.createWorkAxis(any()) } throws RuntimeException("network error")
 
@@ -70,6 +72,16 @@ class WorkAxisRepositoryImplTest {
 
         assertIs<AppResult.Success<Unit>>(result)
         coVerify(exactly = 1) { dao.insert(any()) }
+    }
+
+    @Test
+    fun `createWorkAxis when at max capacity returns Error`() = runTest {
+        coEvery { dao.count() } returns 3
+
+        val result = repository.createWorkAxis("Quatrième axe")
+
+        assertIs<AppResult.Error>(result)
+        coVerify(exactly = 0) { dao.insert(any()) }
     }
 
     @Test

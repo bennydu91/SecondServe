@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-23 (story 5.4 review)
+last_updated: 2026-06-23 (code review done)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -82,7 +82,7 @@ development_status:
   5-1-vpsmistralengine-routing-mistral-via-vps: done
   5-2-analyse-post-match-individuelle: done
   5-3-synthese-ia-multi-matchs: done
-  5-4-axes-de-travail-suggestions-ia: review
+  5-4-axes-de-travail-suggestions-ia: done
   epic-5-retrospective: optional
 
   # ─── Epic 6: Notifications coaching contextualisées ─────────────────────────

@@ -13,6 +13,7 @@ import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.api.dto.WorkAxisRequest
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.AxisSuggestion
+import com.secondserve.domain.model.MAX_WORK_AXES
 import com.secondserve.domain.model.WorkAxis
 import com.secondserve.domain.repository.WorkAxisRepository
 import kotlinx.coroutines.flow.Flow
@@ -31,18 +32,22 @@ class WorkAxisRepositoryImpl(
     override fun getWorkAxes(): Flow<List<WorkAxis>> =
         dao.getAll().map { entities -> entities.map { it.toDomain() } }
 
-    override suspend fun createWorkAxis(title: String): AppResult<Unit> = try {
-        val now = System.currentTimeMillis()
-        val entity = WorkAxisEntity(title = title, createdAt = now, updatedAt = now)
-        dao.insert(entity)
-        try {
-            vpsApiService.createWorkAxis(WorkAxisRequest(title = title, createdAt = now))
+    override suspend fun createWorkAxis(title: String): AppResult<Unit> {
+        if (dao.count() >= MAX_WORK_AXES)
+            return AppResult.Error(IllegalStateException("Maximum $MAX_WORK_AXES axes actifs atteint"))
+        return try {
+            val now = System.currentTimeMillis()
+            val entity = WorkAxisEntity(title = title, createdAt = now, updatedAt = now)
+            dao.insert(entity)
+            try {
+                vpsApiService.createWorkAxis(WorkAxisRequest(title = title, createdAt = now))
+            } catch (e: Exception) {
+                Timber.w(e, "VPS work axis create failed — local save succeeded")
+            }
+            AppResult.Success(Unit)
         } catch (e: Exception) {
-            Timber.w(e, "VPS work axis create failed — local save succeeded")
+            AppResult.Error(e)
         }
-        AppResult.Success(Unit)
-    } catch (e: Exception) {
-        AppResult.Error(e)
     }
 
     override suspend fun updateWorkAxis(id: Long, title: String): AppResult<Unit> = try {
@@ -88,7 +93,7 @@ class WorkAxisRepositoryImpl(
         } catch (e: Exception) {
             return AppResult.Error(e)
         }
-        if (latestContent == null) return AppResult.Error(IllegalStateException("No coaching data available"))
+        if (latestContent.isNullOrBlank()) return AppResult.Error(IllegalStateException("No coaching data available"))
 
         val currentAxes = try { dao.getAllTitles() } catch (e: Exception) { emptyList() }
         val prompt = buildSuggestionsPrompt(latestContent, currentAxes)
@@ -120,13 +125,22 @@ class WorkAxisRepositoryImpl(
         AppResult.Error(e)
     }
 
-    override suspend fun ignoreSuggestion(id: Long) {
-        try { suggestionDao.updateStatus(id, "IGNORED") }
-        catch (e: Exception) { Timber.e(e, "Failed to ignore suggestion $id") }
+    override suspend fun ignoreSuggestion(id: Long): AppResult<Unit> = try {
+        suggestionDao.updateStatus(id, "IGNORED")
+        AppResult.Success(Unit)
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to ignore suggestion $id")
+        AppResult.Error(e)
+    }
+
+    override suspend fun hasCoachingData(): Boolean = try {
+        synthesisDao.getLatest() != null || analysisDao.getMostRecent() != null
+    } catch (e: Exception) {
+        false
     }
 
     private fun buildSuggestionsPrompt(sourceContent: String, currentAxes: List<String>): String {
-        val axesText = currentAxes.joinToString(", ").ifEmpty { "aucun" }
+        val axesText = currentAxes.map { it.replace("\n", " ").replace("\r", "") }.joinToString(", ").ifEmpty { "aucun" }
         return """
 Tu es un coach tennis. Basé sur l'analyse ci-dessous, suggère 2 ou 3 axes de travail concrets et actionnables.
 
@@ -141,7 +155,7 @@ Réponds UNIQUEMENT avec les titres des axes suggérés, un par ligne, en 3 à 8
 
     private fun parseSuggestionsResponse(response: String): List<String> =
         response.lines()
-            .map { it.trim().trimStart('-', '*', '•', '1', '2', '3', '4', '5', '.', ' ').trim() }
+            .map { it.trim().replace(Regex("^[\\-*•\\d.]+\\s*"), "").trim() }
             .filter { it.isNotBlank() && it.length in 3..150 }
             .take(3)
 }
