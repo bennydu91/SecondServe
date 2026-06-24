@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from app.features.work_axes.schemas import WorkAxisRequest, MAX_WORK_AXES
 from app.features.work_axes.service import WorkAxisService
+from app.shared.exceptions import SecondServeException
 
 
 def make_service(count: int = 0, created_axis=None):
@@ -18,22 +19,22 @@ def make_service(count: int = 0, created_axis=None):
 
 
 @pytest.mark.asyncio
-async def test_create_raises_422_when_at_max():
+async def test_create_raises_409_when_at_max():
     service = make_service(count=MAX_WORK_AXES)
     request = WorkAxisRequest(title="Axe 4", created_at=1000)
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(SecondServeException) as exc_info:
         await service.create(request)
-    assert exc_info.value.status_code == 422
-    assert exc_info.value.detail["error_code"] == "MAX_WORK_AXES_REACHED"
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.error_code == "MAX_WORK_AXES_REACHED"
 
 
 @pytest.mark.asyncio
-async def test_create_raises_422_when_already_at_max_exactly():
+async def test_create_raises_409_when_already_at_max_exactly():
     service = make_service(count=3)
     request = WorkAxisRequest(title="Un axe de plus", created_at=1000)
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(SecondServeException) as exc_info:
         await service.create(request)
-    assert exc_info.value.status_code == 422
+    assert exc_info.value.status_code == 409
 
 
 @pytest.mark.asyncio

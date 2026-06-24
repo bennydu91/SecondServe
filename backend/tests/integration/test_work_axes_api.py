@@ -51,8 +51,8 @@ async def test_create_4th_axis_rejected(client):
         json={"title": "Axe 4", "created_at": 1003},
         headers=auth(token)
     )
-    assert response.status_code == 422
-    assert response.json()["detail"]["error_code"] == "MAX_WORK_AXES_REACHED"
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "MAX_WORK_AXES_REACHED"
 
 
 @pytest.mark.asyncio

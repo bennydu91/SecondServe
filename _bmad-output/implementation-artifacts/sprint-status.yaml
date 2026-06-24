@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-24 (TD-4 done)
+last_updated: 2026-06-24 (TD-5 review)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -96,4 +96,4 @@ development_status:
   td-2-enums-sealed-classes-kotlin-quality: done
   td-3-couverture-tests-scoreviewmodel-migrations: done
   td-4-integrite-donnees-timeout-scoretextsync: done
-  td-5-contrats-api-backend-hardening: ready-for-dev
+  td-5-contrats-api-backend-hardening: review

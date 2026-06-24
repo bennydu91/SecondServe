@@ -18,10 +18,11 @@ def auth(token: str) -> dict:
 @pytest.mark.asyncio
 async def test_analyze_success(client):
     token = make_token()
-    with patch(
-        "app.features.coaching.service.mistral_client.generate",
-        new=AsyncMock(return_value="Conseil Mistral"),
-    ):
+    with patch.object(settings, "mistral_api_key", "test-api-key"), \
+         patch(
+            "app.features.coaching.service.mistral_client.generate",
+            new=AsyncMock(return_value="Conseil Mistral"),
+         ):
         response = await client.post(
             "/api/v1/coaching/analyze",
             json={"prompt": "Tu es coach tennis. Conseil court."},
@@ -35,12 +36,13 @@ async def test_analyze_success(client):
 @pytest.mark.asyncio
 async def test_analyze_mistral_unavailable_returns_503(client):
     token = make_token()
-    with patch(
-        "app.features.coaching.service.mistral_client.generate",
-        new=AsyncMock(
-            side_effect=SecondServeException("MISTRAL_UNAVAILABLE", "Mistral timeout after retry", 503)
-        ),
-    ):
+    with patch.object(settings, "mistral_api_key", "test-api-key"), \
+         patch(
+            "app.features.coaching.service.mistral_client.generate",
+            new=AsyncMock(
+                side_effect=SecondServeException("MISTRAL_UNAVAILABLE", "Mistral timeout after retry", 503)
+            ),
+         ):
         response = await client.post(
             "/api/v1/coaching/analyze",
             json={"prompt": "prompt"},
@@ -53,21 +55,16 @@ async def test_analyze_mistral_unavailable_returns_503(client):
 
 @pytest.mark.asyncio
 async def test_analyze_missing_api_key_returns_503(client):
+    # api_key is "" by default in test settings → guard fires immediately
     token = make_token()
-    with patch(
-        "app.features.coaching.service.mistral_client.generate",
-        new=AsyncMock(
-            side_effect=SecondServeException("MISTRAL_UNAVAILABLE", "API key missing or invalid", 503)
-        ),
-    ):
-        response = await client.post(
-            "/api/v1/coaching/analyze",
-            json={"prompt": "prompt"},
-            headers=auth(token),
-        )
+    response = await client.post(
+        "/api/v1/coaching/analyze",
+        json={"prompt": "prompt"},
+        headers=auth(token),
+    )
     assert response.status_code == 503
     data = response.json()
-    assert data["error_code"] == "MISTRAL_UNAVAILABLE"
+    assert data["error_code"] == "MISTRAL_NOT_CONFIGURED"
 
 
 @pytest.mark.asyncio

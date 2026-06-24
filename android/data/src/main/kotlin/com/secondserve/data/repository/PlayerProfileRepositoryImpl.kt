@@ -75,6 +75,8 @@ class PlayerProfileRepositoryImpl(
 
     override suspend fun buildMatchContextProfile(): MatchContextProfile {
         val profile = dao.getProfile()
+        // NFR-C3/S5: fftLicenseNumber is excluded — stored in EncryptedSharedPreferences only,
+        // never included in VPS-bound context.
         return MatchContextProfile(
             fftSeries = profile?.currentSeries,
             playStyle = profile?.playStyle,

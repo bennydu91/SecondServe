@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -13,9 +14,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.core.security import JWTManager
+    JWTManager(settings.jwt_secret)
+    start_scheduler()
+    yield
+    stop_scheduler()
+
+
 app = FastAPI(
     title="SecondServe Backend",
     version="1.0.0",
+    lifespan=lifespan,
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
     openapi_url="/openapi.json" if settings.debug else None,
@@ -31,15 +43,3 @@ async def secondserve_exception_handler(request: Request, exc: SecondServeExcept
 
 
 app.include_router(api_router, prefix="/api/v1")
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    from app.core.security import JWTManager
-    JWTManager(settings.jwt_secret)
-    start_scheduler()
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    stop_scheduler()

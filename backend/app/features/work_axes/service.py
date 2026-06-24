@@ -4,6 +4,7 @@ from app.features.work_axes.repository import WorkAxisRepository
 from app.features.work_axes.schemas import (
     WorkAxisRequest, WorkAxisResponse, WorkAxesResponse, MAX_WORK_AXES
 )
+from app.shared.exceptions import SecondServeException
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +21,10 @@ class WorkAxisService:
     async def create(self, request: WorkAxisRequest) -> WorkAxisResponse:
         count = await self.repository.count()
         if count >= MAX_WORK_AXES:
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "error_code": "MAX_WORK_AXES_REACHED",
-                    "message": f"Maximum {MAX_WORK_AXES} axes actifs atteint"
-                }
+            raise SecondServeException(
+                error_code="MAX_WORK_AXES_REACHED",
+                message=f"Maximum {MAX_WORK_AXES} axes actifs atteint",
+                status_code=409
             )
         axis = await self.repository.create(request.title, request.created_at)
         return WorkAxisResponse.model_validate(axis)
