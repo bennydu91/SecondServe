@@ -1,6 +1,7 @@
 package com.secondserve.data.worker
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
@@ -64,6 +65,7 @@ class PreMatchReminderWorker @AssistedInject constructor(
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun postNotification(content: String) {
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
