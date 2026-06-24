@@ -5,6 +5,7 @@ import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
 import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.local.db.entity.SessionEntity
+import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.Session
@@ -35,6 +36,7 @@ class SessionRepositoryImplTest {
     private lateinit var dao: SessionDao
     private lateinit var syncQueueDao: SyncQueueDao
     private lateinit var database: SecondServeDatabase
+    private lateinit var notificationScheduler: NotificationScheduler
     private lateinit var repository: SessionRepositoryImpl
 
     @BeforeEach
@@ -42,12 +44,13 @@ class SessionRepositoryImplTest {
         dao = mockk()
         syncQueueDao = mockk(relaxed = true)
         database = mockk()
+        notificationScheduler = mockk(relaxed = true)
         mockkStatic("androidx.room.RoomDatabaseKt__RoomDatabase_androidKt")
         coEvery { database.withTransaction<Any?>(any()) } coAnswers {
             @Suppress("UNCHECKED_CAST")
             secondArg<suspend () -> Any?>().invoke()
         }
-        repository = SessionRepositoryImpl(dao, syncQueueDao, database)
+        repository = SessionRepositoryImpl(dao, syncQueueDao, database, notificationScheduler)
     }
 
     @AfterEach
