@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-24 (TD-2 done)
+last_updated: 2026-06-24 (TD-3 review)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -94,6 +94,6 @@ development_status:
   # ─── Sprint Technique : Dette Technique Post-V1 ─────────────────────────────
   td-1-securite-repositories-cancellation-exception: done
   td-2-enums-sealed-classes-kotlin-quality: done
-  td-3-couverture-tests-scoreviewmodel-migrations: ready-for-dev
+  td-3-couverture-tests-scoreviewmodel-migrations: review
   td-4-integrite-donnees-timeout-scoretextsync: ready-for-dev
   td-5-contrats-api-backend-hardening: ready-for-dev

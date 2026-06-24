@@ -12,6 +12,7 @@ android {
     defaultConfig {
         minSdk = 33 // must match :wear (Wear OS 4 = API 33) since DataLayerClient lives here
         consumerProguardFiles("consumer-rules.pro")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -63,7 +64,7 @@ dependencies {
     // Security
     implementation(libs.security.crypto)
 
-    // Tests
+    // Tests JVM
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)
     testImplementation(libs.junit.platform.launcher)
@@ -72,5 +73,11 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.turbine)
     testImplementation(libs.work.testing)
+
+    // Tests instrumentés (androidTest)
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+
     implementation(libs.timber)
 }
