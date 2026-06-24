@@ -86,8 +86,6 @@ class CoachingViewModelTest {
 
     @Test
     fun `generateNow sets timeout error message when engine throws TimeoutCancellationException`() = runTest(testDispatcher) {
-        // withTimeout(0L) lance TimeoutCancellationException de façon synchrone (sans suspension)
-        // ce qui simule la réception de l'exception par le catch (e: TimeoutCancellationException) du ViewModel
         coEvery { vpsMistralEngine.generate(any()) } coAnswers {
             withTimeout(0L) { AppResult.Success("") }
         }

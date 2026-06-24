@@ -148,11 +148,7 @@ private fun SessionDetailContent(
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text("Session", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    DetailRow(
-                        "Date",
-                        if (session.createdAt <= 0L) "Date inconnue"
-                        else sessionDetailDateFormat.format(Date(session.createdAt))
-                    )
+                    DetailRow("Date", formatDate(session.createdAt, sessionDetailDateFormat))
                     DetailRow("Surface", session.surface)
                     DetailRow("Format", session.format.matchFormat.name)
                     session.opponent?.let { DetailRow("Adversaire", it) }
@@ -163,10 +159,7 @@ private fun SessionDetailContent(
                     session.feelingRating?.let { DetailRow("Ressenti", "$it/5") }
                     session.feelingComment?.let { DetailRow("Commentaire", it) }
                     session.scheduledAt?.let {
-                        DetailRow(
-                            "Match planifié",
-                            sessionDetailDateFormat.format(Date(it))
-                        )
+                        DetailRow("Match planifié", formatDate(it, sessionDetailDateFormat))
                     }
                 }
             }

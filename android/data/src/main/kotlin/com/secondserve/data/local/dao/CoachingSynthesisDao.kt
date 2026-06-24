@@ -22,9 +22,14 @@ interface CoachingSynthesisDao {
         DELETE FROM coaching_syntheses
         WHERE id NOT IN (
             SELECT id FROM coaching_syntheses
-            ORDER BY generated_at DESC
+            ORDER BY generated_at DESC, id DESC
             LIMIT :keepCount
         )
     """)
-    suspend fun deleteOldBeyond(keepCount: Int)
+    suspend fun deleteOldBeyondUnchecked(keepCount: Int)
+
+    suspend fun deleteOldBeyond(keepCount: Int) {
+        require(keepCount > 0) { "keepCount must be > 0" }
+        deleteOldBeyondUnchecked(keepCount)
+    }
 }

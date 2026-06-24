@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-4 : Intégrité des Données & Résilience
 
-Status: review
+Status: done
 
 ## Story
 
@@ -220,3 +220,21 @@ Source : deferred items 4-1 (`scoreText`), 5-3 D2/D3, 5-3 D2 (`withTimeout`).
 - `4-1` — `createdAt = 0L` affiche "01/01/1970"
 - `5-3 D3` — Table `coaching_syntheses` sans politique de purge
 - `5-3 D2` — Aucun timeout sur `vpsMistralEngine.generate()` dans `generateNow()`
+
+## Review Findings
+
+### decision-needed
+- [ ] [Review][Decision] score_text sync écrase la valeur serveur avec null quand le client envoie null — `existing.score_text = dto.score_text` (UPDATE path) remplace inconditionnellement la valeur serveur par null. Si un score existait côté serveur et que le client envoie null (session sans score local), la donnée est effacée. Décision requise : null signifie-t-il « skip l'update » ou « écraser » ?
+
+### patch
+- [x] [Review][Patch] deleteOldBeyond à l'intérieur du même try-catch que insert : si la purge lève une exception, AppResult.Error est retourné malgré l'insert réussi — viole "purge peut rater sans affecter l'insert" [CoachingRepositoryImpl.kt:79]
+- [x] [Review][Patch] Nom du test erroné : "saveSynthesis calls deleteOldBeyond even when insert throws" — le corps asserte coVerify(exactly = 0), soit le comportement inverse [CoachingRepositoryImplTest.kt:~240]
+- [x] [Review][Patch] deleteOldBeyond(0) vide toute la table — aucune garde keepCount > 0 dans le DAO [CoachingSynthesisDao.kt]
+
+### defer
+- [x] [Review][Patch] Timeout injectable dans CoachingViewModel (generateTimeoutMs var internal) — withTimeout(0L) conservé dans les tests (constructeur internal de TCE) [CoachingViewModel.kt]
+- [x] [Review][Patch] Fallback "Date inconnue" extrait dans DateUtils.kt — HistoryScreen et SessionDetailScreen utilisent formatDate() [DateUtils.kt / HistoryScreen.kt / SessionDetailScreen.kt]
+- [x] [Review][Patch] Alembic revision ID renommé g7b8c9d0e1f2 → a7b8c9d0e1f2 (hex valide) [a7b8c9d0e1f2_add_score_text_to_sessions.py]
+- [x] [Review][Patch] SQL tie-breaking ajouté : ORDER BY generated_at DESC, id DESC [CoachingSynthesisDao.kt]
+- [x] [Review][Patch] withTimeout(5_000L) ajouté autour de saveSynthesis() [CoachingViewModel.kt]
+- [x] [Review][Patch] scheduledAt dans SessionDetailScreen garde <= 0L ajoutée via formatDate() [SessionDetailScreen.kt]

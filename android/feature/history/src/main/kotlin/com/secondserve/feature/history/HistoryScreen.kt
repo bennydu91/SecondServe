@@ -177,6 +177,4 @@ private fun Session.statusBadge(): String? = when (status) {
     SessionStatus.COMPLETED -> null
 }
 
-private fun Session.formattedDate(): String =
-    if (createdAt <= 0L) "Date inconnue"
-    else sessionDateFormat.format(Date(createdAt))
+private fun Session.formattedDate(): String = formatDate(createdAt, sessionDateFormat)

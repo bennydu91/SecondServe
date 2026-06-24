@@ -237,12 +237,22 @@ class CoachingRepositoryImplTest {
     }
 
     @Test
-    fun `saveSynthesis calls deleteOldBeyond even when insert throws`() = runTest {
+    fun `saveSynthesis does not call deleteOldBeyond when insert throws`() = runTest {
         coEvery { synthesisDao.insert(any()) } throws RuntimeException("DB error")
 
         val result = repository.saveSynthesis("content", 3)
 
         assertIs<AppResult.Error>(result)
         coVerify(exactly = 0) { synthesisDao.deleteOldBeyond(any()) }
+    }
+
+    @Test
+    fun `saveSynthesis returns Success when deleteOldBeyond throws`() = runTest {
+        coEvery { synthesisDao.insert(any()) } returns 5L
+        coEvery { synthesisDao.deleteOldBeyond(any()) } throws RuntimeException("Purge error")
+
+        val result = repository.saveSynthesis("content", 3)
+
+        assertIs<AppResult.Success<*>>(result)
     }
 }

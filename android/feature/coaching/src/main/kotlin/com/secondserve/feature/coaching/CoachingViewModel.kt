@@ -29,6 +29,8 @@ class CoachingViewModel @Inject constructor(
     @VpsMistralEngine private val vpsMistralEngine: InferenceEngine
 ) : ViewModel(), ContainerHost<CoachingUiState, CoachingSideEffect> {
 
+    internal var generateTimeoutMs: Long = 30_000L
+
     override val container = container<CoachingUiState, CoachingSideEffect>(CoachingUiState(isLoading = true))
 
     init {
@@ -61,7 +63,7 @@ class CoachingViewModel @Inject constructor(
             val profile = playerProfileRepository.buildMatchContextProfile()
             val prompt = buildSynthesisPrompt(sessions, profile, lastSynthesis)
             val result = try {
-                withTimeout(30_000L) {
+                withTimeout(generateTimeoutMs) {
                     vpsMistralEngine.generate(prompt)
                 }
             } catch (e: TimeoutCancellationException) {
@@ -70,7 +72,14 @@ class CoachingViewModel @Inject constructor(
             }
             when (result) {
                 is AppResult.Success -> {
-                    val saveResult = coachingRepository.saveSynthesis(result.data, sessions.size)
+                    val saveResult = try {
+                        withTimeout(5_000L) {
+                            coachingRepository.saveSynthesis(result.data, sessions.size)
+                        }
+                    } catch (e: TimeoutCancellationException) {
+                        reduce { state.copy(error = "Sauvegarde échouée — réessayez") }
+                        return@intent
+                    }
                     if (saveResult is AppResult.Error) {
                         reduce { state.copy(error = "Sauvegarde échouée — réessayez") }
                     }
