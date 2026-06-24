@@ -59,8 +59,9 @@ class PreMatchReminderWorker @AssistedInject constructor(
     private suspend fun buildFallback(sessionId: Long): String? {
         val session = try { sessionDao.getById(sessionId) } catch (e: Exception) { null }
         val opponent = session?.opponent
-        val surface = try { playerProfileDao.getProfile()?.preferredSurfaces } catch (e: Exception) { null }
-        val ranking = try { playerProfileDao.getProfile()?.currentSeries } catch (e: Exception) { null }
+        val profile = try { playerProfileDao.getProfile() } catch (e: Exception) { null }
+        val surface = profile?.preferredSurfaces
+        val ranking = profile?.currentSeries
         val axis = try {
             workAxisDao.getAllTitles().firstOrNull { it.isNotBlank() }
         } catch (e: Exception) { null }
