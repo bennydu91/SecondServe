@@ -78,6 +78,7 @@ class CoachingRepositoryImpl @Inject constructor(
                 generatedAt = System.currentTimeMillis()
             )
             val id = synthesisDao.insert(entity)
+            synthesisDao.deleteOldBeyond(keepCount = 10)
             AppResult.Success(entity.copy(id = id).toDomain())
         } catch (e: Exception) {
             if (e is CancellationException) throw e

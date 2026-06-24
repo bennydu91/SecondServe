@@ -49,6 +49,7 @@ class SyncService:
                 status=dto.status,
                 session_type=dto.session_type,
                 result=dto.result,
+                score_text=dto.score_text,
                 feeling_rating=dto.feeling_rating,
                 feeling_comment=dto.feeling_comment,
                 created_at=dto.created_at,
@@ -61,6 +62,7 @@ class SyncService:
             if dto.updated_at >= existing.updated_at:
                 existing.status = dto.status
                 existing.result = dto.result
+                existing.score_text = dto.score_text
                 existing.feeling_rating = dto.feeling_rating
                 existing.feeling_comment = dto.feeling_comment
                 existing.updated_at = dto.updated_at

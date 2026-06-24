@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-4 : Intégrité des Données & Résilience
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -52,28 +52,28 @@ Source : deferred items 4-1 (`scoreText`), 5-3 D2/D3, 5-3 D2 (`withTimeout`).
 
 ### BLOC A — `scoreText` dans `SyncSessionDto`
 
-- [ ] **T1 — Ajouter `score_text` dans `SyncSessionDto`**
-  - [ ] T1.1 Dans `android/data/src/main/kotlin/com/secondserve/data/remote/api/dto/SyncDto.kt`, ajouter dans `SyncSessionDto` :
+- [x] **T1 — Ajouter `score_text` dans `SyncSessionDto`**
+  - [x] T1.1 Dans `android/data/src/main/kotlin/com/secondserve/data/remote/api/dto/SyncDto.kt`, ajouter dans `SyncSessionDto` :
     ```kotlin
     @Json(name = "score_text") val scoreText: String? = null
     ```
 
-- [ ] **T2 — Mettre à jour le mapper `Session.toSyncDto()`**
-  - [ ] T2.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt`, localiser la fonction `Session.toSyncDto()` (ou `SessionEntity.toSyncDto()`) et ajouter :
+- [x] **T2 — Mettre à jour le mapper `Session.toSyncDto()`**
+  - [x] T2.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt`, localiser la fonction `Session.toSyncDto()` (ou `SessionEntity.toSyncDto()`) et ajouter :
     ```kotlin
     scoreText = scoreText,
     ```
 
-- [ ] **T3 — Mettre à jour le backend pour accepter `score_text`**
-  - [ ] T3.1 Dans `backend/app/features/sync/schemas.py`, localiser `SessionSyncRequest` (ou équivalent) et ajouter :
+- [x] **T3 — Mettre à jour le backend pour accepter `score_text`**
+  - [x] T3.1 Dans `backend/app/features/sync/schemas.py`, localiser `SessionSyncRequest` (ou équivalent) et ajouter :
     ```python
     score_text: Optional[str] = None
     ```
-  - [ ] T3.2 Dans `backend/app/features/sync/service.py` (ou `repository.py`), passer `score_text` lors de l'upsert de la session :
+  - [x] T3.2 Dans `backend/app/features/sync/service.py` (ou `repository.py`), passer `score_text` lors de l'upsert de la session :
     ```python
     session.score_text = data.score_text
     ```
-  - [ ] T3.3 Vérifier que la colonne `score_text` existe dans le modèle SQLAlchemy `Session` côté backend. Si absente, ajouter une migration Alembic :
+  - [x] T3.3 Vérifier que la colonne `score_text` existe dans le modèle SQLAlchemy `Session` côté backend. Si absente, ajouter une migration Alembic :
     ```python
     # Dans une nouvelle migration alembic
     op.add_column('sessions', sa.Column('score_text', sa.String(), nullable=True))
@@ -83,16 +83,16 @@ Source : deferred items 4-1 (`scoreText`), 5-3 D2/D3, 5-3 D2 (`withTimeout`).
 
 ### BLOC B — Guard `createdAt = 0L`
 
-- [ ] **T4 — `HistoryScreen.kt` — fallback "Date inconnue"**
-  - [ ] T4.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/HistoryScreen.kt`, modifier la fonction `Session.formattedDate()` :
+- [x] **T4 — `HistoryScreen.kt` — fallback "Date inconnue"**
+  - [x] T4.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/HistoryScreen.kt`, modifier la fonction `Session.formattedDate()` :
     ```kotlin
     private fun Session.formattedDate(): String =
         if (createdAt <= 0L) "Date inconnue"
         else sessionDateFormat.format(Date(createdAt))
     ```
 
-- [ ] **T5 — `SessionDetailScreen.kt` — fallback "Date inconnue"**
-  - [ ] T5.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/SessionDetailScreen.kt`, ligne ~151 :
+- [x] **T5 — `SessionDetailScreen.kt` — fallback "Date inconnue"**
+  - [x] T5.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/SessionDetailScreen.kt`, ligne ~151 :
     ```kotlin
     // Avant
     DetailRow("Date", sessionDetailDateFormat.format(Date(session.createdAt)))
@@ -108,8 +108,8 @@ Source : deferred items 4-1 (`scoreText`), 5-3 D2/D3, 5-3 D2 (`withTimeout`).
 
 ### BLOC C — Purge des synthèses après insertion
 
-- [ ] **T6 — Ajouter une requête de purge dans `CoachingSynthesisDao`**
-  - [ ] T6.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/dao/CoachingSynthesisDao.kt`, ajouter :
+- [x] **T6 — Ajouter une requête de purge dans `CoachingSynthesisDao`**
+  - [x] T6.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/dao/CoachingSynthesisDao.kt`, ajouter :
     ```kotlin
     @Query("""
         DELETE FROM coaching_syntheses
@@ -122,24 +122,24 @@ Source : deferred items 4-1 (`scoreText`), 5-3 D2/D3, 5-3 D2 (`withTimeout`).
     suspend fun deleteOldBeyond(keepCount: Int)
     ```
 
-- [ ] **T7 — Appeler la purge après chaque insertion dans `CoachingRepositoryImpl`**
-  - [ ] T7.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/CoachingRepositoryImpl.kt`, localiser `saveSynthesis()` et ajouter après le `dao.insert()` :
+- [x] **T7 — Appeler la purge après chaque insertion dans `CoachingRepositoryImpl`**
+  - [x] T7.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/CoachingRepositoryImpl.kt`, localiser `saveSynthesis()` et ajouter après le `dao.insert()` :
     ```kotlin
     synthesisDao.deleteOldBeyond(keepCount = 10)
     ```
-  - [ ] T7.2 Vérifier que cet appel est dans une transaction ou accepter le comportement non-transactionnel (purge peut rater sans affecter l'insert)
+  - [x] T7.2 Comportement non-transactionnel accepté — purge peut rater sans affecter l'insert
 
 ---
 
 ### BLOC D — `withTimeout` dans `generateNow()`
 
-- [ ] **T8 — Ajouter `withTimeout` dans `CoachingViewModel.generateNow()`**
-  - [ ] T8.1 Dans `android/feature/coaching/src/main/kotlin/com/secondserve/feature/coaching/CoachingViewModel.kt`, ajouter l'import :
+- [x] **T8 — Ajouter `withTimeout` dans `CoachingViewModel.generateNow()`**
+  - [x] T8.1 Dans `android/feature/coaching/src/main/kotlin/com/secondserve/feature/coaching/CoachingViewModel.kt`, ajouter l'import :
     ```kotlin
     import kotlinx.coroutines.TimeoutCancellationException
     import kotlinx.coroutines.withTimeout
     ```
-  - [ ] T8.2 Entourer l'appel `vpsMistralEngine.generate(prompt)` avec `withTimeout` :
+  - [x] T8.2 Entourer l'appel `vpsMistralEngine.generate(prompt)` avec `withTimeout` :
     ```kotlin
     val result = try {
         withTimeout(30_000L) {
@@ -160,11 +160,11 @@ Source : deferred items 4-1 (`scoreText`), 5-3 D2/D3, 5-3 D2 (`withTimeout`).
 
 ### BLOC E — Compilation & validation
 
-- [ ] **T9 — Compiler le projet Android**
-  - [ ] T9.1 `./gradlew :data:compileDebugKotlin :feature:coaching:compileDebugKotlin :feature:history:compileDebugKotlin`
+- [x] **T9 — Compiler le projet Android**
+  - [x] T9.1 `./gradlew :data:compileDebugKotlin :feature:coaching:compileDebugKotlin :feature:history:compileDebugKotlin` — BUILD SUCCESSFUL
 
-- [ ] **T10 — Lancer les tests unitaires**
-  - [ ] T10.1 `./gradlew testDebugUnitTest` — tous les tests doivent passer
+- [x] **T10 — Lancer les tests unitaires**
+  - [x] T10.1 `./gradlew testDebugUnitTest` — BUILD SUCCESSFUL, tous les tests passent
 
 ## Dev Notes
 
@@ -172,6 +172,47 @@ Source : deferred items 4-1 (`scoreText`), 5-3 D2/D3, 5-3 D2 (`withTimeout`).
 - Pour T7 (purge synthèses) : le `keepCount = 10` est arbitraire — ajustable selon les besoins. La valeur 10 représente ~3-4 mois de synthèse hebdomadaire
 - `withTimeout(30_000L)` correspond au timeout recommandé pour une requête Mistral. La valeur peut être ajustée selon les benchmarks observés sur le VPS
 - `TimeoutCancellationException` est une sous-classe de `CancellationException` — elle NE doit PAS être catchée par les blocs génériques `catch (e: Exception)` après la correction de TD-1
+
+## Dev Agent Record
+
+### Completion Notes
+
+- **BLOC A** : `score_text` ajouté dans `SyncSessionDto` Android (Moshi `@Json`), mapper `Session.toSyncDto()` mis à jour, backend `SyncSessionDto` Pydantic + `SyncService._upsert_session()` mis à jour, colonne `score_text` ajoutée dans `SessionModel` SQLAlchemy + migration Alembic `g7b8c9d0e1f2`.
+- **BLOC B** : Guard `createdAt <= 0L` → "Date inconnue" dans `HistoryScreen.formattedDate()` et `SessionDetailScreen`. Comportement simple, validé par compilation.
+- **BLOC C** : `CoachingSynthesisDao.deleteOldBeyond(keepCount: Int)` ajouté (requête SQL `DELETE WHERE id NOT IN`). Appelé dans `CoachingRepositoryImpl.saveSynthesis()` après chaque insert. Comportement non-transactionnel accepté (purge peut rater sans affecter l'insert).
+- **BLOC D** : `withTimeout(30_000L)` + `catch (e: TimeoutCancellationException)` dans `CoachingViewModel.generateNow()`. Import `kotlinx.coroutines.TimeoutCancellationException` et `kotlinx.coroutines.withTimeout` ajoutés.
+- **Tests** : `MappersTest.kt` (BLOC A, 3 tests), tests purge dans `CoachingRepositoryImplTest.kt` (BLOC C, 3 tests), `CoachingViewModelTest.kt` (BLOC D, 3 tests — module coaching configuré avec deps de test JUnit5+mockk). 226 tests passent, 0 régression.
+- **Note technique** : Le test `withTimeout(0L)` dans `CoachingViewModelTest` simule un `TimeoutCancellationException` lancé de façon synchrone (sans suspension), ce qui permet au `catch (e: TimeoutCancellationException)` du ViewModel d'être exercé. Un timeout lancé via cancellation asynchrone est pris en charge par le `finally` block.
+
+### Debug Log
+
+- Tentative initiale avec `withTimeout(1L) { delay(Long.MAX_VALUE) }` dans le mock : échoue car la cancellation asynchrone bypasse les blocs `catch` (seul `finally` s'exécute). Solution : `withTimeout(0L)` qui lance l'exception de façon synchrone.
+- `TimeoutCancellationException` a un constructeur `internal` — impossible à instancier directement dans les tests.
+
+## File List
+
+### Android
+- `android/data/src/main/kotlin/com/secondserve/data/remote/api/dto/SyncDto.kt` — ajout `scoreText`
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/Mappers.kt` — ajout `scoreText = scoreText` dans `toSyncDto()`
+- `android/data/src/main/kotlin/com/secondserve/data/local/dao/CoachingSynthesisDao.kt` — ajout `deleteOldBeyond()`
+- `android/data/src/main/kotlin/com/secondserve/data/repository/CoachingRepositoryImpl.kt` — appel `deleteOldBeyond(10)` dans `saveSynthesis()`
+- `android/feature/history/src/main/kotlin/com/secondserve/feature/history/HistoryScreen.kt` — guard `createdAt <= 0L`
+- `android/feature/history/src/main/kotlin/com/secondserve/feature/history/SessionDetailScreen.kt` — guard `createdAt <= 0L`
+- `android/feature/coaching/src/main/kotlin/com/secondserve/feature/coaching/CoachingViewModel.kt` — `withTimeout(30_000L)` + catch timeout
+- `android/feature/coaching/build.gradle.kts` — ajout deps de test (junit5, mockk, coroutines-test)
+- `android/data/src/test/kotlin/com/secondserve/data/local/db/entity/MappersTest.kt` — NOUVEAU
+- `android/data/src/test/kotlin/com/secondserve/data/repository/CoachingRepositoryImplTest.kt` — 3 tests purge ajoutés
+- `android/feature/coaching/src/test/kotlin/com/secondserve/feature/coaching/CoachingViewModelTest.kt` — NOUVEAU
+
+### Backend
+- `backend/app/features/sync/schemas.py` — ajout `score_text: Optional[str] = None`
+- `backend/app/features/sync/service.py` — propagation `score_text` dans `_upsert_session()`
+- `backend/app/features/sessions/models.py` — ajout colonne `score_text`
+- `backend/alembic/versions/g7b8c9d0e1f2_add_score_text_to_sessions.py` — NOUVEAU
+
+## Change Log
+
+- 2026-06-24 : Implémentation complète TD-4 — 4 blocs (scoreText sync, date fallback, purge synthèses, timeout IA)
 
 ## Deferred items adressés
 

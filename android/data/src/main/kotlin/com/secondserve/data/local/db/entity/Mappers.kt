@@ -98,5 +98,6 @@ fun Session.toSyncDto(): SyncSessionDto = SyncSessionDto(
     feelingComment = feelingComment,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    scheduledAt = scheduledAt
+    scheduledAt = scheduledAt,
+    scoreText = scoreText
 )

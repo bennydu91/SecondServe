@@ -12,9 +12,11 @@ import com.secondserve.domain.repository.CoachingRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.SessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 import javax.inject.Inject
@@ -58,7 +60,15 @@ class CoachingViewModel @Inject constructor(
             }
             val profile = playerProfileRepository.buildMatchContextProfile()
             val prompt = buildSynthesisPrompt(sessions, profile, lastSynthesis)
-            when (val result = vpsMistralEngine.generate(prompt)) {
+            val result = try {
+                withTimeout(30_000L) {
+                    vpsMistralEngine.generate(prompt)
+                }
+            } catch (e: TimeoutCancellationException) {
+                reduce { state.copy(error = "Délai dépassé — réessayez") }
+                return@intent
+            }
+            when (result) {
                 is AppResult.Success -> {
                     val saveResult = coachingRepository.saveSynthesis(result.data, sessions.size)
                     if (saveResult is AppResult.Error) {

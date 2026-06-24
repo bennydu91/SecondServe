@@ -25,7 +25,8 @@ data class SyncSessionDto(
     @Json(name = "feeling_comment") val feelingComment: String?,
     @Json(name = "created_at") val createdAt: Long,
     @Json(name = "updated_at") val updatedAt: Long,
-    @Json(name = "scheduled_at") val scheduledAt: Long? = null
+    @Json(name = "scheduled_at") val scheduledAt: Long? = null,
+    @Json(name = "score_text") val scoreText: String? = null
 )
 
 @JsonClass(generateAdapter = true)

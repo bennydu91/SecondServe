@@ -148,7 +148,11 @@ private fun SessionDetailContent(
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text("Session", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    DetailRow("Date", sessionDetailDateFormat.format(Date(session.createdAt)))
+                    DetailRow(
+                        "Date",
+                        if (session.createdAt <= 0L) "Date inconnue"
+                        else sessionDetailDateFormat.format(Date(session.createdAt))
+                    )
                     DetailRow("Surface", session.surface)
                     DetailRow("Format", session.format.matchFormat.name)
                     session.opponent?.let { DetailRow("Adversaire", it) }

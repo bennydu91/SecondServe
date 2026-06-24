@@ -17,4 +17,14 @@ interface CoachingSynthesisDao {
 
     @Query("SELECT * FROM coaching_syntheses ORDER BY generated_at DESC LIMIT 1")
     fun observeLatest(): Flow<CoachingSynthesisEntity?>
+
+    @Query("""
+        DELETE FROM coaching_syntheses
+        WHERE id NOT IN (
+            SELECT id FROM coaching_syntheses
+            ORDER BY generated_at DESC
+            LIMIT :keepCount
+        )
+    """)
+    suspend fun deleteOldBeyond(keepCount: Int)
 }

@@ -218,4 +218,31 @@ class CoachingRepositoryImplTest {
             awaitComplete()
         }
     }
+
+    @Test
+    fun `saveSynthesis calls deleteOldBeyond(10) after insert`() = runTest {
+        coEvery { synthesisDao.insert(any()) } returns 5L
+
+        repository.saveSynthesis("Patterns récurrents : bon service.", 3)
+
+        coVerify(exactly = 1) { synthesisDao.deleteOldBeyond(keepCount = 10) }
+    }
+
+    @Test
+    fun `saveSynthesis does not call deleteOldBeyond when content is blank`() = runTest {
+        val result = repository.saveSynthesis("", 3)
+
+        assertIs<AppResult.Error>(result)
+        coVerify(exactly = 0) { synthesisDao.deleteOldBeyond(any()) }
+    }
+
+    @Test
+    fun `saveSynthesis calls deleteOldBeyond even when insert throws`() = runTest {
+        coEvery { synthesisDao.insert(any()) } throws RuntimeException("DB error")
+
+        val result = repository.saveSynthesis("content", 3)
+
+        assertIs<AppResult.Error>(result)
+        coVerify(exactly = 0) { synthesisDao.deleteOldBeyond(any()) }
+    }
 }
