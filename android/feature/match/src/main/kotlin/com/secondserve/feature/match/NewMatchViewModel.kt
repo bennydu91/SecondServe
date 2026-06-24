@@ -70,7 +70,8 @@ class NewMatchViewModel @Inject constructor(
         reduce { state.copy(isLoading = true) }
 
         val now = System.currentTimeMillis()
-        val isPlanned = state.isScheduled && state.scheduledAt != null && state.scheduledAt > now
+        val scheduledAtMs = state.scheduledAt
+        val isPlanned = state.isScheduled && scheduledAtMs != null && scheduledAtMs > now
         val session = Session(
             surface = surface,
             format = SessionFormat(matchFormat = matchFormat, thirdSetRule = thirdSetRule),
@@ -78,7 +79,7 @@ class NewMatchViewModel @Inject constructor(
             competitionType = state.competitionType.takeIf { it.isNotBlank() },
             tournament = state.tournament.takeIf { it.isNotBlank() },
             status = if (isPlanned) SessionStatus.PLANNED else SessionStatus.ACTIVE,
-            scheduledAt = if (isPlanned) state.scheduledAt else null,
+            scheduledAt = if (isPlanned) scheduledAtMs else null,
             createdAt = now,
             updatedAt = now
         )
@@ -87,8 +88,9 @@ class NewMatchViewModel @Inject constructor(
             is AppResult.Success -> {
                 reduce { state.copy(isLoading = false) }
                 val createdSession = result.data
-                if (isPlanned && createdSession.scheduledAt != null) {
-                    val triggerMs = createdSession.scheduledAt - 2 * 60 * 60 * 1000L
+                val createdScheduledAt = createdSession.scheduledAt
+                if (isPlanned && createdScheduledAt != null) {
+                    val triggerMs = createdScheduledAt - 2 * 60 * 60 * 1000L
                     notificationScheduler.schedulePreMatchReminder(createdSession.id, triggerMs)
                 }
                 if (isPlanned) {

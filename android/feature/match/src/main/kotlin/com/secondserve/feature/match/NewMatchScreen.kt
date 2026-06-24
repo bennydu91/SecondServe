@@ -173,9 +173,10 @@ fun NewMatchScreen(
                 val calendar = remember { Calendar.getInstance() }
                 val fmt = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE) }
 
-                if (state.scheduledAt != null) {
+                val scheduledAt = state.scheduledAt
+                if (scheduledAt != null) {
                     Text(
-                        text = "Match planifié : ${fmt.format(Date(state.scheduledAt))}",
+                        text = "Match planifié : ${fmt.format(Date(scheduledAt))}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
