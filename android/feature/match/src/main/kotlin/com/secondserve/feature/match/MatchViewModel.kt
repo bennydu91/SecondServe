@@ -110,6 +110,6 @@ data class MatchUiState(
 )
 
 sealed class MatchSideEffect {
-    object SessionClosed : MatchSideEffect()
+    data object SessionClosed : MatchSideEffect()
     data class ShowError(val message: String) : MatchSideEffect()
 }

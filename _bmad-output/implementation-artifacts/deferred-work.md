@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of td-2-enums-sealed-classes-kotlin-quality (2026-06-24)
+
+- **D1 — SQL `'PENDING'` literal sans lien compile-time** — `AxisSuggestionDao` hard-code `'PENDING'` dans ses queries Room. Un renommage de `AxisSuggestionStatus.PENDING` casserait silencieusement la query. T4.1 de la spec a accepté ce compromis ; à reconsidérer si l'enum évolue. [`AxisSuggestionDao.kt:12`]
+- **D2 — `SettingsUiState.frequency` initialisé à `DAILY` en dur** — L'état initial du ViewModel n'est pas lu depuis le repository ; bref flash de l'ancienne valeur si l'utilisateur a un autre réglage. Pré-existant. [`SettingsViewModel.kt:25`]
+- **D3 — Contrat sérialisation `.name`/`valueOf`** — Renommer un enum (`EVERY_2_DAYS` → `EVERY_TWO_DAYS`) casserait les données persistées en SharedPreferences et Room. Envisager une propriété `serializedName` ou annotation dédiée. Pré-existant, architectural.
+- **D4 — `isChangeover()` sans test pour `MatchOver → false`** — L'hypothèse que `MatchOver` ne déclenche pas de changeover n'est pas couverte par un test unitaire. [`ScoreViewModel.kt`]
+
 ## Deferred from: code review of 5-4-axes-de-travail-suggestions-ia (2026-06-23)
 
 - **W1 — `sourceContent.take(500)` troncature sémantique** — Intentionnel per Dev Notes (prompt court = réponse courte). À optimiser si la qualité des suggestions se révèle insuffisante en usage réel. [`WorkAxisRepositoryImpl.kt`]

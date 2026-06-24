@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-2 : Enums & Sealed Classes — Qualité Kotlin
 
-Status: review
+Status: done
 
 ## Story
 
@@ -286,3 +286,14 @@ Tous les 4 blocs implémentés. `./gradlew testDebugUnitTest` → BUILD SUCCESSF
 ## Change Log
 
 - 2026-06-24 : TD-2 implémenté — 2 enums créés (`AxisSuggestionStatus`, `NotificationFrequency`), 4 singletons convertis en `data object`, `isChangeover()` extension function exhaustive sans `else`, 15 fichiers modifiés, 222 tests verts.
+
+### Review Findings
+
+- [x] [Review][Patch] `NotificationFrequency.valueOf()` crash sur string inconnue en SharedPreferences [`PlayerDataStore.kt:43`]
+- [x] [Review][Patch] `AxisSuggestionStatus.valueOf()` crash sur ligne DB corrompue [`AxisSuggestionEntity.kt:19`, `WorkAxisRepositoryImpl.kt:180`]
+- [x] [Review][Patch] Duplicate `toDomain()` privée dans `WorkAxisRepositoryImpl` masque l'extension de l'entity [`WorkAxisRepositoryImpl.kt:176`]
+- [x] [Review][Patch] `object SessionClosed` et `object SessionDeleted` non convertis en `data object` [`MatchViewModel.kt:113`, `SessionDetailViewModel.kt:16`]
+- [x] [Review][Defer] SQL `'PENDING'` literal dans `AxisSuggestionDao` sans lien compile-time vers `AxisSuggestionStatus.PENDING.name` [`AxisSuggestionDao.kt:12`] — deferred, pre-existing (T4.1 accepté par spec)
+- [x] [Review][Defer] `SettingsUiState.frequency` initialisé à `DAILY` en dur avant la lecture du repository (flash UI incorrect) [`SettingsViewModel.kt:25`] — deferred, pre-existing
+- [x] [Review][Defer] Contrat de sérialisation `.name`/`valueOf` : renommage d'un enum = breaking change silencieux — deferred, pre-existing
+- [x] [Review][Defer] `isChangeover()` sans test unitaire pour la branche `MatchOver → false` [`ScoreViewModel.kt`] — deferred, test coverage

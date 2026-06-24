@@ -172,11 +172,3 @@ Réponds UNIQUEMENT avec les titres des axes suggérés, un par ligne, en 3 à 8
             .filter { it.isNotBlank() && it.length in 3..150 }
             .take(3)
 }
-
-private fun AxisSuggestionEntity.toDomain(): AxisSuggestion =
-    AxisSuggestion(
-        id = id,
-        title = title,
-        status = AxisSuggestionStatus.valueOf(status),
-        generatedAt = generatedAt
-    )

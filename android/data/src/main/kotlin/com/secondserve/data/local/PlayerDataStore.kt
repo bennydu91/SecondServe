@@ -38,8 +38,10 @@ class PlayerDataStore(private val context: Context) {
     fun saveNotificationFrequency(frequency: NotificationFrequency) =
         prefs.edit().putString(KEY_NOTIF_FREQUENCY, frequency.name).apply()
 
-    fun getNotificationFrequency(): NotificationFrequency =
-        NotificationFrequency.valueOf(prefs.getString(KEY_NOTIF_FREQUENCY, "DAILY") ?: "DAILY")
+    fun getNotificationFrequency(): NotificationFrequency {
+        val raw = prefs.getString(KEY_NOTIF_FREQUENCY, "DAILY") ?: "DAILY"
+        return NotificationFrequency.entries.firstOrNull { it.name == raw } ?: NotificationFrequency.DAILY
+    }
 
     fun saveSilentModeUntil(epochMs: Long) =
         prefs.edit().putLong(KEY_SILENT_MODE_UNTIL, epochMs).apply()

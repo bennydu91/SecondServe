@@ -18,7 +18,7 @@ fun AxisSuggestionEntity.toDomain(): AxisSuggestion =
     AxisSuggestion(
         id = id,
         title = title,
-        status = AxisSuggestionStatus.valueOf(status),
+        status = AxisSuggestionStatus.entries.firstOrNull { it.name == status } ?: AxisSuggestionStatus.PENDING,
         generatedAt = generatedAt
     )
 

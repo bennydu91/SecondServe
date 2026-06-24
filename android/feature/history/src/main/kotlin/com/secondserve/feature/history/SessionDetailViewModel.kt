@@ -13,7 +13,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 sealed class SessionDetailSideEffect {
-    object SessionDeleted : SessionDetailSideEffect()
+    data object SessionDeleted : SessionDetailSideEffect()
     data class ShowError(val message: String) : SessionDetailSideEffect()
 }
 
