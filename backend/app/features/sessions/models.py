@@ -19,3 +19,4 @@ class SessionModel(Base):
     feeling_comment = Column(String, nullable=True)
     created_at = Column(Integer, nullable=False)
     updated_at = Column(Integer, nullable=False)
+    scheduled_at = Column(Integer, nullable=True)

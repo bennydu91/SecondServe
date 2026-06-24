@@ -60,7 +60,8 @@ fun SessionEntity.toDomain(): Session = Session(
     feelingRating = feelingRating,
     feelingComment = feelingComment,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    scheduledAt = scheduledAt
 )
 
 fun Session.toEntity(): SessionEntity = SessionEntity(
@@ -78,7 +79,8 @@ fun Session.toEntity(): SessionEntity = SessionEntity(
     feelingRating = feelingRating,
     feelingComment = feelingComment,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    scheduledAt = scheduledAt
 )
 
 fun Session.toSyncDto(): SyncSessionDto = SyncSessionDto(
@@ -95,5 +97,6 @@ fun Session.toSyncDto(): SyncSessionDto = SyncSessionDto(
     feelingRating = feelingRating,
     feelingComment = feelingComment,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    scheduledAt = scheduledAt
 )

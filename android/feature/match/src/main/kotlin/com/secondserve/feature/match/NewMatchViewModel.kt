@@ -5,7 +5,9 @@ import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.Session
 import com.secondserve.domain.model.SessionFormat
+import com.secondserve.domain.model.SessionStatus
 import com.secondserve.domain.model.ThirdSetRule
+import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.repository.SessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.ContainerHost
@@ -14,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NewMatchViewModel @Inject constructor(
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val notificationScheduler: NotificationScheduler
 ) : ViewModel(), ContainerHost<NewMatchUiState, NewMatchSideEffect> {
 
     override val container = container<NewMatchUiState, NewMatchSideEffect>(NewMatchUiState())
@@ -49,6 +52,14 @@ class NewMatchViewModel @Inject constructor(
         reduce { state.copy(tournament = value) }
     }
 
+    fun onScheduledToggled(enabled: Boolean) = intent {
+        reduce { state.copy(isScheduled = enabled, scheduledAt = if (!enabled) null else state.scheduledAt) }
+    }
+
+    fun onScheduledAtChanged(epochMs: Long) = intent {
+        reduce { state.copy(scheduledAt = epochMs) }
+    }
+
     fun startMatch() = intent {
         val surface = state.selectedSurface ?: return@intent
         val matchFormat = state.selectedMatchFormat ?: return@intent
@@ -59,12 +70,15 @@ class NewMatchViewModel @Inject constructor(
         reduce { state.copy(isLoading = true) }
 
         val now = System.currentTimeMillis()
+        val isPlanned = state.isScheduled && state.scheduledAt != null && state.scheduledAt > now
         val session = Session(
             surface = surface,
             format = SessionFormat(matchFormat = matchFormat, thirdSetRule = thirdSetRule),
             opponent = state.opponent.takeIf { it.isNotBlank() },
             competitionType = state.competitionType.takeIf { it.isNotBlank() },
             tournament = state.tournament.takeIf { it.isNotBlank() },
+            status = if (isPlanned) SessionStatus.PLANNED else SessionStatus.ACTIVE,
+            scheduledAt = if (isPlanned) state.scheduledAt else null,
             createdAt = now,
             updatedAt = now
         )
@@ -72,7 +86,16 @@ class NewMatchViewModel @Inject constructor(
         when (val result = sessionRepository.createSession(session)) {
             is AppResult.Success -> {
                 reduce { state.copy(isLoading = false) }
-                postSideEffect(NewMatchSideEffect.SessionStarted(result.data.id))
+                val createdSession = result.data
+                if (isPlanned && createdSession.scheduledAt != null) {
+                    val triggerMs = createdSession.scheduledAt - 2 * 60 * 60 * 1000L
+                    notificationScheduler.schedulePreMatchReminder(createdSession.id, triggerMs)
+                }
+                if (isPlanned) {
+                    postSideEffect(NewMatchSideEffect.SessionPlanned(createdSession.id))
+                } else {
+                    postSideEffect(NewMatchSideEffect.SessionStarted(createdSession.id))
+                }
             }
             is AppResult.Error -> {
                 reduce { state.copy(isLoading = false) }
@@ -90,14 +113,18 @@ data class NewMatchUiState(
     val opponent: String = "",
     val competitionType: String = "",
     val tournament: String = "",
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isScheduled: Boolean = false,
+    val scheduledAt: Long? = null
 ) {
     val canStartMatch: Boolean get() =
         selectedSurface != null && selectedMatchFormat != null &&
-        (selectedMatchFormat == MatchFormat.BEST_OF_1 || selectedThirdSetRule != null)
+        (selectedMatchFormat == MatchFormat.BEST_OF_1 || selectedThirdSetRule != null) &&
+        (if (isScheduled) scheduledAt != null && scheduledAt > System.currentTimeMillis() else true)
 }
 
 sealed class NewMatchSideEffect {
     data class SessionStarted(val sessionId: Long) : NewMatchSideEffect()
+    data class SessionPlanned(val sessionId: Long) : NewMatchSideEffect()
     data class ShowError(val message: String) : NewMatchSideEffect()
 }

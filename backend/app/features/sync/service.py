@@ -42,6 +42,7 @@ class SyncService:
                 feeling_comment=dto.feeling_comment,
                 created_at=dto.created_at,
                 updated_at=dto.updated_at,
+                scheduled_at=dto.scheduled_at,
             )
             self.db.add(model)
         else:

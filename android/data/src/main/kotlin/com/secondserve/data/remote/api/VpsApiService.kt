@@ -5,6 +5,7 @@ import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
 import com.secondserve.data.remote.api.dto.ProfileSummaryDto
 import com.secondserve.data.remote.api.dto.RankingEntryDto
 import com.secondserve.data.remote.api.dto.RankingRequest
+import com.secondserve.data.remote.api.dto.PendingNotificationResponse
 import com.secondserve.data.remote.api.dto.SyncPushRequest
 import com.secondserve.data.remote.api.dto.SyncPushResponse
 import com.secondserve.data.remote.api.dto.WorkAxesResponse
@@ -16,6 +17,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface VpsApiService {
     @POST("api/v1/auth/init")
@@ -47,4 +49,7 @@ interface VpsApiService {
 
     @POST("api/v1/sync/push")
     suspend fun syncPush(@Body request: SyncPushRequest): SyncPushResponse
+
+    @GET("api/v1/notifications/pending")
+    suspend fun getPendingNotification(@Query("session_id") sessionId: Long): PendingNotificationResponse
 }

@@ -30,4 +30,10 @@ interface SessionDao {
 
     @Query("SELECT * FROM sessions WHERE status = 'COMPLETED' AND updated_at > :afterMs ORDER BY updated_at DESC")
     suspend fun getCompletedSince(afterMs: Long): List<SessionEntity>
+
+    @Query("DELETE FROM sessions WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM sessions WHERE scheduled_at IS NOT NULL AND status = 'PLANNED' ORDER BY scheduled_at ASC")
+    suspend fun getPlannedSessions(): List<SessionEntity>
 }

@@ -17,6 +17,7 @@ class SyncSessionDto(BaseModel):
     feeling_comment: Optional[str] = None
     created_at: int
     updated_at: int
+    scheduled_at: Optional[int] = None
 
 
 class SyncPushRequest(BaseModel):

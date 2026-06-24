@@ -9,6 +9,7 @@ from app.core.config import settings
 # Import all model modules here so Base.metadata is populated for --autogenerate.
 from app.features.profile import models as profile_models  # noqa: F401
 from app.features.work_axes import models as work_axes_models  # noqa: F401
+from app.features.notifications import models as notifications_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

@@ -9,6 +9,7 @@ import com.secondserve.data.local.db.entity.toDomain
 import com.secondserve.data.local.db.entity.toEntity
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.Session
+import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.repository.SessionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,12 +21,22 @@ import javax.inject.Singleton
 class SessionRepositoryImpl @Inject constructor(
     private val dao: SessionDao,
     private val syncQueueDao: SyncQueueDao,
-    private val database: SecondServeDatabase
+    private val database: SecondServeDatabase,
+    private val notificationScheduler: NotificationScheduler
 ) : SessionRepository {
 
     override suspend fun createSession(session: Session): AppResult<Session> = try {
         val id = dao.insert(session.toEntity())
-        Timber.d("SessionRepository: session créée id=%d", id)
+        if (session.scheduledAt != null) {
+            val now = System.currentTimeMillis()
+            syncQueueDao.insert(SyncQueueEntity(
+                entityType = SyncQueueEntity.ENTITY_TYPE_SESSION,
+                entityId = id,
+                operation = SyncQueueEntity.OPERATION_UPSERT,
+                createdAt = now
+            ))
+        }
+        Timber.d("SessionRepository: session créée id=%d (planned=%b)", id, session.scheduledAt != null)
         AppResult.Success(session.copy(id = id))
     } catch (e: Exception) {
         Timber.e(e, "SessionRepository: createSession failed")
@@ -84,6 +95,16 @@ class SessionRepositoryImpl @Inject constructor(
                 null
             }
         }
+
+    override suspend fun deleteSession(sessionId: Long): AppResult<Unit> = try {
+        dao.deleteById(sessionId)
+        notificationScheduler.cancelPreMatchReminder(sessionId)
+        Timber.d("SessionRepository: session %d supprimée + reminder annulé", sessionId)
+        AppResult.Success(Unit)
+    } catch (e: Exception) {
+        Timber.e(e, "SessionRepository: deleteSession failed for id=%d", sessionId)
+        AppResult.Error(e)
+    }
 
     override suspend fun closeSession(
         sessionId: Long,

@@ -24,5 +24,6 @@ data class SessionEntity(
     @ColumnInfo(name = "feeling_rating") val feelingRating: Int? = null,
     @ColumnInfo(name = "feeling_comment") val feelingComment: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
-    @ColumnInfo(name = "updated_at") val updatedAt: Long
+    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+    @ColumnInfo(name = "scheduled_at") val scheduledAt: Long? = null
 )

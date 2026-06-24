@@ -1,6 +1,6 @@
 package com.secondserve.domain.model
 
-enum class SessionStatus { ACTIVE, COMPLETED, INTERRUPTED }
+enum class SessionStatus { ACTIVE, COMPLETED, INTERRUPTED, PLANNED, CANCELLED }
 enum class SessionType { MATCH, TRAINING }
 
 data class Session(
@@ -17,5 +17,6 @@ data class Session(
     val feelingRating: Int? = null,
     val feelingComment: String? = null,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val scheduledAt: Long? = null
 )

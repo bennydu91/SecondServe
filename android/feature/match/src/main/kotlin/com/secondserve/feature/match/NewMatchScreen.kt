@@ -1,5 +1,7 @@
 package com.secondserve.feature.match
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,13 +23,16 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.secondserve.domain.model.MatchFormat
@@ -36,6 +41,10 @@ import com.secondserve.domain.model.ThirdSetRule
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -51,6 +60,7 @@ fun NewMatchScreen(
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is NewMatchSideEffect.SessionStarted -> onSessionStarted(effect.sessionId)
+            is NewMatchSideEffect.SessionPlanned -> onNavigateBack()
             is NewMatchSideEffect.ShowError ->
                 scope.launch { snackbarHostState.showSnackbar(effect.message) }
         }
@@ -142,6 +152,69 @@ fun NewMatchScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Planification
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Planifier pour plus tard",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Switch(
+                    checked = state.isScheduled,
+                    onCheckedChange = { viewModel.onScheduledToggled(it) }
+                )
+            }
+
+            if (state.isScheduled) {
+                val context = LocalContext.current
+                val calendar = remember { Calendar.getInstance() }
+                val fmt = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE) }
+
+                if (state.scheduledAt != null) {
+                    Text(
+                        text = "Match planifié : ${fmt.format(Date(state.scheduledAt))}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                TextButton(
+                    onClick = {
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, day ->
+                                calendar.set(year, month, day)
+                                TimePickerDialog(
+                                    context,
+                                    { _, hour, minute ->
+                                        calendar.set(Calendar.HOUR_OF_DAY, hour)
+                                        calendar.set(Calendar.MINUTE, minute)
+                                        calendar.set(Calendar.SECOND, 0)
+                                        val selected = calendar.timeInMillis
+                                        if (selected > System.currentTimeMillis()) {
+                                            viewModel.onScheduledAtChanged(selected)
+                                        }
+                                    },
+                                    calendar.get(Calendar.HOUR_OF_DAY),
+                                    calendar.get(Calendar.MINUTE),
+                                    true
+                                ).show()
+                            },
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH),
+                            calendar.get(Calendar.DAY_OF_MONTH)
+                        ).apply {
+                            datePicker.minDate = System.currentTimeMillis() + 60_000L
+                        }.show()
+                    }
+                ) {
+                    Text(if (state.scheduledAt != null) "Changer la date/heure" else "Choisir la date/heure")
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             if (state.isLoading) {
@@ -152,7 +225,7 @@ fun NewMatchScreen(
                     enabled = state.canStartMatch,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Démarrer le match")
+                    Text(if (state.isScheduled) "Planifier le match" else "Démarrer le match")
                 }
             }
         }

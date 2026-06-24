@@ -19,4 +19,5 @@ interface SessionRepository {
     suspend fun getPointSummaryForSession(sessionId: Long): Pair<Int, Int>
     suspend fun countCompletedSince(afterMs: Long): Int
     suspend fun getCompletedSince(afterMs: Long): List<Session>
+    suspend fun deleteSession(sessionId: Long): AppResult<Unit>
 }

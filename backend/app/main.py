@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.features.notifications.scheduler import start_scheduler, stop_scheduler
 from app.shared.exceptions import SecondServeException
 
 logging.basicConfig(
@@ -33,6 +34,12 @@ app.include_router(api_router, prefix="/api/v1")
 
 
 @app.on_event("startup")
-async def startup_validation() -> None:
+async def startup_event() -> None:
     from app.core.security import JWTManager
     JWTManager(settings.jwt_secret)
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+async def shutdown_event() -> None:
+    stop_scheduler()
