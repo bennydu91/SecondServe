@@ -5,9 +5,8 @@
 - VPS Ubuntu 22.04+ (4 vCPU / 16 Go RAM recommandés)
 - Python 3.12 installé
 - `uv` installé (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- Nginx installé (`apt install nginx`)
-- Certbot installé (`apt install certbot python3-certbot-nginx`)
-- Domaine DNS pointant vers le VPS
+- Tunnel Cloudflare configuré (remplace nginx + Certbot — le HTTPS est géré par Cloudflare)
+- Domaine géré par Cloudflare
 
 ## Étapes de déploiement
 
@@ -28,14 +27,17 @@ uv sync --no-dev
 
 ```bash
 cp .env.example .env
-# Éditer .env avec les vraies valeurs
 nano /opt/secondserve-backend/.env
 ```
 
 Variables à renseigner :
-- `JWT_SECRET` : clé secrète forte (min. 32 caractères)
-- `MISTRAL_API_KEY` : clé API Mistral (pour Epic 5)
-- `DATABASE_URL` : `sqlite+aiosqlite:///./secondserve.db` (ou PostgreSQL en production)
+
+| Variable | Description |
+|---|---|
+| `JWT_SECRET` | Clé secrète forte, min. 32 caractères (`openssl rand -hex 32`) |
+| `MISTRAL_API_KEY` | Clé API Mistral |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./secondserve.db` (défaut SQLite) |
+| `PORT` | Port d'écoute uvicorn — choisir un port libre sur le VPS (ex. `8765`) |
 
 ### 4. Appliquer les migrations Alembic
 
@@ -47,47 +49,49 @@ uv run alembic upgrade head
 ### 5. Configurer le service systemd
 
 ```bash
-cp secondserve-backend.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable secondserve-backend
-systemctl start secondserve-backend
-systemctl status secondserve-backend
+sudo cp secondserve-backend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable secondserve-backend
+sudo systemctl start secondserve-backend
+sudo systemctl status secondserve-backend
 ```
 
-### 6. Configurer Nginx
+Le service lit `PORT` depuis le fichier `.env` via `EnvironmentFile=`. Pas besoin de modifier le fichier `.service` si tu changes le port.
+
+### 6. Configurer le tunnel Cloudflare
+
+Dans le dashboard Cloudflare → **Zero Trust → Networks → Tunnels** :
+
+1. Sélectionner ton tunnel ou en créer un nouveau
+2. Ajouter un **Public Hostname** :
+   - **Domain** : `api.ton-domaine.com` (ou le sous-domaine de ton choix)
+   - **Service** : `http://localhost:<PORT>` (même valeur que `PORT` dans `.env`)
+3. Sauvegarder — Cloudflare gère le HTTPS automatiquement
+
+### 7. Vérifier le déploiement
 
 ```bash
-# Remplacer <vps-domain> par votre vrai domaine dans le fichier
-sed 's/<vps-domain>/votre-domaine.com/g' nginx-secondserve.conf > /etc/nginx/sites-available/secondserve
-ln -s /etc/nginx/sites-available/secondserve /etc/nginx/sites-enabled/
-nginx -t && systemctl reload nginx
-```
+# Vérification locale sur le VPS
+curl http://localhost:<PORT>/api/v1/health
+# → {"status": "ok"}
 
-### 7. Obtenir un certificat SSL avec Certbot
-
-```bash
-certbot --nginx -d votre-domaine.com
-```
-
-### 8. Vérifier le déploiement
-
-```bash
-curl https://votre-domaine.com/api/v1/health
-# Réponse attendue : {"status": "ok"}
+# Vérification depuis l'extérieur (via Cloudflare)
+curl https://api.ton-domaine.com/api/v1/health
+# → {"status": "ok"}
 ```
 
 ## Vérification que le service survive un redémarrage
 
 ```bash
-reboot
+sudo reboot
 # Après redémarrage :
-systemctl status secondserve-backend
-curl https://votre-domaine.com/api/v1/health
+sudo systemctl status secondserve-backend
+curl https://api.ton-domaine.com/api/v1/health
 ```
 
 ## Mise à jour du backend
 
 ```bash
 rsync -avz backend/ user@<vps-ip>:/opt/secondserve-backend/
-ssh user@<vps-ip> "cd /opt/secondserve-backend && uv sync --no-dev && uv run alembic upgrade head && systemctl restart secondserve-backend"
+ssh user@<vps-ip> "cd /opt/secondserve-backend && uv sync --no-dev && uv run alembic upgrade head && sudo systemctl restart secondserve-backend"
 ```

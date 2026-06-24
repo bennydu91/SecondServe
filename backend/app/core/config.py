@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     mistral_api_key: str = ""
     database_url: str = "sqlite+aiosqlite:///./secondserve.db"
     debug: bool = False
+    port: int = 8000
 
     @model_validator(mode="after")
     def validate_jwt_secret(self) -> "Settings":

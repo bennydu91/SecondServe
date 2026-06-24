@@ -29,7 +29,7 @@ If `{spec_file}` exists and contains a Tasks/Subtasks section, append a `### Rev
 3. **`defer`** findings (checked off, marked deferred):
    `- [x] [Review][Defer] <Title> [<file>:<line>] — deferred, pre-existing`
 
-Also append each `defer` finding to `{deferred_work_file}` under a heading `## Deferred from: code review ({date})`. If `{spec_file}` is set, include its basename in the heading (e.g., `code review of story-3.3 (2026-03-18)`). One bullet per finding with description.
+**Do NOT automatically append `defer` findings to `{deferred_work_file}`.** Findings are marked in the story file only. Adding them to the deferred backlog requires explicit user confirmation — this will be offered in section 5b.
 
 ### 3. Present summary
 
@@ -44,7 +44,7 @@ Otherwise add: `Findings are listed above. No story file was provided, so nothin
 
 If `decision_needed` findings exist, present each one with its detail and the options available. The user must decide — the correct fix is ambiguous without their input. Walk through each finding (or batch related ones) and get the user's call. Once resolved, each becomes a `patch`, `defer`, or is dismissed.
 
-If the user chooses to defer, ask: Quick one-line reason for deferring this item? (helps future reviews): — then append that reason to both the story file bullet and the `{deferred_work_file}` entry.
+If the user chooses to defer, ask: Quick one-line reason for deferring this item? (helps future reviews): — then update the story file bullet only. **Do NOT append to `{deferred_work_file}` here** — this will be offered collectively in section 5b.
 
 **HALT** — I am waiting for your numbered choice. Reply with only the number. Do not proceed until you select an option.
 
@@ -79,6 +79,21 @@ If `{spec_file}` is **not** set, present only options 1 and 2 (omit "Leave as ac
 - Patches handled: <P>
 - Deferred: <W>
 - Dismissed: <R>
+
+### 5b. Decide fate of deferred findings (confirmation required)
+
+Skip this section if there are zero `defer` findings (including any deferred in step 4).
+
+Present a single yes/no question:
+
+> You have <W> deferred finding(s) classified as pre-existing. Would you like to defer them to `{deferred_work_file}` for later? (y/n)
+> - **Yes** → they are logged in the backlog and left alone for now.
+> - **No** → they are treated as `patch` findings and fixed immediately.
+
+**HALT** — wait for the user's answer before proceeding.
+
+- **Yes**: Append to `{deferred_work_file}` under a heading `## Deferred from: code review ({date})`. Include the story file basename in the heading if `{spec_file}` is set (e.g., `code review of story-3.3 (2026-06-24)`). One bullet per finding with description and reason if provided. Update the story file bullets to `[x]` (done/deferred).
+- **No**: Reclassify all `defer` findings as `patch` and apply them immediately following the same rules as section 5 (Apply every patch). Update the story file bullets from `[x] [Review][Defer]` to `[x] [Review][Patch]` once fixed.
 
 ### 6. Update story status and sync sprint tracking
 
