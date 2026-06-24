@@ -3,7 +3,7 @@ from app.shared.exceptions import SecondServeException
 
 
 async def analyze(prompt: str, api_key: str) -> str:
-    if not api_key:
+    if not api_key or not api_key.strip():
         raise SecondServeException(
             error_code="MISTRAL_NOT_CONFIGURED",
             message="Mistral API key not configured",

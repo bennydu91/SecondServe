@@ -19,6 +19,9 @@ CONTENT_TTL_SEC = 3 * 60 * 60      # contenu valide 3h
 async def generate_pending_for_upcoming(db: AsyncSession, api_key: str) -> int:
     """APScheduler job : génère le contenu coaching pré-match pour les sessions
     planifiées dans la fenêtre [now+30min, now+4h]."""
+    if not api_key or not api_key.strip():
+        logger.warning("APScheduler: MISTRAL_API_KEY non configurée — génération pré-match ignorée")
+        return 0
     now_ms = int(time.time() * 1000)
     window_min = now_ms + LOOKAHEAD_MIN_SEC * 1000
     window_max = now_ms + LOOKAHEAD_MAX_SEC * 1000

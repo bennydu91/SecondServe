@@ -1,5 +1,4 @@
 import logging
-from fastapi import HTTPException
 from app.features.work_axes.repository import WorkAxisRepository
 from app.features.work_axes.schemas import (
     WorkAxisRequest, WorkAxisResponse, WorkAxesResponse, MAX_WORK_AXES
@@ -32,16 +31,18 @@ class WorkAxisService:
     async def update(self, axis_id: int, request: WorkAxisRequest) -> WorkAxisResponse:
         axis = await self.repository.update(axis_id, request.title)
         if not axis:
-            raise HTTPException(
-                status_code=404,
-                detail={"error_code": "WORK_AXIS_NOT_FOUND", "message": "Axe non trouvé"}
+            raise SecondServeException(
+                error_code="WORK_AXIS_NOT_FOUND",
+                message="Axe non trouvé",
+                status_code=404
             )
         return WorkAxisResponse.model_validate(axis)
 
     async def delete(self, axis_id: int) -> None:
         deleted = await self.repository.delete(axis_id)
         if not deleted:
-            raise HTTPException(
-                status_code=404,
-                detail={"error_code": "WORK_AXIS_NOT_FOUND", "message": "Axe non trouvé"}
+            raise SecondServeException(
+                error_code="WORK_AXIS_NOT_FOUND",
+                message="Axe non trouvé",
+                status_code=404
             )

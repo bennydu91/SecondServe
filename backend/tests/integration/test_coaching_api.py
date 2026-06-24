@@ -55,13 +55,13 @@ async def test_analyze_mistral_unavailable_returns_503(client):
 
 @pytest.mark.asyncio
 async def test_analyze_missing_api_key_returns_503(client):
-    # api_key is "" by default in test settings → guard fires immediately
     token = make_token()
-    response = await client.post(
-        "/api/v1/coaching/analyze",
-        json={"prompt": "prompt"},
-        headers=auth(token),
-    )
+    with patch.object(settings, "mistral_api_key", ""):
+        response = await client.post(
+            "/api/v1/coaching/analyze",
+            json={"prompt": "prompt"},
+            headers=auth(token),
+        )
     assert response.status_code == 503
     data = response.json()
     assert data["error_code"] == "MISTRAL_NOT_CONFIGURED"

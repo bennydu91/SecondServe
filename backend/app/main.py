@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.core.security import JWTManager
-    JWTManager(settings.jwt_secret)
-    start_scheduler()
-    yield
-    stop_scheduler()
+    JWTManager(settings.jwt_secret)  # eager validation: raises ValueError if JWT_SECRET < 32 chars
+    try:
+        start_scheduler()
+        yield
+    finally:
+        stop_scheduler()
 
 
 app = FastAPI(

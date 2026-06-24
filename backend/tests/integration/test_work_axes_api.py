@@ -91,7 +91,7 @@ async def test_delete_nonexistent_axis(client):
     token = make_token()
     resp = await client.delete("/api/v1/work_axes/99999", headers=auth(token))
     assert resp.status_code == 404
-    assert resp.json()["detail"]["error_code"] == "WORK_AXIS_NOT_FOUND"
+    assert resp.json()["error_code"] == "WORK_AXIS_NOT_FOUND"
 
 
 @pytest.mark.asyncio

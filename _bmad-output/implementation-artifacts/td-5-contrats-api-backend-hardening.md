@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-5 : Contrats API & Backend Hardening
 
-Status: review
+Status: done
 
 ## Story
 
@@ -175,6 +175,18 @@ Source : deferred items 1-6 p2 (422→409), 5-1 (MISTRAL_API_KEY), 1-3 patch (`l
 - [x] **T9 — Vérification runtime**
   - [x] T9.1 Démarrer le backend localement : `cd backend && uvicorn app.main:app --reload`
   - [x] T9.2 Vérifier dans les logs qu'aucun warning `DeprecationWarning` n'est émis au démarrage
+
+### Review Findings
+
+- [x] [Review][Patch] `stop_scheduler()` non appelé si `start_scheduler()` lève une exception — `try/finally` ajouté dans `lifespan` [backend/app/main.py]
+- [x] [Review][Patch] `if not api_key:` ne filtre pas les clés whitespace-only — remplacé par `not api_key or not api_key.strip()` [backend/app/features/coaching/service.py:6]
+- [x] [Review][Patch] `generate_pending_for_upcoming` contourne la guard `MISTRAL_NOT_CONFIGURED` — guard ajoutée en entrée de fonction [backend/app/features/notifications/service.py]
+- [x] [Review][Patch] `test_analyze_missing_api_key_returns_503` : `patch.object(settings, "mistral_api_key", "")` explicite ajouté [backend/tests/integration/test_coaching_api.py]
+- [x] [Review][Patch] `JWTManager()` — commentaire d'intent ajouté (validation eager explicite) [backend/app/main.py]
+- [x] [Review][Dismiss] `SecondServeException` positional args — faux positif : signature `(error_code, message, status_code)` confirmée correcte
+- [x] [Review][Patch] `test_create_raises_409_when_already_at_max_exactly` — assertion `error_code` ajoutée [backend/tests/unit/test_work_axis_service.py]
+- [x] [Review][Patch] Asymétrie réponse — `update()`/`delete()` migrés vers `SecondServeException` (réponse flat), tests mis à jour [backend/app/features/work_axes/service.py]
+- [x] [Review][Patch] Retry loop Mistral — retry ajouté sur erreurs 5xx (attempt 0 uniquement) [backend/app/features/coaching/mistral_client.py]
 
 ## Dev Agent Record
 

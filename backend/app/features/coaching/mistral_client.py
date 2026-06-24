@@ -33,6 +33,8 @@ async def generate(prompt: str, api_key: str) -> str:
                     )
                 continue
             except httpx.HTTPStatusError as e:
+                if e.response.status_code >= 500 and attempt == 0:
+                    continue
                 raise SecondServeException(
                     "MISTRAL_ERROR",
                     f"Mistral API error: {e.response.status_code}",
