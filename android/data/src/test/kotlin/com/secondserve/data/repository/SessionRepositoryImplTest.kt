@@ -21,12 +21,14 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkAll
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -257,6 +259,39 @@ class SessionRepositoryImplTest {
         val result = repository.closeSession(99L, "VICTORY", null, null, null)
 
         assertIs<AppResult.Error>(result)
+    }
+
+    @Test
+    fun `createSession rethrows CancellationException without wrapping in AppResult`() = runTest {
+        coEvery { dao.insert(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.createSession(aSession())
+        }
+    }
+
+    @Test
+    fun `createCompletedSession rethrows CancellationException`() = runTest {
+        coEvery { dao.insert(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.createCompletedSession(aSession())
+        }
+    }
+
+    @Test
+    fun `deleteSession rethrows CancellationException`() = runTest {
+        coEvery { dao.deleteById(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.deleteSession(1L)
+        }
+    }
+
+    @Test
+    fun `closeSession rethrows CancellationException`() = runTest {
+        coEvery { dao.getById(1L) } returns anEntity(id = 1L)
+        coEvery { dao.update(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.closeSession(1L, "VICTORY", null, null, null)
+        }
     }
 
     @Test

@@ -12,11 +12,13 @@ import com.secondserve.domain.model.CoachingSynthesis
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 
@@ -186,6 +188,22 @@ class CoachingRepositoryImplTest {
         repository.observeLatestSynthesis().test {
             assertNull(awaitItem())
             awaitComplete()
+        }
+    }
+
+    @Test
+    fun `saveAnalysis rethrows CancellationException`() = runTest {
+        coEvery { analysisDao.insert(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveAnalysis(1L, "content")
+        }
+    }
+
+    @Test
+    fun `saveSynthesis rethrows CancellationException`() = runTest {
+        coEvery { synthesisDao.insert(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveSynthesis("content", 3)
         }
     }
 

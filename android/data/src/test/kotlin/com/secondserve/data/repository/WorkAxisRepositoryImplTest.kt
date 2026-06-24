@@ -15,11 +15,13 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -140,6 +142,38 @@ class WorkAxisRepositoryImplTest {
         val result = repository.deleteWorkAxis(1L)
 
         assertIs<AppResult.Success<Unit>>(result)
+    }
+
+    @Test
+    fun `createWorkAxis rethrows CancellationException`() = runTest {
+        coEvery { dao.count() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.createWorkAxis("Revers")
+        }
+    }
+
+    @Test
+    fun `updateWorkAxis rethrows CancellationException`() = runTest {
+        coEvery { dao.getById(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.updateWorkAxis(1L, "Nouveau titre")
+        }
+    }
+
+    @Test
+    fun `deleteWorkAxis rethrows CancellationException`() = runTest {
+        coEvery { dao.delete(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.deleteWorkAxis(1L)
+        }
+    }
+
+    @Test
+    fun `ignoreSuggestion rethrows CancellationException`() = runTest {
+        coEvery { suggestionDao.updateStatus(any(), any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.ignoreSuggestion(1L)
+        }
     }
 
     @Test

@@ -13,6 +13,7 @@ import com.secondserve.domain.model.CoachingCacheEntry
 import com.secondserve.domain.model.CoachingSynthesis
 import com.secondserve.domain.model.MatchPattern
 import com.secondserve.domain.repository.CoachingRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -58,6 +59,7 @@ class CoachingRepositoryImpl @Inject constructor(
             AppResult.Success(entity.copy(id = id).toDomain())
         }
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         AppResult.Error(e)
     }
 
@@ -78,6 +80,7 @@ class CoachingRepositoryImpl @Inject constructor(
             val id = synthesisDao.insert(entity)
             AppResult.Success(entity.copy(id = id).toDomain())
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             AppResult.Error(e)
         }
     }

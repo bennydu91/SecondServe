@@ -11,6 +11,7 @@ import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.Session
 import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.repository.SessionRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
@@ -39,6 +40,7 @@ class SessionRepositoryImpl @Inject constructor(
         Timber.d("SessionRepository: session créée id=%d (planned=%b)", id, session.scheduledAt != null)
         AppResult.Success(session.copy(id = id))
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "SessionRepository: createSession failed")
         AppResult.Error(e)
     }
@@ -56,6 +58,7 @@ class SessionRepositoryImpl @Inject constructor(
             AppResult.Success(session.copy(id = id))
         }
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "SessionRepository: createCompletedSession failed")
         AppResult.Error(e)
     }
@@ -108,6 +111,7 @@ class SessionRepositoryImpl @Inject constructor(
         Timber.d("SessionRepository: session %d supprimée + reminder annulé + sync DELETE enqueued", sessionId)
         AppResult.Success(Unit)
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "SessionRepository: deleteSession failed for id=%d", sessionId)
         AppResult.Error(e)
     }
@@ -145,6 +149,7 @@ class SessionRepositoryImpl @Inject constructor(
         Timber.d("SessionRepository: session %d closed, SyncQueue entry created", sessionId)
         AppResult.Success(Unit)
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "SessionRepository: closeSession failed")
         AppResult.Error(e)
     }

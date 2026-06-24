@@ -16,6 +16,7 @@ import com.secondserve.domain.model.AxisSuggestion
 import com.secondserve.domain.model.MAX_WORK_AXES
 import com.secondserve.domain.model.WorkAxis
 import com.secondserve.domain.repository.WorkAxisRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
@@ -42,10 +43,12 @@ class WorkAxisRepositoryImpl(
             try {
                 vpsApiService.createWorkAxis(WorkAxisRequest(title = title, createdAt = now))
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Timber.w(e, "VPS work axis create failed — local save succeeded")
             }
             AppResult.Success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             AppResult.Error(e)
         }
     }
@@ -57,10 +60,12 @@ class WorkAxisRepositoryImpl(
         try {
             vpsApiService.updateWorkAxis(id, WorkAxisRequest(title = title, createdAt = existing.createdAt))
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Timber.w(e, "VPS work axis update failed — local save succeeded")
         }
         AppResult.Success(Unit)
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         AppResult.Error(e)
     }
 
@@ -69,10 +74,12 @@ class WorkAxisRepositoryImpl(
         try {
             vpsApiService.deleteWorkAxis(id)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Timber.w(e, "VPS work axis delete failed — local delete succeeded")
         }
         AppResult.Success(Unit)
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         AppResult.Error(e)
     }
 
@@ -85,17 +92,18 @@ class WorkAxisRepositoryImpl(
         }
 
     override suspend fun hasPendingSuggestions(): Boolean =
-        try { suggestionDao.countPending() > 0 } catch (e: Exception) { false }
+        try { suggestionDao.countPending() > 0 } catch (e: Exception) { if (e is CancellationException) throw e; false }
 
     override suspend fun generateAndSaveSuggestions(): AppResult<Unit> {
         val latestContent = try {
             synthesisDao.getLatest()?.content ?: analysisDao.getMostRecent()?.content
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             return AppResult.Error(e)
         }
         if (latestContent.isNullOrBlank()) return AppResult.Error(IllegalStateException("No coaching data available"))
 
-        val currentAxes = try { dao.getAllTitles() } catch (e: Exception) { emptyList() }
+        val currentAxes = try { dao.getAllTitles() } catch (e: Exception) { if (e is CancellationException) throw e; emptyList() }
         val prompt = buildSuggestionsPrompt(latestContent, currentAxes)
 
         return when (val result = vpsMistralEngine.generate(prompt)) {
@@ -107,6 +115,7 @@ class WorkAxisRepositoryImpl(
                     suggestionDao.insertAll(titles.map { AxisSuggestionEntity(title = it, generatedAt = now) })
                     AppResult.Success(Unit)
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     AppResult.Error(e)
                 }
             }
@@ -122,6 +131,7 @@ class WorkAxisRepositoryImpl(
         if (result is AppResult.Success) suggestionDao.updateStatus(id, "ACCEPTED")
         result
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         AppResult.Error(e)
     }
 
@@ -129,6 +139,7 @@ class WorkAxisRepositoryImpl(
         suggestionDao.updateStatus(id, "IGNORED")
         AppResult.Success(Unit)
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         Timber.e(e, "Failed to ignore suggestion $id")
         AppResult.Error(e)
     }
@@ -136,6 +147,7 @@ class WorkAxisRepositoryImpl(
     override suspend fun hasCoachingData(): Boolean = try {
         synthesisDao.getLatest() != null || analysisDao.getMostRecent() != null
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         false
     }
 

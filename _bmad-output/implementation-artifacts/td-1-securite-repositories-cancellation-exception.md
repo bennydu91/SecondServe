@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-1 : Sécurité des Repositories — CancellationException & race condition profil
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -49,27 +49,27 @@ Source : deferred items 1-5 p2, 1-6 p2.
 
 ### BLOC A — Fix CancellationException dans tous les repositories
 
-- [ ] **T1 — `SessionRepositoryImpl.kt`** — Rethrow CancellationException
-  - [ ] T1.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/SessionRepositoryImpl.kt`, pour chaque bloc `catch (e: Exception)`, ajouter en première instruction :
+- [x] **T1 — `SessionRepositoryImpl.kt`** — Rethrow CancellationException
+  - [x] T1.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/SessionRepositoryImpl.kt`, pour chaque bloc `catch (e: Exception)`, ajouter en première instruction :
     ```kotlin
     if (e is CancellationException) throw e
     ```
-  - [ ] T1.2 Appliquer sur les 4 occurrences de `catch (e: Exception)` dans ce fichier
+  - [x] T1.2 Appliquer sur les 4 occurrences de `catch (e: Exception)` dans ce fichier
 
-- [ ] **T2 — `PlayerProfileRepositoryImpl.kt`** — Rethrow CancellationException
-  - [ ] T2.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt`, pour chaque bloc `catch (e: Exception)`, ajouter en première instruction :
+- [x] **T2 — `PlayerProfileRepositoryImpl.kt`** — Rethrow CancellationException
+  - [x] T2.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt`, pour chaque bloc `catch (e: Exception)`, ajouter en première instruction :
     ```kotlin
     if (e is CancellationException) throw e
     ```
-  - [ ] T2.2 Appliquer sur les 4+ occurrences (inclure les blocs imbriqués dans `saveRanking()` et `saveProfileDetails()`)
+  - [x] T2.2 Appliquer sur les 4+ occurrences (inclure les blocs imbriqués dans `saveRanking()` et `saveProfileDetails()`)
 
-- [ ] **T3 — `WorkAxisRepositoryImpl.kt`** — Rethrow CancellationException
-  - [ ] T3.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImpl.kt`, pour chaque bloc `catch (e: Exception)`, ajouter en première instruction :
+- [x] **T3 — `WorkAxisRepositoryImpl.kt`** — Rethrow CancellationException
+  - [x] T3.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImpl.kt`, pour chaque bloc `catch (e: Exception)`, ajouter en première instruction :
     ```kotlin
     if (e is CancellationException) throw e
     ```
-  - [ ] T3.2 Appliquer sur les ~8 occurrences dans ce fichier
-  - [ ] T3.3 Note : le `catch` inline dans `hasPendingSuggestions()` (`catchAll → false`) est traité séparément — ne pas oublier celui-là :
+  - [x] T3.2 Appliquer sur les ~8 occurrences dans ce fichier
+  - [x] T3.3 Note : le `catch` inline dans `hasPendingSuggestions()` (`catchAll → false`) est traité séparément — ne pas oublier celui-là :
     ```kotlin
     // Avant
     try { suggestionDao.countPending() > 0 } catch (e: Exception) { false }
@@ -77,20 +77,20 @@ Source : deferred items 1-5 p2, 1-6 p2.
     try { suggestionDao.countPending() > 0 } catch (e: Exception) { if (e is CancellationException) throw e; false }
     ```
 
-- [ ] **T4 — `CoachingRepositoryImpl.kt`** — Rethrow CancellationException
-  - [ ] T4.1 Lire le fichier `android/data/src/main/kotlin/com/secondserve/data/repository/CoachingRepositoryImpl.kt`
-  - [ ] T4.2 Identifier tous les blocs `catch (e: Exception)` et ajouter le rethrow
+- [x] **T4 — `CoachingRepositoryImpl.kt`** — Rethrow CancellationException
+  - [x] T4.1 Lire le fichier `android/data/src/main/kotlin/com/secondserve/data/repository/CoachingRepositoryImpl.kt`
+  - [x] T4.2 Identifier tous les blocs `catch (e: Exception)` et ajouter le rethrow
 
-- [ ] **T5 — `NotificationRepositoryImpl.kt`** — Rethrow CancellationException
-  - [ ] T5.1 Lire le fichier `android/data/src/main/kotlin/com/secondserve/data/repository/NotificationRepositoryImpl.kt`
-  - [ ] T5.2 Identifier tous les blocs `catch (e: Exception)` et ajouter le rethrow
+- [x] **T5 — `NotificationRepositoryImpl.kt`** — Rethrow CancellationException
+  - [x] T5.1 Lire le fichier `android/data/src/main/kotlin/com/secondserve/data/repository/NotificationRepositoryImpl.kt`
+  - [x] T5.2 Identifier tous les blocs `catch (e: Exception)` et ajouter le rethrow
 
 ---
 
 ### BLOC B — Mutex pour saveRanking() / saveProfileDetails()
 
-- [ ] **T6 — Ajouter un Mutex dans `PlayerProfileRepositoryImpl`**
-  - [ ] T6.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt`, ajouter l'import et la propriété :
+- [x] **T6 — Ajouter un Mutex dans `PlayerProfileRepositoryImpl`**
+  - [x] T6.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt`, ajouter l'import et la propriété :
     ```kotlin
     import kotlinx.coroutines.sync.Mutex
     import kotlinx.coroutines.sync.withLock
@@ -98,54 +98,16 @@ Source : deferred items 1-5 p2, 1-6 p2.
     // Dans la classe PlayerProfileRepositoryImpl :
     private val profileWriteMutex = Mutex()
     ```
-  - [ ] T6.2 Entourer le bloc read-modify-write dans `saveRanking()` avec le mutex :
-    ```kotlin
-    override suspend fun saveRanking(series: String, points: Int): AppResult<Unit> = try {
-        val result = profileWriteMutex.withLock {
-            val now = System.currentTimeMillis()
-            val current = dao.getProfile()
-            dao.upsertProfile(
-                PlayerProfileEntity(
-                    id = 1,
-                    currentSeries = series,
-                    currentPoints = points,
-                    playStyle = current?.playStyle,
-                    preferredSurfaces = current?.preferredSurfaces,
-                    coachInstruction1 = current?.coachInstruction1,
-                    coachInstruction2 = current?.coachInstruction2,
-                    coachInstruction3 = current?.coachInstruction3,
-                    updatedAt = now
-                )
-            )
-        }
-        // ... suite (appel VPS) inchangée
-    ```
-  - [ ] T6.3 Entourer le bloc read-modify-write dans `saveProfileDetails()` avec le même mutex :
-    ```kotlin
-    override suspend fun saveProfileDetails(...): AppResult<Unit> = try {
-        profileWriteMutex.withLock {
-            val now = System.currentTimeMillis()
-            val current = dao.getProfile()
-            dao.upsertProfile(
-                PlayerProfileEntity(
-                    id = 1,
-                    currentSeries = current?.currentSeries,
-                    currentPoints = current?.currentPoints,
-                    playStyle = playStyle,
-                    // ... reste des champs
-                )
-            )
-        }
-        // ... suite (appel VPS) inchangée
-    ```
+  - [x] T6.2 Entourer le bloc read-modify-write dans `saveRanking()` avec le mutex
+  - [x] T6.3 Entourer le bloc read-modify-write dans `saveProfileDetails()` avec le même mutex
 
 ---
 
 ### BLOC C — Vérification & Tests
 
-- [ ] **T7 — Lancer les tests unitaires data layer**
-  - [ ] T7.1 `./gradlew :data:testDebugUnitTest` — tous les tests doivent passer
-  - [ ] T7.2 Si des tests échouent à cause du rethrow CancellationException, vérifier que ces tests simulent des annulations de coroutines (et adapter le mock si nécessaire)
+- [x] **T7 — Lancer les tests unitaires data layer**
+  - [x] T7.1 `./gradlew :data:testDebugUnitTest` — tous les tests passent
+  - [x] T7.2 Aucun test existant n'a été cassé par les modifications
 
 ## Dev Notes
 
@@ -165,3 +127,49 @@ Source : deferred items 1-5 p2, 1-6 p2.
 
 - `1-6 p2` — `CancellationException` swallowée dans les repositories
 - `1-5 p2` — Race read-modify-write dans `saveRanking()`/`saveProfileDetails()`
+
+## Dev Agent Record
+
+### Implementation Notes
+
+**BLOC A — CancellationException rethrow (T1–T5)**
+- `SessionRepositoryImpl.kt` : 4 blocs `catch (e: Exception)` corrigés (createSession, createCompletedSession, deleteSession, closeSession)
+- `PlayerProfileRepositoryImpl.kt` : 5 blocs corrigés (getProfile, saveRanking inner VPS, saveRanking outer, saveProfileDetails inner VPS, saveProfileDetails outer)
+- `WorkAxisRepositoryImpl.kt` : 13 blocs corrigés (createWorkAxis ×2, updateWorkAxis ×2, deleteWorkAxis ×2, hasPendingSuggestions inline, generateAndSaveSuggestions ×3, acceptSuggestion, ignoreSuggestion, hasCoachingData)
+- `CoachingRepositoryImpl.kt` : 2 blocs corrigés (saveAnalysis, saveSynthesis)
+- `NotificationRepositoryImpl.kt` : aucun bloc `catch (e: Exception)` — pas de modification
+
+**BLOC B — Mutex (T6)**
+- Ajout de `private val profileWriteMutex = Mutex()` dans `PlayerProfileRepositoryImpl`
+- `saveRanking` : le bloc `getProfile()` + `saveProfileAndHistory()` est entouré d'un `profileWriteMutex.withLock { }` ; l'appel VPS reste en dehors du verrou
+- `saveProfileDetails` : le bloc `getProfile()` + `upsertProfile()` est entouré du même mutex ; l'appel VPS reste en dehors du verrou
+
+**Tests ajoutés (TDD red-green)**
+- 12 tests CancellationException (4 Session + 3 PlayerProfile + 4 WorkAxis + 2 Coaching)
+- 1 test mutex pour `saveProfileDetails reads updated profile written by saveRanking`
+- Tous les 65 tests existants + 14 nouveaux passent sans régression
+
+### Completion Notes
+
+Story TD-1 complète. Tous les AC satisfaits :
+- AC1 : CancellationException propagée dans tous les repositories
+- AC2 : saveRanking/saveProfileDetails sérialisées par Mutex
+- AC3 : 0 régression sur la suite existante
+
+## File List
+
+- `android/data/src/main/kotlin/com/secondserve/data/repository/SessionRepositoryImpl.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImpl.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImpl.kt`
+- `android/data/src/main/kotlin/com/secondserve/data/repository/CoachingRepositoryImpl.kt`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/SessionRepositoryImplTest.kt`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/PlayerProfileRepositoryImplTest.kt`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImplTest.kt`
+- `android/data/src/test/kotlin/com/secondserve/data/repository/CoachingRepositoryImplTest.kt`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+## Change Log
+
+- Ajout du rethrow `CancellationException` dans tous les `catch (e: Exception)` des 4 repositories (2026-06-24)
+- Ajout d'un `Mutex` dans `PlayerProfileRepositoryImpl` pour sérialiser `saveRanking`/`saveProfileDetails` (2026-06-24)
+- 14 nouveaux tests unitaires (TDD) — 0 régression (2026-06-24)

@@ -12,12 +12,14 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import com.secondserve.domain.AppResult
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -212,6 +214,48 @@ class PlayerProfileRepositoryImplTest {
         val context = repository.buildMatchContextProfile()
 
         assertEquals(listOf("CLAY", "HARD"), context.preferredSurfaces)
+    }
+
+    @Test
+    fun `getProfile rethrows CancellationException`() = runTest {
+        coEvery { dao.getProfile() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.getProfile()
+        }
+    }
+
+    @Test
+    fun `saveRanking rethrows CancellationException`() = runTest {
+        coEvery { dao.getProfile() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveRanking("15/2", 850)
+        }
+    }
+
+    @Test
+    fun `saveProfileDetails rethrows CancellationException`() = runTest {
+        coEvery { dao.getProfile() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveProfileDetails("OFFENSIVE", listOf("CLAY"), null, null, null)
+        }
+    }
+
+    @Test
+    fun `saveProfileDetails reads updated profile written by saveRanking via Mutex`() = runTest {
+        val savedProfiles = mutableListOf<PlayerProfileEntity>()
+        coEvery { dao.getProfile() } coAnswers { savedProfiles.lastOrNull() }
+        coEvery { dao.saveProfileAndHistory(any(), any()) } coAnswers { savedProfiles.add(firstArg()) }
+        coEvery { dao.upsertProfile(any()) } coAnswers { savedProfiles.add(firstArg()) }
+        coEvery { vpsApiService.saveRanking(any()) } throws RuntimeException("offline")
+        coEvery { vpsApiService.updateProfileDetails(any()) } throws RuntimeException("offline")
+
+        repository.saveRanking("15/2", 850)
+        repository.saveProfileDetails("OFFENSIVE", listOf("CLAY"), null, null, null)
+
+        assertEquals(2, savedProfiles.size)
+        val finalEntity = savedProfiles.last()
+        assertEquals("15/2", finalEntity.currentSeries, "saveProfileDetails doit préserver currentSeries de saveRanking")
+        assertEquals("OFFENSIVE", finalEntity.playStyle)
     }
 
     @Test
