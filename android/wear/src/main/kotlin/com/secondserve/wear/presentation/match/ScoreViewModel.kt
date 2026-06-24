@@ -51,11 +51,7 @@ class ScoreViewModel @Inject constructor(
     fun recordPoint(scorer: Player) = intent {
         if (engine.currentScore.isMatchOver) return@intent
         val event = engine.recordPoint(scorer)
-        val changeover = when (event) {
-            is EngineEvent.GameWon -> event.changeover
-            is EngineEvent.SetWon -> event.changeover
-            else -> false
-        }
+        val changeover = event.isChangeover()
         pointCount++
         val snapshot = engine.currentScore
         reduce {
@@ -136,3 +132,10 @@ data class ScoreUiState(
 )
 
 sealed class ScoreSideEffect
+
+private fun EngineEvent.isChangeover(): Boolean = when (this) {
+    is EngineEvent.PointScored -> false
+    is EngineEvent.GameWon -> this.changeover
+    is EngineEvent.SetWon -> this.changeover
+    is EngineEvent.MatchOver -> false
+}

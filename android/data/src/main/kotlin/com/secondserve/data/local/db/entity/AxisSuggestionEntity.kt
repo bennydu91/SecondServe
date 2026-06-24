@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.secondserve.domain.model.AxisSuggestion
+import com.secondserve.domain.model.AxisSuggestionStatus
 
 @Entity(tableName = "axis_suggestions")
 data class AxisSuggestionEntity(
@@ -14,7 +15,12 @@ data class AxisSuggestionEntity(
 )
 
 fun AxisSuggestionEntity.toDomain(): AxisSuggestion =
-    AxisSuggestion(id = id, title = title, status = status, generatedAt = generatedAt)
+    AxisSuggestion(
+        id = id,
+        title = title,
+        status = AxisSuggestionStatus.valueOf(status),
+        generatedAt = generatedAt
+    )
 
 fun AxisSuggestion.toEntity(): AxisSuggestionEntity =
-    AxisSuggestionEntity(id = id, title = title, status = status, generatedAt = generatedAt)
+    AxisSuggestionEntity(id = id, title = title, status = status.name, generatedAt = generatedAt)

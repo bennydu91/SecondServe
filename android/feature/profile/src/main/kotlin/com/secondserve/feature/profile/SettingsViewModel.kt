@@ -1,6 +1,7 @@
 package com.secondserve.feature.profile
 
 import androidx.lifecycle.ViewModel
+import com.secondserve.domain.notification.NotificationFrequency
 import com.secondserve.domain.repository.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,7 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     data class SettingsUiState(
-        val frequency: String = "DAILY",
+        val frequency: NotificationFrequency = NotificationFrequency.DAILY,
         val silentModeUntil: Long = 0L
     )
 
@@ -27,7 +28,7 @@ class SettingsViewModel @Inject constructor(
     )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
-    fun onFrequencyChanged(frequency: String) {
+    fun onFrequencyChanged(frequency: NotificationFrequency) {
         notificationRepository.setFrequency(frequency)
         _uiState.update { it.copy(frequency = frequency) }
     }

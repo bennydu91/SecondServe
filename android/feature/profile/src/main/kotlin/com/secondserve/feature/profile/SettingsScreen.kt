@@ -31,16 +31,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.secondserve.domain.notification.NotificationFrequency
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 private val FREQUENCY_OPTIONS = listOf(
-    "DAILY" to "Quotidien",
-    "EVERY_2_DAYS" to "Tous les 2 jours",
-    "WEEKLY" to "Hebdomadaire",
-    "DISABLED" to "Désactivé"
+    NotificationFrequency.DAILY to "Quotidien",
+    NotificationFrequency.EVERY_2_DAYS to "Tous les 2 jours",
+    NotificationFrequency.WEEKLY to "Hebdomadaire",
+    NotificationFrequency.DISABLED to "Désactivé"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

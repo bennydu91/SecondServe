@@ -1,8 +1,10 @@
 package com.secondserve.domain.repository
 
+import com.secondserve.domain.notification.NotificationFrequency
+
 interface NotificationRepository {
-    fun getFrequency(): String
-    fun setFrequency(frequency: String)
+    fun getFrequency(): NotificationFrequency
+    fun setFrequency(frequency: NotificationFrequency)
     fun getSilentModeUntil(): Long
     fun setSilentModeUntil(epochMs: Long)
 }

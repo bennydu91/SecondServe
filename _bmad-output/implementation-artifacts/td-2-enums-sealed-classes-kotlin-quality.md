@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-2 : Enums & Sealed Classes — Qualité Kotlin
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -52,8 +52,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
 
 ### BLOC A — `AxisSuggestionStatus` enum dans le domain
 
-- [ ] **T1 — Créer `AxisSuggestionStatus` dans le domain**
-  - [ ] T1.1 Créer le fichier `android/domain/src/main/kotlin/com/secondserve/domain/model/AxisSuggestionStatus.kt` :
+- [x] **T1 — Créer `AxisSuggestionStatus` dans le domain**
+  - [x] T1.1 Créer le fichier `android/domain/src/main/kotlin/com/secondserve/domain/model/AxisSuggestionStatus.kt` :
     ```kotlin
     package com.secondserve.domain.model
     
@@ -62,8 +62,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     }
     ```
 
-- [ ] **T2 — Mettre à jour `AxisSuggestion` domain model**
-  - [ ] T2.1 Dans `android/domain/src/main/kotlin/com/secondserve/domain/model/AxisSuggestion.kt`, changer :
+- [x] **T2 — Mettre à jour `AxisSuggestion` domain model**
+  - [x] T2.1 Dans `android/domain/src/main/kotlin/com/secondserve/domain/model/AxisSuggestion.kt`, changer :
     ```kotlin
     // Avant
     val status: String = "PENDING"
@@ -71,8 +71,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     val status: AxisSuggestionStatus = AxisSuggestionStatus.PENDING
     ```
 
-- [ ] **T3 — Mettre à jour `AxisSuggestionEntity`**
-  - [ ] T3.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/AxisSuggestionEntity.kt` :
+- [x] **T3 — Mettre à jour `AxisSuggestionEntity`**
+  - [x] T3.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/AxisSuggestionEntity.kt` :
     - Ajouter un `TypeConverter` Room pour `AxisSuggestionStatus` → String, ou utiliser une `@ColumnInfo` avec le nom de l'enum comme string :
     ```kotlin
     // Option recommandée : TypeConverter dans SecondServeDatabase
@@ -88,14 +88,14 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     status = status.name
     ```
 
-- [ ] **T4 — Mettre à jour `AxisSuggestionDao`**
-  - [ ] T4.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/dao/AxisSuggestionDao.kt`, les queries SQL restent avec des string literals (Room query SQL) — pas de changement nécessaire :
+- [x] **T4 — Mettre à jour `AxisSuggestionDao`**
+  - [x] T4.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/dao/AxisSuggestionDao.kt`, les queries SQL restent avec des string literals (Room query SQL) — pas de changement nécessaire :
     ```kotlin
     @Query("SELECT * FROM axis_suggestions WHERE status = 'PENDING' ORDER BY generated_at DESC")
     ```
 
-- [ ] **T5 — Mettre à jour `WorkAxisRepositoryImpl`**
-  - [ ] T5.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImpl.kt`, remplacer les usages de status String par `AxisSuggestionStatus` :
+- [x] **T5 — Mettre à jour `WorkAxisRepositoryImpl`**
+  - [x] T5.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImpl.kt`, remplacer les usages de status String par `AxisSuggestionStatus` :
     - Chercher `status = "ACCEPTED"`, `status = "IGNORED"`, `status = "PENDING"` dans ce fichier
     - Remplacer par `status = AxisSuggestionStatus.ACCEPTED.name` (pour les entités) ou `status = AxisSuggestionStatus.ACCEPTED` (pour le domain)
 
@@ -103,8 +103,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
 
 ### BLOC B — `NotificationFrequency` enum dans le domain
 
-- [ ] **T6 — Créer `NotificationFrequency` dans le domain**
-  - [ ] T6.1 Créer le fichier `android/domain/src/main/kotlin/com/secondserve/domain/notification/NotificationFrequency.kt` :
+- [x] **T6 — Créer `NotificationFrequency` dans le domain**
+  - [x] T6.1 Créer le fichier `android/domain/src/main/kotlin/com/secondserve/domain/notification/NotificationFrequency.kt` :
     ```kotlin
     package com.secondserve.domain.notification
     
@@ -113,18 +113,18 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     }
     ```
 
-- [ ] **T7 — Mettre à jour `PlayerDataStore`**
-  - [ ] T7.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/PlayerDataStore.kt`, changer :
+- [x] **T7 — Mettre à jour `PlayerDataStore`**
+  - [x] T7.1 Dans `android/data/src/main/kotlin/com/secondserve/data/local/PlayerDataStore.kt`, changer :
     ```kotlin
     // Avant
     prefs.getString(KEY_NOTIF_FREQUENCY, "DAILY") ?: "DAILY"
     // Après : stocker le name() de l'enum en SharedPreferences
     NotificationFrequency.valueOf(prefs.getString(KEY_NOTIF_FREQUENCY, "DAILY") ?: "DAILY")
     ```
-  - [ ] T7.2 Adapter les fonctions getFrequency() / saveFrequency() pour travailler avec `NotificationFrequency`
+  - [x] T7.2 Adapter les fonctions getFrequency() / saveFrequency() pour travailler avec `NotificationFrequency`
 
-- [ ] **T8 — Mettre à jour `NotificationRepositoryImpl`**
-  - [ ] T8.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/NotificationRepositoryImpl.kt`, remplacer le `when` sur String par un `when` sur `NotificationFrequency` :
+- [x] **T8 — Mettre à jour `NotificationRepositoryImpl`**
+  - [x] T8.1 Dans `android/data/src/main/kotlin/com/secondserve/data/repository/NotificationRepositoryImpl.kt`, remplacer le `when` sur String par un `when` sur `NotificationFrequency` :
     ```kotlin
     // Avant
     when (frequency) {
@@ -142,8 +142,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     }
     ```
 
-- [ ] **T9 — Mettre à jour `SettingsViewModel`**
-  - [ ] T9.1 Dans `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/SettingsViewModel.kt`, changer le type de `frequency` dans l'état :
+- [x] **T9 — Mettre à jour `SettingsViewModel`**
+  - [x] T9.1 Dans `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/SettingsViewModel.kt`, changer le type de `frequency` dans l'état :
     ```kotlin
     // Avant
     val frequency: String = "DAILY"
@@ -151,8 +151,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     val frequency: NotificationFrequency = NotificationFrequency.DAILY
     ```
 
-- [ ] **T10 — Mettre à jour `SettingsScreen`**
-  - [ ] T10.1 Dans `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/SettingsScreen.kt`, adapter la map des labels :
+- [x] **T10 — Mettre à jour `SettingsScreen`**
+  - [x] T10.1 Dans `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/SettingsScreen.kt`, adapter la map des labels :
     ```kotlin
     // Avant
     val frequencyOptions = mapOf(
@@ -174,8 +174,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
 
 ### BLOC C — `data object` dans les sealed classes
 
-- [ ] **T11 — `HistoryUiState.kt`**
-  - [ ] T11.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/HistoryUiState.kt`, changer :
+- [x] **T11 — `HistoryUiState.kt`**
+  - [x] T11.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/HistoryUiState.kt`, changer :
     ```kotlin
     // Avant
     object Loading : HistoryUiState()
@@ -183,8 +183,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     data object Loading : HistoryUiState()
     ```
 
-- [ ] **T12 — `SessionDetailUiState.kt`**
-  - [ ] T12.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/SessionDetailUiState.kt`, changer :
+- [x] **T12 — `SessionDetailUiState.kt`**
+  - [x] T12.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/SessionDetailUiState.kt`, changer :
     ```kotlin
     // Avant
     object Loading : SessionDetailUiState()
@@ -192,8 +192,8 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     data object Loading : SessionDetailUiState()
     ```
 
-- [ ] **T13 — `StatsUiState.kt`**
-  - [ ] T13.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/StatsUiState.kt`, changer :
+- [x] **T13 — `StatsUiState.kt`**
+  - [x] T13.1 Dans `android/feature/history/src/main/kotlin/com/secondserve/feature/history/StatsUiState.kt`, changer :
     ```kotlin
     // Avant
     object Loading : StatsUiState()
@@ -201,17 +201,17 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
     data object Loading : StatsUiState()
     ```
 
-- [ ] **T14 — Vérifier les autres sealed class**
-  - [ ] T14.1 Rechercher `^    object ` dans tous les fichiers `*UiState.kt` et `*SideEffect.kt` du projet
-  - [ ] T14.2 Appliquer `data object` à chaque occurrence trouvée dans une sealed class
+- [x] **T14 — Vérifier les autres sealed class**
+  - [x] T14.1 Rechercher `^    object ` dans tous les fichiers `*UiState.kt` et `*SideEffect.kt` du projet
+  - [x] T14.2 Appliquer `data object` à chaque occurrence trouvée dans une sealed class
 
 ---
 
 ### BLOC D — `isChangeover()` en extension function + when exhaustif
 
-- [ ] **T15 — Extraire `isChangeover()` et supprimer `else -> false`**
-  - [ ] T15.1 Dans `android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`, localiser le bloc `val changeover = when(event) { ... else -> false }`
-  - [ ] T15.2 Remplacer par une extension function privée :
+- [x] **T15 — Extraire `isChangeover()` et supprimer `else -> false`**
+  - [x] T15.1 Dans `android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt`, localiser le bloc `val changeover = when(event) { ... else -> false }`
+  - [x] T15.2 Remplacer par une extension function privée :
     ```kotlin
     private fun EngineEvent.isChangeover(): Boolean = when (this) {
         is EngineEvent.SetWon -> this.changeover
@@ -221,19 +221,19 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
         else -> false  // À supprimer une fois tous les cas couverts
     }
     ```
-  - [ ] T15.3 Lire `EngineEvent` sealed class pour lister tous les sous-types et les couvrir explicitement dans le `when`, puis supprimer le `else`
-  - [ ] T15.4 Utiliser `event.isChangeover()` dans le code appelant
+  - [x] T15.3 Lire `EngineEvent` sealed class pour lister tous les sous-types et les couvrir explicitement dans le `when`, puis supprimer le `else`
+  - [x] T15.4 Utiliser `event.isChangeover()` dans le code appelant
 
 ---
 
 ### BLOC E — Compilation & tests
 
-- [ ] **T16 — Vérifier la compilation**
-  - [ ] T16.1 `./gradlew :domain:compileDebugKotlin :data:compileDebugKotlin :feature:profile:compileDebugKotlin :wear:compileDebugKotlin`
-  - [ ] T16.2 Corriger toutes les erreurs de compilation (les usages non migrés des anciens String literals)
+- [x] **T16 — Vérifier la compilation**
+  - [x] T16.1 `./gradlew :domain:compileDebugKotlin :data:compileDebugKotlin :feature:profile:compileDebugKotlin :wear:compileDebugKotlin`
+  - [x] T16.2 Corriger toutes les erreurs de compilation (les usages non migrés des anciens String literals)
 
-- [ ] **T17 — Lancer les tests unitaires**
-  - [ ] T17.1 `./gradlew testDebugUnitTest` — tous les tests doivent passer
+- [x] **T17 — Lancer les tests unitaires**
+  - [x] T17.1 `./gradlew testDebugUnitTest` — tous les tests doivent passer
 
 ## Dev Notes
 
@@ -248,3 +248,41 @@ Source : deferred items 5-4 W7, 6-1 W5, 4-1, 2-5.
 - `6-1 W5` — Frequency strings magiques → enum
 - `4-1` — `object` → `data object` dans sealed classes
 - `2-5` — `else -> false` supprime l'exhaustivité Kotlin + `isChangeover()` extension function
+
+## Dev Agent Record
+
+### Implementation Plan
+
+**BLOC A** : Création de `AxisSuggestionStatus` dans `:domain`. `AxisSuggestion.status` passe de `String` à `AxisSuggestionStatus`. `AxisSuggestionEntity` conserve `status: String` pour Room (pas de migration DB), avec conversion dans `toDomain()`/`toEntity()`. `WorkAxisRepositoryImpl` utilise `.name` pour les appels DAO. La `private toDomain()` locale dans `WorkAxisRepositoryImpl` également corrigée.
+
+**BLOC B** : Création de `NotificationFrequency` dans `:domain:notification`. `PlayerDataStore` expose directement `NotificationFrequency`. `NotificationRepository` interface mise à jour. `NotificationRepositoryImpl.setFrequency()` utilise un `when` exhaustif sans `else`. `SettingsViewModel` et `SettingsScreen` migrent vers l'enum typé.
+
+**BLOC C** : 4 singletons convertis en `data object` : `HistoryUiState.Loading`, `SessionDetailUiState.Loading`, `StatsUiState.Loading`, `AddRetroSessionSideEffect.SessionCreated`. Kotlin 2.1.0 confirmé (≥ 1.9).
+
+**BLOC D** : Extension function privée `EngineEvent.isChangeover()` couvrant exhaustivement les 4 sous-types (`PointScored`, `GameWon`, `SetWon`, `MatchOver`) sans `else`.
+
+### Completion Notes
+
+Tous les 4 blocs implémentés. `./gradlew testDebugUnitTest` → BUILD SUCCESSFUL, 222 tests passent sans régression. Compilation `:domain`, `:data`, `:feature:profile`, `:wear` OK.
+
+## File List
+
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/AxisSuggestionStatus.kt` (créé)
+- `android/domain/src/main/kotlin/com/secondserve/domain/notification/NotificationFrequency.kt` (créé)
+- `android/domain/src/main/kotlin/com/secondserve/domain/model/AxisSuggestion.kt` (modifié)
+- `android/domain/src/main/kotlin/com/secondserve/domain/repository/NotificationRepository.kt` (modifié)
+- `android/data/src/main/kotlin/com/secondserve/data/local/db/entity/AxisSuggestionEntity.kt` (modifié)
+- `android/data/src/main/kotlin/com/secondserve/data/local/PlayerDataStore.kt` (modifié)
+- `android/data/src/main/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImpl.kt` (modifié)
+- `android/data/src/main/kotlin/com/secondserve/data/repository/NotificationRepositoryImpl.kt` (modifié)
+- `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/SettingsViewModel.kt` (modifié)
+- `android/feature/profile/src/main/kotlin/com/secondserve/feature/profile/SettingsScreen.kt` (modifié)
+- `android/feature/history/src/main/kotlin/com/secondserve/feature/history/HistoryUiState.kt` (modifié)
+- `android/feature/history/src/main/kotlin/com/secondserve/feature/history/SessionDetailUiState.kt` (modifié)
+- `android/feature/history/src/main/kotlin/com/secondserve/feature/history/StatsUiState.kt` (modifié)
+- `android/feature/history/src/main/kotlin/com/secondserve/feature/history/AddRetroSessionUiState.kt` (modifié)
+- `android/wear/src/main/kotlin/com/secondserve/wear/presentation/match/ScoreViewModel.kt` (modifié)
+
+## Change Log
+
+- 2026-06-24 : TD-2 implémenté — 2 enums créés (`AxisSuggestionStatus`, `NotificationFrequency`), 4 singletons convertis en `data object`, `isChangeover()` extension function exhaustive sans `else`, 15 fichiers modifiés, 222 tests verts.

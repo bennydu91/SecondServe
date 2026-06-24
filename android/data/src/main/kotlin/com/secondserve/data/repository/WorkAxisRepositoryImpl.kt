@@ -13,6 +13,7 @@ import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.api.dto.WorkAxisRequest
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.AxisSuggestion
+import com.secondserve.domain.model.AxisSuggestionStatus
 import com.secondserve.domain.model.MAX_WORK_AXES
 import com.secondserve.domain.model.WorkAxis
 import com.secondserve.domain.repository.WorkAxisRepository
@@ -128,7 +129,7 @@ class WorkAxisRepositoryImpl(
         val suggestion = suggestionDao.getById(id)
             ?: return AppResult.Error(IllegalStateException("Suggestion $id not found"))
         val result = createWorkAxis(suggestion.title)
-        if (result is AppResult.Success) suggestionDao.updateStatus(id, "ACCEPTED")
+        if (result is AppResult.Success) suggestionDao.updateStatus(id, AxisSuggestionStatus.ACCEPTED.name)
         result
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -136,7 +137,7 @@ class WorkAxisRepositoryImpl(
     }
 
     override suspend fun ignoreSuggestion(id: Long): AppResult<Unit> = try {
-        suggestionDao.updateStatus(id, "IGNORED")
+        suggestionDao.updateStatus(id, AxisSuggestionStatus.IGNORED.name)
         AppResult.Success(Unit)
     } catch (e: Exception) {
         if (e is CancellationException) throw e
@@ -173,4 +174,9 @@ Réponds UNIQUEMENT avec les titres des axes suggérés, un par ligne, en 3 à 8
 }
 
 private fun AxisSuggestionEntity.toDomain(): AxisSuggestion =
-    AxisSuggestion(id = id, title = title, status = status, generatedAt = generatedAt)
+    AxisSuggestion(
+        id = id,
+        title = title,
+        status = AxisSuggestionStatus.valueOf(status),
+        generatedAt = generatedAt
+    )

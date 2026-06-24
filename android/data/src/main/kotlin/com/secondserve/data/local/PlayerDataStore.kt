@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.secondserve.domain.notification.NotificationFrequency
 
 class PlayerDataStore(private val context: Context) {
 
@@ -34,11 +35,11 @@ class PlayerDataStore(private val context: Context) {
         prefs.edit().remove(KEY_FFT_LICENSE).apply()
     }
 
-    fun saveNotificationFrequency(frequency: String) =
-        prefs.edit().putString(KEY_NOTIF_FREQUENCY, frequency).apply()
+    fun saveNotificationFrequency(frequency: NotificationFrequency) =
+        prefs.edit().putString(KEY_NOTIF_FREQUENCY, frequency.name).apply()
 
-    fun getNotificationFrequency(): String =
-        prefs.getString(KEY_NOTIF_FREQUENCY, "DAILY") ?: "DAILY"
+    fun getNotificationFrequency(): NotificationFrequency =
+        NotificationFrequency.valueOf(prefs.getString(KEY_NOTIF_FREQUENCY, "DAILY") ?: "DAILY")
 
     fun saveSilentModeUntil(epochMs: Long) =
         prefs.edit().putLong(KEY_SILENT_MODE_UNTIL, epochMs).apply()

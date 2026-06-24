@@ -25,6 +25,6 @@ data class AddRetroSessionUiState(
 }
 
 sealed class AddRetroSessionSideEffect {
-    object SessionCreated : AddRetroSessionSideEffect()
+    data object SessionCreated : AddRetroSessionSideEffect()
     data class ShowError(val message: String) : AddRetroSessionSideEffect()
 }
