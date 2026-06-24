@@ -35,9 +35,10 @@ story_key: '' # set at runtime when discovered from sprint status
 
    **Tier 3 — Sprint tracking.**
    Look for a sprint status file (`*sprint-status*`) in `{implementation_artifacts}` or `{planning_artifacts}`. If found, scan for stories with status `review`:
-   - **Exactly one `review` story:** Set `{story_key}` to the story's key (e.g., `1-2-user-auth`). Suggest it: "I found story <story-id> in `review` status. Would you like to review its changes? [Y] Yes / [N] No, let me choose". If confirmed, use the story context to determine the diff source (branch name derived from story slug, or uncommitted changes). If declined, clear `{story_key}` and fall through.
+   - **Exactly one `review` story:** Set `{story_key}` to the story's key (e.g., `1-2-user-auth`). Announce: "Auto-sélection de la story `<story-id>` (statut: review)." Then immediately use the story context to determine the diff source (uncommitted changes). Do NOT ask for confirmation — proceed directly to instruction 3.
    - **Multiple `review` stories:** Present them as numbered options alongside a manual choice option. Wait for user selection. If a story is selected, set `{story_key}` and use its context to determine the diff source. If manual choice is selected, clear `{story_key}` and fall through.
-   - **None:** Fall through.
+   - **None:** Look for the last story with status `done` (the one with the highest story number across all epics). Set `{story_key}` to that story's key. Announce: "Aucune story en `review` — auto-sélection de la dernière story complétée : `<story-id>`." Proceed directly to instruction 3.
+   - If no `review` and no `done` story is found: Fall through.
 
    **Tier 4 — Current git state.**
    If version control is unavailable, skip to Tier 5. Otherwise, check the current branch and HEAD. If the branch is not `main` (or the default branch), confirm: "I see HEAD is `<short-sha>` on `<branch>` — do you want to review this branch's changes?" If confirmed, treat as a branch diff against `main`. If declined, fall through.
@@ -65,6 +66,7 @@ story_key: '' # set at runtime when discovered from sprint status
 
 4. **Set the spec context.**
    - If `{spec_file}` is already set (from Tier 1 or Tier 2): verify the file exists and is readable, then set `{review_mode}` = `"full"`.
+   - If `{story_key}` is set (auto-detected from Tier 3): look for a story file at `{implementation_artifacts}/{story_key}.md`. If it exists, set `{spec_file}` to that path and `{review_mode}` = `"full"`. Do NOT ask the user — proceed automatically.
    - Otherwise, ask the user: **Is there a spec or story file that provides context for these changes?**
      - If yes: set `{spec_file}` to the path provided, verify the file exists and is readable, then set `{review_mode}` = `"full"`.
      - If no: set `{review_mode}` = `"no-spec"`.
