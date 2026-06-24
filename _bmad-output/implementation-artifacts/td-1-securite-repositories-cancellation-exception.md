@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-1 : Sécurité des Repositories — CancellationException & race condition profil
 
-Status: review
+Status: done
 
 ## Story
 
@@ -167,6 +167,22 @@ Story TD-1 complète. Tous les AC satisfaits :
 - `android/data/src/test/kotlin/com/secondserve/data/repository/WorkAxisRepositoryImplTest.kt`
 - `android/data/src/test/kotlin/com/secondserve/data/repository/CoachingRepositoryImplTest.kt`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+### Review Findings
+
+#### Patch
+- [x] [Review][Patch] Tests CE manquants dans WorkAxisRepositoryImpl : acceptSuggestion outer catch, generateAndSaveSuggestions (×3 catch sites), hasCoachingData, hasPendingSuggestions inline — 6 catch blocks patché mais non couverts [WorkAxisRepositoryImpl.kt + WorkAxisRepositoryImplTest.kt]
+- [x] [Review][Patch] Tests CE manquants dans PlayerProfileRepositoryImpl : VPS inner catch de saveRanking, VPS inner catch de saveProfileDetails, dao.saveProfileAndHistory à l'intérieur du withLock, dao.upsertProfile à l'intérieur du withLock — 4 paths non couverts [PlayerProfileRepositoryImpl.kt + PlayerProfileRepositoryImplTest.kt]
+- [x] [Review][Patch] Vérifier que PlayerProfileRepositoryImpl est bien `@Singleton` dans le graphe Hilt — confirmé @Singleton dans DataModule.kt, dismiss [PlayerProfileRepositoryImpl.kt]
+
+#### Defer
+- [x] [Review][Defer] Mutex test séquentiel — `saveProfileDetails reads updated profile written by saveRanking via Mutex` ne teste pas la concurrence réelle [PlayerProfileRepositoryImplTest.kt] — deferred, complexité test concurrents
+- [x] [Review][Defer] `buildMatchContextProfile()` propage les exceptions DAO sans try/catch — incohérence avec le pattern AppResult du reste de la classe [PlayerProfileRepositoryImpl.kt] — deferred, pré-existant
+- [x] [Review][Defer] `saveAnalysis` branche IGNORE : retourne `entity` avec `id=0` si `getBySessionId` renvoie null après un conflit [CoachingRepositoryImpl.kt] — deferred, pré-existant
+- [x] [Review][Defer] `deleteSession` non-atomique : notification annulée même si `syncQueueDao.insert` échoue [SessionRepositoryImpl.kt] — deferred, pré-existant
+- [x] [Review][Defer] `acceptSuggestion` — race TOCTOU sur `MAX_WORK_AXES` sans Mutex partagé avec `createWorkAxis` [WorkAxisRepositoryImpl.kt] — deferred, pré-existant
+- [x] [Review][Defer] `CoachingRepositoryImpl` — `getCachedAdvice`, `saveAdvice`, `markMatchEntriesStale` etc. sans try/catch, incohérents avec le pattern AppResult [CoachingRepositoryImpl.kt] — deferred, pré-existant
+- [x] [Review][Defer] `generateAndSaveSuggestions` — `getAllTitles` retourne `emptyList()` sur erreur DAO non-CE, suggestions générées sans contexte des axes existants [WorkAxisRepositoryImpl.kt] — deferred, pré-existant
 
 ## Change Log
 

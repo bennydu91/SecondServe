@@ -280,6 +280,16 @@
 - **W7 — Aucune contrainte réseau sur le WorkRequest** — `NotificationSchedulerImpl` ne set pas `NetworkType.CONNECTED`. Fonctionnellement correct (le fallback gère l'absence réseau), mais le spec dit "si réseau disponible → VPS". Ajouter la contrainte supprimerait les notifications offline. [`NotificationSchedulerImpl.kt`]
 - **W8 — Test réseau indisponible non distinct** — Le cas 5 (`AppResult.Error`) couvre le comportement en pratique. Pas de test simulant une vraie absence réseau (IOException). [`NotificationWorkerTest.kt`]
 
+## Deferred from: code review of td-1-securite-repositories-cancellation-exception (2026-06-24)
+
+- **W1 — Mutex test séquentiel** — `saveProfileDetails reads updated profile written by saveRanking via Mutex` ne teste pas la concurrence réelle (deux coroutines en parallèle). L'implémentation est correcte (Mutex kotlinx.coroutines est prouvé), mais une régression future ne serait pas détectée. [`PlayerProfileRepositoryImplTest.kt`]
+- **W2 — `buildMatchContextProfile()` propage les exceptions DAO sans try/catch** — Incohérence avec le pattern AppResult du reste de la classe. Un crash DAO ici est non-wrappé, contrairement à `getProfile()` etc. Pre-existing. [`PlayerProfileRepositoryImpl.kt`]
+- **W3 — `saveAnalysis` branche IGNORE : retourne entity avec id=0** — Si `insert` retourne `-1L` (conflit IGNORE) et `getBySessionId` retourne null (race/incohérence DAO), le caller reçoit `AppResult.Success` avec un domain object `id=0`. Pre-existing. [`CoachingRepositoryImpl.kt`]
+- **W4 — `deleteSession` non-atomique** — `notificationScheduler.cancelPreMatchReminder` est appelé avant `syncQueueDao.insert`. Si l'insert échoue, la notification est annulée mais la fonction retourne `AppResult.Error`. Pre-existing. [`SessionRepositoryImpl.kt`]
+- **W5 — `acceptSuggestion` race TOCTOU sur MAX_WORK_AXES** — Deux appels concurrents peuvent tous deux passer le guard `dao.count() >= MAX_WORK_AXES` et insérer, dépassant la limite. Pas de Mutex partagé avec `createWorkAxis`. Pre-existing. [`WorkAxisRepositoryImpl.kt`]
+- **W6 — `CoachingRepositoryImpl` fonctions sans try/catch** — `getCachedAdvice`, `saveAdvice`, `markMatchEntriesStale`, `getAdvicesForSession`, `getAnalysisForSession`, `getLatestSynthesis` : exceptions DAO non wrappées en AppResult, incohérent avec `saveAnalysis`/`saveSynthesis`. Pre-existing. [`CoachingRepositoryImpl.kt`]
+- **W7 — `generateAndSaveSuggestions` : fallback emptyList() si getAllTitles échoue** — Sur erreur DAO non-CE, `currentAxes` = `emptyList()`, le prompt est généré sans les axes existants, risque de suggestions dupliquées. Pre-existing. [`WorkAxisRepositoryImpl.kt`]
+
 ## Deferred from: code review of 6-2-rappel-pre-match-apscheduler-vps (2026-06-24)
 
 - **W9 — `getPlannedSessions()` DAO sans consommateur** — Query Room ajoutée dans le DAO mais aucun appelant dans cette story. Code mort, probablement prévu pour une future story de reprise/sync local. [`SessionDao.kt`]

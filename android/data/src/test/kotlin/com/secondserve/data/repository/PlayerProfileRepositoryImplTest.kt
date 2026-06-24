@@ -259,6 +259,44 @@ class PlayerProfileRepositoryImplTest {
     }
 
     @Test
+    fun `saveRanking rethrows CancellationException on saveProfileAndHistory inside lock`() = runTest {
+        coEvery { dao.getProfile() } returns null
+        coEvery { dao.saveProfileAndHistory(any(), any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveRanking("15/2", 850)
+        }
+    }
+
+    @Test
+    fun `saveProfileDetails rethrows CancellationException on upsertProfile inside lock`() = runTest {
+        coEvery { dao.getProfile() } returns null
+        coEvery { dao.upsertProfile(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveProfileDetails("OFFENSIVE", listOf("CLAY"), null, null, null)
+        }
+    }
+
+    @Test
+    fun `saveRanking rethrows CancellationException on VPS call`() = runTest {
+        coEvery { dao.getProfile() } returns null
+        coEvery { dao.saveProfileAndHistory(any(), any()) } returns Unit
+        coEvery { vpsApiService.saveRanking(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveRanking("15/2", 850)
+        }
+    }
+
+    @Test
+    fun `saveProfileDetails rethrows CancellationException on VPS call`() = runTest {
+        coEvery { dao.getProfile() } returns null
+        coEvery { dao.upsertProfile(any()) } returns Unit
+        coEvery { vpsApiService.updateProfileDetails(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.saveProfileDetails("OFFENSIVE", listOf("CLAY"), null, null, null)
+        }
+    }
+
+    @Test
     fun `observeMatchSessionCount emits 0`() = runTest {
         repository.observeMatchSessionCount().test {
             assertEquals(0, awaitItem())

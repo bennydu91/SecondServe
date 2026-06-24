@@ -15,11 +15,13 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -170,6 +172,60 @@ class WorkAxisSuggestionsTest {
         assertEquals("Revers long de ligne", insertedSlot.captured[0].title)
         assertEquals("Service kicker", insertedSlot.captured[1].title)
         assertEquals("Montée au filet", insertedSlot.captured[2].title)
+    }
+
+    @Test
+    fun `hasPendingSuggestions rethrows CancellationException`() = runTest {
+        coEvery { suggestionDao.countPending() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.hasPendingSuggestions()
+        }
+    }
+
+    @Test
+    fun `generateAndSaveSuggestions rethrows CancellationException on synthesisDao read`() = runTest {
+        coEvery { synthesisDao.getLatest() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.generateAndSaveSuggestions()
+        }
+    }
+
+    @Test
+    fun `generateAndSaveSuggestions rethrows CancellationException on getAllTitles`() = runTest {
+        val synthesis = CoachingSynthesisEntity(id = 1L, content = "Contenu.", sessionCount = 1, generatedAt = 1000L)
+        coEvery { synthesisDao.getLatest() } returns synthesis
+        coEvery { dao.getAllTitles() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.generateAndSaveSuggestions()
+        }
+    }
+
+    @Test
+    fun `generateAndSaveSuggestions rethrows CancellationException on insertAll`() = runTest {
+        val synthesis = CoachingSynthesisEntity(id = 1L, content = "Contenu.", sessionCount = 1, generatedAt = 1000L)
+        coEvery { synthesisDao.getLatest() } returns synthesis
+        coEvery { dao.getAllTitles() } returns emptyList()
+        coEvery { vpsMistralEngine.generate(any()) } returns AppResult.Success("Travail du revers\nMontée au filet")
+        coEvery { suggestionDao.insertAll(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.generateAndSaveSuggestions()
+        }
+    }
+
+    @Test
+    fun `acceptSuggestion rethrows CancellationException`() = runTest {
+        coEvery { suggestionDao.getById(any()) } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.acceptSuggestion(1L)
+        }
+    }
+
+    @Test
+    fun `hasCoachingData rethrows CancellationException`() = runTest {
+        coEvery { synthesisDao.getLatest() } throws CancellationException("cancelled")
+        assertFailsWith<CancellationException> {
+            repository.hasCoachingData()
+        }
     }
 
     @Test

@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-10
-last_updated: 2026-06-24 (TD-1 review)
+last_updated: 2026-06-24 (TD-1 done)
 project: SecondServe
 project_key: NOKEY
 tracking_system: file-system
@@ -92,7 +92,7 @@ development_status:
   epic-6-retrospective: optional
 
   # ─── Sprint Technique : Dette Technique Post-V1 ─────────────────────────────
-  td-1-securite-repositories-cancellation-exception: review
+  td-1-securite-repositories-cancellation-exception: done
   td-2-enums-sealed-classes-kotlin-quality: ready-for-dev
   td-3-couverture-tests-scoreviewmodel-migrations: ready-for-dev
   td-4-integrite-donnees-timeout-scoretextsync: ready-for-dev
