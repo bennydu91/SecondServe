@@ -4,7 +4,7 @@ baseline_commit: 4d97181
 
 # Story TD-3 : Couverture Tests — ScoreViewModel & Migrations Room
 
-Status: review
+Status: done
 
 ## Story
 
@@ -362,6 +362,20 @@ Aucun bug — tous les tests ont passé au premier essai grâce à l'analyse pr�
 - feat(td-3): ajout des tests ScoreViewModel manquants (sendGameOver/undo, sendGameOver/MatchOver, tie-break 7-6) (2026-06-24)
 - feat(td-3): création SecondServeDatabaseMigrationTest avec 7 tests de migration Room v5→v11 (2026-06-24)
 - chore(td-3): ajout dépendance room-testing + testInstrumentationRunner dans module data (2026-06-24)
+
+## Review Findings
+
+### Patch
+- [x] [Review][Patch] Shared `TEST_DB` constant — interférence entre tests si un test crash mi-migration [android/data/src/androidTest/kotlin/com/secondserve/data/SecondServeDatabaseMigrationTest.kt:15]
+- [x] [Review][Patch] `stateFlow.first { == ZERO }` sans guard `&& !it.canUndo` dans le test undo — dismissé après vérification : le undo stack contient encore les 4 points du jeu 1, le guard était inapplicable [android/wear/src/test/kotlin/com/secondserve/wear/presentation/match/ScoreViewModelTest.kt:~257]
+- [x] [Review][Patch] `createViewModel()` sans `ARG_MATCH_FORMAT` explicite dans le test MatchOver — fragile si le format par défaut change [android/wear/src/test/kotlin/com/secondserve/wear/presentation/match/ScoreViewModelTest.kt:~266]
+
+### Defer (traités)
+- [x] [Review][Defer→Patch] Migrations 1→4 non testées / `migrateAll` part de v5 — bloqué : schemas JSON v1-v4 absents, impossible sans régénération
+- [x] [Review][Defer→Patch] Aucun test de preservation de données dans les migrations (rows) — corrigé : ajout de `migrate6To7PreservesSessionRows` et `migrate10To11PreservesSessionRows`
+- [x] [Review][Defer→Patch] `Thread.sleep(50)` flakiness dans les tests coroutines — bloqué : contrainte architecturale Orbit/Dispatcher documentée en tearDown
+- [x] [Review][Defer→Patch] `stateFlow.first` sans timeout — dismissé : `runTest` gère le timeout ; ajout incohérent avec les 17 usages baseline
+- [x] [Review][Defer→Patch] Test tie-break joué à 7-0 seulement — corrigé : ajout du test `game_over sent when set ends with contested tie-break (A wins 7-5 in tie-break points)`
 
 ## Deferred items adressés
 

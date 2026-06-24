@@ -1,24 +1,32 @@
 package com.secondserve.data
 
+import android.database.Cursor
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.secondserve.data.local.db.SecondServeDatabase
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class SecondServeDatabaseMigrationTest {
 
-    private val TEST_DB = "migration-test"
+    @get:Rule(order = 0)
+    val testName: TestName = TestName()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val helper: MigrationTestHelper = MigrationTestHelper(
         InstrumentationRegistry.getInstrumentation(),
         SecondServeDatabase::class.java
     )
+
+    private val TEST_DB get() = "migration-test-${testName.methodName}"
 
     @Test
     @Throws(IOException::class)
@@ -93,5 +101,37 @@ class SecondServeDatabaseMigrationTest {
             SecondServeDatabase.MIGRATION_9_10,
             SecondServeDatabase.MIGRATION_10_11
         )
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun migrate6To7PreservesSessionRows() {
+        helper.createDatabase(TEST_DB, 6).apply {
+            execSQL("""INSERT INTO sessions (id, surface, match_format, third_set_rule, status, session_type, created_at, updated_at)
+                       VALUES (1, 'CLAY', 'BEST_OF_3', 'FULL_ADVANTAGE', 'COMPLETED', 'MATCH', 1000, 2000)""")
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(TEST_DB, 7, true, SecondServeDatabase.MIGRATION_6_7)
+        (db.query("SELECT id, score_text FROM sessions WHERE id = 1", emptyArray<Any?>()) as Cursor).use {
+            assertTrue(it.moveToFirst())
+            assertEquals(1L, it.getLong(it.getColumnIndexOrThrow("id")))
+            assertNull(it.getString(it.getColumnIndexOrThrow("score_text")))
+        }
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun migrate10To11PreservesSessionRows() {
+        helper.createDatabase(TEST_DB, 10).apply {
+            execSQL("""INSERT INTO sessions (id, surface, match_format, third_set_rule, status, session_type, created_at, updated_at)
+                       VALUES (1, 'HARD', 'BEST_OF_1', 'MATCH_TIE_BREAK', 'IN_PROGRESS', 'MATCH', 3000, 4000)""")
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(TEST_DB, 11, true, SecondServeDatabase.MIGRATION_10_11)
+        (db.query("SELECT id, scheduled_at FROM sessions WHERE id = 1", emptyArray<Any?>()) as Cursor).use {
+            assertTrue(it.moveToFirst())
+            assertEquals(1L, it.getLong(it.getColumnIndexOrThrow("id")))
+            assertTrue(it.isNull(it.getColumnIndexOrThrow("scheduled_at")))
+        }
     }
 }

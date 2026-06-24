@@ -264,7 +264,11 @@ class ScoreViewModelTest {
 
     @Test
     fun `sendGameOver NOT called when match is over (MatchOver event)`() = runTest {
-        val vm = createViewModel()
+        val vm = createViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_3.name)
+            )
+        )
         // Set 1: A wins 6-0 (changeovers at games 1,3,5 = 3)
         repeat(6 * 4) { vm.recordPoint(Player.A) }
         vm.container.stateFlow.first { it.score.completedSets.size == 1 }
@@ -303,6 +307,37 @@ class ScoreViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // 6 changeovers on regular games (totals 1,3,5,7,9,11) + 1 on tie-break = 7
+        coVerify(exactly = 7) { dataLayerClient.sendGameOver(any()) }
+    }
+
+    @Test
+    fun `game_over sent when set ends with contested tie-break (A wins 7-5 in tie-break points)`() = runTest {
+        val vm = createViewModel()
+        // Bring score to 6-6 by alternating games (6 changeovers at odd totals 1,3,5,7,9,11)
+        repeat(4) { vm.recordPoint(Player.A) } // 1-0, total=1 (changeover)
+        repeat(4) { vm.recordPoint(Player.B) } // 1-1, total=2
+        repeat(4) { vm.recordPoint(Player.A) } // 2-1, total=3 (changeover)
+        repeat(4) { vm.recordPoint(Player.B) } // 2-2, total=4
+        repeat(4) { vm.recordPoint(Player.A) } // 3-2, total=5 (changeover)
+        repeat(4) { vm.recordPoint(Player.B) } // 3-3, total=6
+        repeat(4) { vm.recordPoint(Player.A) } // 4-3, total=7 (changeover)
+        repeat(4) { vm.recordPoint(Player.B) } // 4-4, total=8
+        repeat(4) { vm.recordPoint(Player.A) } // 5-4, total=9 (changeover)
+        repeat(4) { vm.recordPoint(Player.B) } // 5-5, total=10
+        repeat(4) { vm.recordPoint(Player.A) } // 6-5, total=11 (changeover)
+        repeat(4) { vm.recordPoint(Player.B) } // 6-6 → tie-break, total=12
+        // Contested tie-break: A and B alternate 5 rounds (5-5), then A wins 2 more → 7-5
+        repeat(5) {
+            vm.recordPoint(Player.A)
+            vm.recordPoint(Player.B)
+        }
+        vm.recordPoint(Player.A) // A=6, B=5
+        vm.recordPoint(Player.A) // A=7, B=5 → 2-point lead → awardTieBreakGame → SetWon(changeover=true)
+        vm.container.stateFlow.first { it.score.completedSets.size == 1 }
+        Thread.sleep(50)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Same count as uncontested: 6 (regular games) + 1 (tie-break) = 7
         coVerify(exactly = 7) { dataLayerClient.sendGameOver(any()) }
     }
 
