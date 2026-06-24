@@ -172,6 +172,8 @@ private fun SessionItem(session: Session, onClick: () -> Unit) {
 private fun Session.statusBadge(): String? = when (status) {
     SessionStatus.ACTIVE -> "En cours"
     SessionStatus.INTERRUPTED -> "Interrompue"
+    SessionStatus.PLANNED -> "Planifié"
+    SessionStatus.CANCELLED -> "Annulé"
     SessionStatus.COMPLETED -> null
 }
 
