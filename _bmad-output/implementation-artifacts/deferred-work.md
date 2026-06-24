@@ -279,3 +279,8 @@
 - **W6 — Crash init SettingsViewModel** — `notificationRepository.getFrequency()` et `getSilentModeUntil()` appelés dans le constructeur. Si EncryptedSharedPreferences throw au premier déchiffrement, le ViewModel crash. [`SettingsViewModel.kt`]
 - **W7 — Aucune contrainte réseau sur le WorkRequest** — `NotificationSchedulerImpl` ne set pas `NetworkType.CONNECTED`. Fonctionnellement correct (le fallback gère l'absence réseau), mais le spec dit "si réseau disponible → VPS". Ajouter la contrainte supprimerait les notifications offline. [`NotificationSchedulerImpl.kt`]
 - **W8 — Test réseau indisponible non distinct** — Le cas 5 (`AppResult.Error`) couvre le comportement en pratique. Pas de test simulant une vraie absence réseau (IOException). [`NotificationWorkerTest.kt`]
+
+## Deferred from: code review of 6-2-rappel-pre-match-apscheduler-vps (2026-06-24)
+
+- **W9 — `getPlannedSessions()` DAO sans consommateur** — Query Room ajoutée dans le DAO mais aucun appelant dans cette story. Code mort, probablement prévu pour une future story de reprise/sync local. [`SessionDao.kt`]
+- **W10 — Contrainte non-vide sur `pending_notifications.content` absente au niveau DB** — Aucune contrainte CHECK ou NOT NULL équivalente pour empêcher un content vide. Garanti uniquement par la logique applicative (Mistral + guard `takeIf { isNotBlank() }`). [`backend/app/features/notifications/models.py`]

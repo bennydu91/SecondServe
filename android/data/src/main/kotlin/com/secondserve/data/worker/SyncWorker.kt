@@ -27,13 +27,15 @@ class SyncWorker @AssistedInject constructor(
         val pending = syncQueueDao.getPending()
         if (pending.isEmpty()) return Result.success()
 
-        val sessionIds = pending
-            .filter { it.entityType == "SESSION" }
-            .map { it.entityId }
-            .distinct()
+        val sessionPending = pending.filter { it.entityType == "SESSION" }
+        val upsertPending = sessionPending.filter { it.operation == "UPSERT" }
+        val deletePending = sessionPending.filter { it.operation == "DELETE" }
+
+        val upsertIds = upsertPending.map { it.entityId }.distinct()
+        val deleteIds = deletePending.map { it.entityId }.distinct()
 
         // Sépare sessions sérialisables des sessions corrompues (erreur de données permanente)
-        val dtoBySessionId = sessionIds.associateWith { id ->
+        val dtoBySessionId = upsertIds.associateWith { id ->
             sessionDao.getById(id)?.let { entity ->
                 runCatching { entity.toDomain().toSyncDto() }.getOrElse { e ->
                     Timber.e(e, "SyncWorker: cannot serialize session %d — marking FAILED", id)
@@ -43,16 +45,17 @@ class SyncWorker @AssistedInject constructor(
         }
 
         val unserializableIds = dtoBySessionId.filterValues { it == null }.keys
-        pending.filter { it.entityId in unserializableIds }.forEach { syncQueueDao.markFailed(it.id) }
+        upsertPending.filter { it.entityId in unserializableIds }.forEach { syncQueueDao.markFailed(it.id) }
 
         val sessionDtos = dtoBySessionId.values.filterNotNull()
-        if (sessionDtos.isEmpty()) return Result.success()
+        if (sessionDtos.isEmpty() && deleteIds.isEmpty()) return Result.success()
 
         return try {
-            vpsApiService.syncPush(SyncPushRequest(sessions = sessionDtos))
+            vpsApiService.syncPush(SyncPushRequest(sessions = sessionDtos, deletedSessionIds = deleteIds))
             val syncedIds = dtoBySessionId.filterValues { it != null }.keys
-            pending.filter { it.entityId in syncedIds }.forEach { syncQueueDao.markDone(it.id) }
-            Timber.d("SyncWorker: %d sessions synced", sessionDtos.size)
+            upsertPending.filter { it.entityId in syncedIds }.forEach { syncQueueDao.markDone(it.id) }
+            deletePending.forEach { syncQueueDao.markDone(it.id) }
+            Timber.d("SyncWorker: %d sessions synced, %d deleted", sessionDtos.size, deleteIds.size)
             Result.success()
         } catch (e: Exception) {
             Timber.e(e, "SyncWorker: push failed — will retry")

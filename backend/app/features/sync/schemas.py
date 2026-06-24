@@ -22,6 +22,7 @@ class SyncSessionDto(BaseModel):
 
 class SyncPushRequest(BaseModel):
     sessions: list[SyncSessionDto]
+    deleted_session_ids: list[int] = []
 
 
 class SyncPushResponse(BaseModel):

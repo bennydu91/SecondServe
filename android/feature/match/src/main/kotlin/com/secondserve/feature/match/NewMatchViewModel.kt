@@ -122,7 +122,7 @@ data class NewMatchUiState(
     val canStartMatch: Boolean get() =
         selectedSurface != null && selectedMatchFormat != null &&
         (selectedMatchFormat == MatchFormat.BEST_OF_1 || selectedThirdSetRule != null) &&
-        (if (isScheduled) scheduledAt != null && scheduledAt > System.currentTimeMillis() else true)
+        (if (isScheduled) scheduledAt != null && scheduledAt > System.currentTimeMillis() + 60_000L else true)
 }
 
 sealed class NewMatchSideEffect {

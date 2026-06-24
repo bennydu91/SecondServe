@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.ListenableWorker
 import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
+import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.remote.api.VpsApiService
@@ -25,6 +26,7 @@ class PreMatchReminderWorkerTest {
     private lateinit var playerProfileDao: PlayerProfileDao
     private lateinit var workAxisDao: WorkAxisDao
     private lateinit var playerDataStore: PlayerDataStore
+    private lateinit var sessionDao: SessionDao
 
     @BeforeEach
     fun setup() {
@@ -32,6 +34,7 @@ class PreMatchReminderWorkerTest {
         playerProfileDao = mockk()
         workAxisDao = mockk()
         playerDataStore = mockk(relaxed = true)
+        sessionDao = mockk(relaxed = true)
     }
 
     @AfterEach
@@ -50,6 +53,7 @@ class PreMatchReminderWorkerTest {
             playerProfileDao = playerProfileDao,
             workAxisDao = workAxisDao,
             playerDataStore = playerDataStore,
+            sessionDao = sessionDao,
         )
     }
 

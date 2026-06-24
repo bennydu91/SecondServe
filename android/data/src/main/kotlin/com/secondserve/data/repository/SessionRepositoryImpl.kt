@@ -99,7 +99,13 @@ class SessionRepositoryImpl @Inject constructor(
     override suspend fun deleteSession(sessionId: Long): AppResult<Unit> = try {
         dao.deleteById(sessionId)
         notificationScheduler.cancelPreMatchReminder(sessionId)
-        Timber.d("SessionRepository: session %d supprimée + reminder annulé", sessionId)
+        syncQueueDao.insert(SyncQueueEntity(
+            entityType = SyncQueueEntity.ENTITY_TYPE_SESSION,
+            entityId = sessionId,
+            operation = SyncQueueEntity.OPERATION_DELETE,
+            createdAt = System.currentTimeMillis()
+        ))
+        Timber.d("SessionRepository: session %d supprimée + reminder annulé + sync DELETE enqueued", sessionId)
         AppResult.Success(Unit)
     } catch (e: Exception) {
         Timber.e(e, "SessionRepository: deleteSession failed for id=%d", sessionId)
@@ -132,6 +138,9 @@ class SessionRepositoryImpl @Inject constructor(
                 operation = SyncQueueEntity.OPERATION_UPSERT,
                 createdAt = now
             ))
+        }
+        if (existing.status == "PLANNED") {
+            notificationScheduler.cancelPreMatchReminder(sessionId)
         }
         Timber.d("SessionRepository: session %d closed, SyncQueue entry created", sessionId)
         AppResult.Success(Unit)

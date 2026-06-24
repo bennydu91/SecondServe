@@ -8,6 +8,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.secondserve.domain.notification.NotificationScheduler
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 class NotificationSchedulerImpl(private val context: Context) : NotificationScheduler {
@@ -20,7 +21,10 @@ class NotificationSchedulerImpl(private val context: Context) : NotificationSche
 
     override fun schedulePreMatchReminder(sessionId: Long, triggerAtMs: Long) {
         val delayMs = triggerAtMs - System.currentTimeMillis()
-        if (delayMs <= 0L) return
+        if (delayMs <= 0L) {
+            Timber.w("schedulePreMatchReminder: délai négatif pour session %d (triggerAt=%d) — reminder ignoré", sessionId, triggerAtMs)
+            return
+        }
         val data = workDataOf(PreMatchReminderWorker.KEY_SESSION_ID to sessionId)
         val request = OneTimeWorkRequestBuilder<PreMatchReminderWorker>()
             .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)

@@ -4,7 +4,7 @@ baseline_commit: be128e2
 
 # Story 6.2 : Rappel pré-match & APScheduler VPS
 
-Status: review
+Status: done
 
 ## Story
 
@@ -792,6 +792,31 @@ So that I arrive mentally prepared with relevant tactical focus points.
     - **2 cas :**
       1. `test_get_pending_returns_content` — insérer une `PendingNotificationModel` en DB → GET retourne le contenu
       2. `test_get_pending_returns_404_when_absent` — GET sans entrée DB → HTTP 404
+
+---
+
+### Review Findings
+
+- [x] [Review][Patch] Élargir la fenêtre APScheduler de `[now+1h30, now+4h]` à `[now+30min, now+4h]` — garantit que le contenu est généré avant le déclenchement du worker pour les matches planifiés à court terme [backend/app/features/notifications/service.py:LOOKAHEAD_MIN_SEC]
+
+- [x] [Review][Patch] VPS `_build_prompt()` ne charge pas le profil joueur, les axes de travail ni l'historique récent — la notification VPS ne peut pas satisfaire l'AC "au moins 1 référence spécifique au profil" [backend/app/features/notifications/service.py:57-70]
+- [x] [Review][Patch] `closeSession` (PLANNED→ACTIVE) ne cancel pas le WorkManager reminder — reminder déclenche pendant le match actif [android/.../SessionRepositoryImpl.kt:closeSession]
+- [x] [Review][Patch] `GET /pending` ne filtre pas les notifications expirées (`expires_at` stocké mais jamais vérifié) — contenu périmé servi indéfiniment [backend/app/api/v1/notifications.py:17-28]
+- [x] [Review][Patch] `deleteSession` n'envoie pas de sync-delete au VPS — row `pending_notifications` orpheline sur VPS, APScheduler peut re-générer le contenu [android/.../SessionRepositoryImpl.kt:96-107]
+- [x] [Review][Patch] `NOTIFICATION_ID = 1002` fixe — collision si 2 sessions planifiées déclenchent simultanément, la seconde écrase la première [PreMatchReminderWorker.kt:99]
+- [x] [Review][Patch] `delayMs <= 0L` → retour silencieux si match dans < 2h — aucun log, aucune compensation, aucun retour au ViewModel [NotificationSchedulerImpl.kt:21-23]
+- [x] [Review][Patch] Sync upsert ne met pas à jour `scheduled_at` pour les sessions existantes côté VPS — session reprogrammée jamais reprise par APScheduler [backend/app/features/sync/service.py:existing branch]
+- [x] [Review][Patch] `db.flush()` hors du `try/except` par session dans `generate_pending_for_upcoming()` — échec Mistral sur session B peut corrompre le batch pour session A [backend/app/features/notifications/service.py:653]
+- [x] [Review][Patch] `buildFallback()` ne contient pas l'adversaire (`opponent`) — session non accessible au worker, AC "adversaire (si renseigné)" non satisfait en mode offline [PreMatchReminderWorker.kt:56-70]
+- [x] [Review][Patch] `deleteSession` dans `SessionDetailViewModel` swallow erreur sans retour utilisateur — WorkRequest peut rester actif si la suppression échoue [SessionDetailViewModel.kt:deleteSession]
+- [x] [Review][Patch] VPS HTTP 404 indistinguishable d'une erreur réseau dans `fetchVpsContentOrFallback()` — fallback définitif immédiat sans retry, alors que le contenu pourrait être disponible quelques minutes plus tard [PreMatchReminderWorker.kt:46-53]
+- [x] [Review][Patch] `buildFallback()` ne contient pas le classement (`ranking`) — `PlayerDataStore` injecté mais non utilisé, AC "classement" non satisfait en mode offline [PreMatchReminderWorker.kt:56-70]
+- [x] [Review][Patch] `PreMatchReminderWorker.doWork()` toujours `Result.success()` — WorkManager ne retry pas en cas d'échec transitoire de notification [PreMatchReminderWorker.kt:34-42]
+- [x] [Review][Patch] `canStartMatch` sans buffer temporel — si le temps franchit `scheduledAt` entre l'évaluation et `startMatch()`, session créée silencieusement ACTIVE au lieu de PLANNED [NewMatchViewModel.kt:canStartMatch]
+- [x] [Review][Patch] Mistral peut retourner une string vide (sans exception) côté VPS — `PendingNotificationModel` stocké avec contenu blank [backend/app/features/notifications/service.py:generate]
+
+- [x] [Review][Defer] `getPlannedSessions()` DAO sans consommateur dans ce diff — code mort, probablement prévu pour une story future [SessionDao.kt] — deferred, pré-existant
+- [x] [Review][Defer] Contrainte non-vide sur `pending_notifications.content` absente au niveau DB — garanti uniquement par la logique applicative [backend/app/features/notifications/models.py] — deferred, pré-existant
 
 ---
 

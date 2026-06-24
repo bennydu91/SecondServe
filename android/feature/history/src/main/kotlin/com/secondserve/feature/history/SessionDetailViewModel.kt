@@ -9,10 +9,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collect
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
+import timber.log.Timber
 import javax.inject.Inject
 
 sealed class SessionDetailSideEffect {
     object SessionDeleted : SessionDetailSideEffect()
+    data class ShowError(val message: String) : SessionDetailSideEffect()
 }
 
 @HiltViewModel
@@ -48,9 +50,12 @@ class SessionDetailViewModel @Inject constructor(
 
     fun deleteSession() = intent {
         val s = (state as? SessionDetailUiState.Content) ?: return@intent
-        when (sessionRepository.deleteSession(s.session.id)) {
+        when (val result = sessionRepository.deleteSession(s.session.id)) {
             is AppResult.Success -> postSideEffect(SessionDetailSideEffect.SessionDeleted)
-            is AppResult.Error -> {}
+            is AppResult.Error -> {
+                Timber.e(result.exception, "SessionDetailViewModel: deleteSession failed for id=%d", s.session.id)
+                postSideEffect(SessionDetailSideEffect.ShowError("Impossible de supprimer la session"))
+            }
             AppResult.Loading -> {}
         }
     }

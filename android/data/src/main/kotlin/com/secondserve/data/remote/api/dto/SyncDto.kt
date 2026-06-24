@@ -5,7 +5,8 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class SyncPushRequest(
-    val sessions: List<SyncSessionDto>
+    val sessions: List<SyncSessionDto>,
+    @Json(name = "deleted_session_ids") val deletedSessionIds: List<Long> = emptyList()
 )
 
 @JsonClass(generateAdapter = true)

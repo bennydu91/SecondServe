@@ -17,9 +17,20 @@ class SyncService:
         for session_dto in request.sessions:
             await self._upsert_session(session_dto)
             synced += 1
+        for session_id in request.deleted_session_ids:
+            await self._delete_session(session_id)
         await self.db.flush()
-        logger.info("SyncService: %d sessions upserted", synced)
+        logger.info("SyncService: %d sessions upserted, %d deleted", synced, len(request.deleted_session_ids))
         return SyncPushResponse(synced_sessions=synced)
+
+    async def _delete_session(self, session_id: int) -> None:
+        result = await self.db.execute(
+            select(SessionModel).where(SessionModel.id == session_id)
+        )
+        existing = result.scalar_one_or_none()
+        if existing is not None:
+            await self.db.delete(existing)
+            logger.info("SyncService: session %d supprimée (cascade: pending_notifications)", session_id)
 
     async def _upsert_session(self, dto) -> None:
         result = await self.db.execute(
@@ -53,3 +64,4 @@ class SyncService:
                 existing.feeling_rating = dto.feeling_rating
                 existing.feeling_comment = dto.feeling_comment
                 existing.updated_at = dto.updated_at
+                existing.scheduled_at = dto.scheduled_at
