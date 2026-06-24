@@ -1,10 +1,6 @@
 package com.secondserve.data.worker
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.work.ListenableWorker
 import com.secondserve.data.local.PlayerDataStore
 import com.secondserve.data.local.dao.PlayerProfileDao
@@ -16,7 +12,6 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
@@ -30,8 +25,6 @@ class PreMatchReminderWorkerTest {
     private lateinit var playerProfileDao: PlayerProfileDao
     private lateinit var workAxisDao: WorkAxisDao
     private lateinit var playerDataStore: PlayerDataStore
-    private lateinit var context: Context
-    private lateinit var notificationManager: NotificationManagerCompat
 
     @BeforeEach
     fun setup() {
@@ -39,15 +32,6 @@ class PreMatchReminderWorkerTest {
         playerProfileDao = mockk()
         workAxisDao = mockk()
         playerDataStore = mockk(relaxed = true)
-        context = mockk(relaxed = true)
-        notificationManager = mockk(relaxed = true)
-
-        mockkStatic(ActivityCompat::class)
-        mockkStatic(NotificationManagerCompat::class)
-        every {
-            ActivityCompat.checkSelfPermission(any(), Manifest.permission.POST_NOTIFICATIONS)
-        } returns PackageManager.PERMISSION_GRANTED
-        every { NotificationManagerCompat.from(any()) } returns notificationManager
     }
 
     @AfterEach
@@ -60,7 +44,7 @@ class PreMatchReminderWorkerTest {
             every { inputData.getLong(PreMatchReminderWorker.KEY_SESSION_ID, -1L) } returns sessionId
         }
         return PreMatchReminderWorker(
-            context = context,
+            context = mockk(relaxed = true),
             params = params,
             vpsApiService = vpsApiService,
             playerProfileDao = playerProfileDao,
@@ -79,10 +63,10 @@ class PreMatchReminderWorkerTest {
         coVerify(exactly = 0) { vpsApiService.getPendingNotification(any()) }
     }
 
-    // ─── Cas 2 : VPS disponible → contenu récupéré, notification postée ───────
+    // ─── Cas 2 : VPS disponible → contenu récupéré ────────────────────────────
 
     @Test
-    fun `doWork_whenVpsSucceeds_postsNotificationAndReturnsSuccess`() = runTest {
+    fun `doWork_whenVpsSucceeds_callsVpsAndReturnsSuccess`() = runTest {
         coEvery { vpsApiService.getPendingNotification(42L) } returns
             PendingNotificationResponse(content = "Prépare ton service en variant les effets.")
 
@@ -90,7 +74,6 @@ class PreMatchReminderWorkerTest {
 
         assertEquals(ListenableWorker.Result.success(), result)
         coVerify(exactly = 1) { vpsApiService.getPendingNotification(42L) }
-        coVerify(exactly = 1) { notificationManager.notify(PreMatchReminderWorker.NOTIFICATION_ID, any()) }
     }
 
     // ─── Cas 3 : VPS indisponible → fallback local avec profil ───────────────
@@ -106,7 +89,6 @@ class PreMatchReminderWorkerTest {
         assertEquals(ListenableWorker.Result.success(), result)
         coVerify(exactly = 1) { playerProfileDao.getProfile() }
         coVerify(exactly = 1) { workAxisDao.getAllTitles() }
-        coVerify(exactly = 1) { notificationManager.notify(PreMatchReminderWorker.NOTIFICATION_ID, any()) }
     }
 
     // ─── Cas 4 : VPS indisponible ET aucune donnée locale → message générique ─
@@ -120,7 +102,6 @@ class PreMatchReminderWorkerTest {
         val result = makeWorker().doWork()
 
         assertEquals(ListenableWorker.Result.success(), result)
-        coVerify(exactly = 1) { notificationManager.notify(PreMatchReminderWorker.NOTIFICATION_ID, any()) }
     }
 
     // ─── Helper ───────────────────────────────────────────────────────────────

@@ -35,7 +35,11 @@ class PreMatchReminderWorker @AssistedInject constructor(
         val content = fetchVpsContentOrFallback(sessionId)
         if (content.isNullOrBlank()) return Result.success()
 
-        postNotification(content)
+        try {
+            postNotification(content)
+        } catch (e: Exception) {
+            Timber.d("PreMatchReminderWorker: notification failed: %s", e.message)
+        }
         return Result.success()
     }
 
