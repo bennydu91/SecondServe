@@ -16,6 +16,8 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.secondserve.BuildConfig
+import com.secondserve.R
+import com.secondserve.auth.GoogleSignInHelper
 import com.secondserve.data.remote.api.JwtInterceptor
 import com.secondserve.data.remote.api.TokenAuthenticator
 import com.secondserve.data.remote.api.VpsApiService
@@ -132,5 +134,11 @@ object AuthModule {
         tokenStore: TokenStore
     ): AuthRepository {
         return AuthRepositoryImpl(authService, tokenStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGoogleSignInHelper(@ApplicationContext context: Context): GoogleSignInHelper {
+        return GoogleSignInHelper(context.getString(R.string.google_web_client_id))
     }
 }
