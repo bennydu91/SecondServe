@@ -56,7 +56,8 @@ fun ScoreScreen(
             state = state,
             onPointA = { viewModel.recordPoint(Player.A) },
             onPointB = { viewModel.recordPoint(Player.B) },
-            onUndo = { viewModel.undo() }
+            onUndo = { viewModel.undo() },
+            phoneConnected = state.phoneConnected
         )
     }
 }
@@ -148,7 +149,8 @@ private fun ScoreScreenContent(
     state: ScoreUiState,
     onPointA: () -> Unit,
     onPointB: () -> Unit,
-    onUndo: () -> Unit
+    onUndo: () -> Unit,
+    phoneConnected: Boolean = true
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -170,10 +172,21 @@ private fun ScoreScreenContent(
             )
         }
 
-        ScoreDisplay(
-            score = state.score,
-            modifier = Modifier.align(Alignment.Center)
-        )
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (!phoneConnected) {
+                Text(
+                    text = "⚠ Téléphone non connecté",
+                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+            ScoreDisplay(score = state.score)
+        }
 
         Box(
             modifier = Modifier
@@ -197,12 +210,9 @@ private fun ScoreScreenContent(
 }
 
 @Composable
-private fun ScoreDisplay(
-    score: MatchScore,
-    modifier: Modifier = Modifier
-) {
+private fun ScoreDisplay(score: MatchScore) {
     Column(
-        modifier = modifier.padding(horizontal = 32.dp),
+        modifier = Modifier.padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {

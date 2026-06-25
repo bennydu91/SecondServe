@@ -12,6 +12,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,10 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.secondserve.domain.model.GamePoint
 import com.secondserve.domain.model.MatchScore
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
@@ -63,12 +66,7 @@ fun MatchScreen(
         ) {
             Text(text = "Match en cours", style = MaterialTheme.typography.headlineMedium)
 
-            val setsA = score?.completedSets?.count { it.gamesA > it.gamesB } ?: 0
-            val setsB = score?.completedSets?.count { it.gamesB > it.gamesA } ?: 0
-            Text(
-                text = "Sets : $setsA — $setsB",
-                style = MaterialTheme.typography.headlineLarge
-            )
+            score?.let { LiveScoreCard(it) }
 
             state.coachingAdvice?.let { advice ->
                 Card(
@@ -117,6 +115,77 @@ fun MatchScreen(
             onDismiss = viewModel::onCloseDialogDismissed
         )
     }
+}
+
+@Composable
+private fun LiveScoreCard(score: MatchScore) {
+    val setsA = score.completedSets.count { it.gamesA > it.gamesB }
+    val setsB = score.completedSets.count { it.gamesB > it.gamesA }
+    val (pointsA, pointsB) = score.currentPointsDisplay()
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "$setsA — $setsB",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Sets",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            HorizontalDivider()
+
+            Text(
+                text = "${score.currentSetGamesA} — ${score.currentSetGamesB}",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Jeux",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            HorizontalDivider()
+
+            Text(
+                text = "$pointsA — $pointsB",
+                style = MaterialTheme.typography.titleLarge
+            )
+            val label = when {
+                score.isSuperTieBreak -> "Super Tie-break"
+                score.isTieBreak -> "Tie-break"
+                score.isDeuce -> "Égalité"
+                else -> "Points"
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private fun MatchScore.currentPointsDisplay(): Pair<String, String> = when {
+    isSuperTieBreak || isTieBreak -> Pair(tieBreakPointsA.toString(), tieBreakPointsB.toString())
+    isDeuce -> Pair("Ég.", "Ég.")
+    else -> Pair(currentGamePointsA.toDisplay(), currentGamePointsB.toDisplay())
+}
+
+private fun GamePoint.toDisplay(): String = when (this) {
+    GamePoint.ZERO -> "0"
+    GamePoint.FIFTEEN -> "15"
+    GamePoint.THIRTY -> "30"
+    GamePoint.FORTY -> "40"
+    GamePoint.ADVANTAGE -> "Avt"
 }
 
 @Composable

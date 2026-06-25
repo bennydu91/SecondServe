@@ -108,9 +108,9 @@ class ScoreViewModel @Inject constructor(
 
     private suspend fun sendScoreEvent(score: MatchScore) {
         val result = dataLayerClient.sendScoreEvent(score)
-        if (result is AppResult.Error) {
-            Timber.d("ScoreViewModel: sendScoreEvent failed — %s", result.exception.message)
-        }
+        val connected = result !is AppResult.Error
+        if (!connected) Timber.d("ScoreViewModel: sendScoreEvent failed — %s", (result as AppResult.Error).exception.message)
+        intent { reduce { state.copy(phoneConnected = connected) } }
     }
 
     private suspend fun sendGameOver(score: MatchScore) {
@@ -128,7 +128,8 @@ class ScoreViewModel @Inject constructor(
 
 data class ScoreUiState(
     val score: MatchScore = MatchScore(),
-    val canUndo: Boolean = false
+    val canUndo: Boolean = false,
+    val phoneConnected: Boolean = true
 )
 
 sealed class ScoreSideEffect
