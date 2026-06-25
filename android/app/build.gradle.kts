@@ -26,6 +26,7 @@ android {
         }
         create("staging") {
             initWith(getByName("debug"))
+            matchingFallbacks += listOf("debug")
             buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
         }
         debug {
