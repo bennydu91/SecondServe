@@ -5,6 +5,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -68,27 +69,35 @@ private fun MatchOverScreen(
     onCancelRequest: () -> Unit,
     onCloseRequest: () -> Unit
 ) {
+    val setsA = score.completedSets.count { it.gamesA > it.gamesB }
+    val setsB = score.completedSets.count { it.gamesB > it.gamesA }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            val setsA = score.completedSets.count { it.gamesA > it.gamesB }
-            val setsB = score.completedSets.count { it.gamesB > it.gamesA }
-            Text(
-                text = "Sets : $setsA — $setsB",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
             Text(
                 text = "Fin du match",
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.tertiary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "$setsA  —  $setsB",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "SETS",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
         }
 
@@ -103,7 +112,7 @@ private fun MatchOverScreen(
                 Text("Terminer", fontSize = 12.sp)
             }
             FilledTonalButton(onClick = onCancelRequest) {
-                Text("Annuler le dernier point", fontSize = 11.sp)
+                Text("Annuler", fontSize = 11.sp)
             }
         }
     }
@@ -153,6 +162,7 @@ private fun ScoreScreenContent(
     phoneConnected: Boolean = true
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
+        // Zone de tap A (moitié gauche)
         Box(
             modifier = Modifier
                 .fillMaxHeight()
@@ -161,33 +171,10 @@ private fun ScoreScreenContent(
                 .combinedClickable(
                     onClick = { onPointA() },
                     onLongClick = { if (state.canUndo) onUndo() }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "A",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            if (!phoneConnected) {
-                Text(
-                    text = "⚠ Téléphone non connecté",
-                    fontSize = 9.sp,
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-            }
-            ScoreDisplay(score = state.score)
-        }
+        )
 
+        // Zone de tap B (moitié droite)
         Box(
             modifier = Modifier
                 .fillMaxHeight()
@@ -196,14 +183,40 @@ private fun ScoreScreenContent(
                 .combinedClickable(
                     onClick = { onPointB() },
                     onLongClick = { if (state.canUndo) onUndo() }
-                ),
-            contentAlignment = Alignment.Center
+                )
+        )
+
+        // Contenu central (par-dessus les zones de tap, pointer-events pass-through)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            ScoreDisplay(score = state.score)
+
+            if (state.canUndo) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "↩ Long press",
+                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        // Indicateur déconnexion en bas
+        if (!phoneConnected) {
             Text(
-                text = "B",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary
+                text = "⚠ Déconnecté",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 6.dp)
             )
         }
     }
@@ -211,44 +224,64 @@ private fun ScoreScreenContent(
 
 @Composable
 private fun ScoreDisplay(score: MatchScore) {
+    val setsA = score.completedSets.count { it.gamesA > it.gamesB }
+    val setsB = score.completedSets.count { it.gamesB > it.gamesA }
+    val (pA, pB) = score.currentPointsDisplay()
+
     Column(
-        modifier = Modifier.padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        // Sets toujours affichés — AC 1 "en permanence"
-        val setsA = score.completedSets.count { it.gamesA > it.gamesB }
-        val setsB = score.completedSets.count { it.gamesB > it.gamesA }
+        // Sets — petit, informatif
         Text(
-            text = "Sets : $setsA — $setsB",
-            fontSize = 12.sp,
+            text = "$setsA  —  $setsB  SETS",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
 
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Jeux — dominant, le plus grand
         Text(
-            text = "${score.currentSetGamesA} — ${score.currentSetGamesB}",
-            fontSize = 22.sp,
+            text = "${score.currentSetGamesA}  —  ${score.currentSetGamesB}",
+            fontSize = 36.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "JEUX",
+            fontSize = 9.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Points — grand, accent couleur
+        Text(
+            text = "$pA  —  $pB",
+            fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center
-        )
-
-        val (pA, pB) = score.currentPointsDisplay()
-        Text(
-            text = "$pA — $pB",
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface
         )
 
         when {
             score.isSuperTieBreak -> Text(
                 text = "Super TB",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.secondary
             )
             score.isTieBreak -> Text(
                 text = "Tie-break",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.secondary
+            )
+            score.isDeuce -> Text(
+                text = "Égalité",
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.secondary
             )
         }

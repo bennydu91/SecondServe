@@ -17,17 +17,17 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "com.secondserve.HiltTestRunner"
-        buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
+        buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.bennyzhome.fr/\"")
     }
 
     buildTypes {
         release {
-            buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
+            buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.bennyzhome.fr/\"")
         }
         create("staging") {
             initWith(getByName("debug"))
             matchingFallbacks += listOf("debug")
-            buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.example.com/\"")
+            buildConfigField("String", "VPS_BASE_URL", "\"https://secondserve.bennyzhome.fr/\"")
         }
         debug {
             buildConfigField("String", "VPS_BASE_URL", "\"http://10.0.2.2:8000/\"")
@@ -62,6 +62,7 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
