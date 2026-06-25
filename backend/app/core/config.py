@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./secondserve.db"
     debug: bool = False
     port: int = 8000
+    google_client_id: str = ""
+    authorized_email: str = "ben.finot@gmail.com"
 
     @model_validator(mode="after")
     def validate_jwt_secret(self) -> "Settings":
