@@ -92,9 +92,8 @@ object AuthModule {
     @Provides
     @Singleton
     fun provideTokenAuthenticator(
-        tokenStore: TokenStore,
-        authService: AuthService
-    ): TokenAuthenticator = TokenAuthenticator(tokenStore, authService)
+        tokenStore: TokenStore
+    ): TokenAuthenticator = TokenAuthenticator(tokenStore)
 
     @Provides
     @Singleton

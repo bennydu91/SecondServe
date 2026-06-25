@@ -19,7 +19,6 @@ import com.secondserve.core.ui.theme.SecondServeTheme
 import com.secondserve.data.remote.auth.AuthRepository
 import com.secondserve.navigation.AppNavGraph
 import dagger.hilt.android.AndroidEntryPoint
-import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -58,12 +57,8 @@ class MainActivity : ComponentActivity() {
             SecondServeTheme {
                 var authReady by remember { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
-                    try {
-                        authRepository.initAuthIfNeeded()
-                            .onFailure { Timber.e(it, "Failed to initialize auth") }
-                    } finally {
-                        authReady = true
-                    }
+                    // TODO(Task 5): trigger Google Sign-In flow if !authRepository.hasToken()
+                    authReady = true
                 }
                 if (authReady) {
                     AppNavGraph()

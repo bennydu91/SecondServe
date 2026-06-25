@@ -1,5 +1,6 @@
 package com.secondserve.data.remote.auth
 
+import com.secondserve.data.remote.api.GoogleAuthRequest
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.data.remote.security.TokenStore
 
@@ -7,8 +8,8 @@ class AuthService(
     private val vpsApiService: VpsApiService,
     private val tokenStore: TokenStore
 ) {
-    suspend fun initAuth(): Result<String> = try {
-        val response = vpsApiService.initAuth()
+    suspend fun initAuth(googleIdToken: String): Result<String> = try {
+        val response = vpsApiService.initAuth(GoogleAuthRequest(googleIdToken))
         val token = response.token
         if (token.isBlank()) {
             Result.failure(IllegalStateException("Received blank token from server"))
@@ -19,6 +20,4 @@ class AuthService(
     } catch (e: Exception) {
         Result.failure(e)
     }
-
-    suspend fun reauthenticate(): Result<String> = initAuth()
 }

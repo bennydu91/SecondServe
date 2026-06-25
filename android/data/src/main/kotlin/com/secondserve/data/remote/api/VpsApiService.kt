@@ -21,7 +21,7 @@ import retrofit2.http.Query
 
 interface VpsApiService {
     @POST("api/v1/auth/init")
-    suspend fun initAuth(): TokenResponse
+    suspend fun initAuth(@Body request: GoogleAuthRequest): TokenResponse
 
     @GET("api/v1/health")
     suspend fun health(): HealthResponse

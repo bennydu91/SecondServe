@@ -5,8 +5,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 interface AuthRepository {
-    suspend fun initAuthIfNeeded(): Result<Unit>
-    suspend fun reauthenticate(): Result<Unit>
+    suspend fun initAuth(googleIdToken: String): Result<Unit>
+    fun hasToken(): Boolean
 }
 
 class AuthRepositoryImpl(
@@ -16,11 +16,9 @@ class AuthRepositoryImpl(
 
     private val mutex = Mutex()
 
-    override suspend fun initAuthIfNeeded(): Result<Unit> = mutex.withLock {
-        if (tokenStore.hasToken()) return@withLock Result.success(Unit)
-        authService.initAuth().map { }
+    override suspend fun initAuth(googleIdToken: String): Result<Unit> = mutex.withLock {
+        authService.initAuth(googleIdToken).map { }
     }
 
-    override suspend fun reauthenticate(): Result<Unit> =
-        authService.reauthenticate().map { }
+    override fun hasToken(): Boolean = tokenStore.hasToken()
 }
