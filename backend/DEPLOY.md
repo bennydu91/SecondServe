@@ -15,7 +15,7 @@
 ### 1. Copier les fichiers du backend sur le VPS
 
 ```bash
-rsync -avz backend/ user@<vps-ip>:/opt/secondserve-backend/
+rsync -avz --exclude='.venv' backend/ user@<vps-ip>:/opt/secondserve-backend/
 ```
 
 ### 2. Installer les dépendances
@@ -144,8 +144,10 @@ L'authentification repose sur Google OAuth2 — aucune dépendance Firebase. Le 
 ## Mise à jour du backend
 
 ```bash
-rsync -avz backend/ user@<vps-ip>:/opt/secondserve-backend/
+rsync -avz --exclude='.venv' backend/ user@<vps-ip>:/opt/secondserve-backend/
 ssh user@<vps-ip> "cd /opt/secondserve-backend && UV_PYTHON_INSTALL_DIR=/opt/uv-python UV_PYTHON=3.12 uv sync --no-dev && uv run alembic upgrade head && sudo systemctl restart secondserve-backend"
 ```
 
-> Ne jamais oublier `UV_PYTHON_INSTALL_DIR=/opt/uv-python` lors des mises à jour — si `uv` recréé le `.venv` sans cette variable, le service ne démarrera plus.
+> **`--exclude='.venv'`** est indispensable : sans lui, le `.venv` local (dont les shebangs pointent vers le chemin de développement) écrase celui construit sur le VPS et le service refuse de démarrer avec `Permission denied`.
+>
+> Ne jamais oublier `UV_PYTHON_INSTALL_DIR=/opt/uv-python` lors des mises à jour — si `uv` recrée le `.venv` sans cette variable, Python est installé sous `/root/.local/` (inaccessible à `www-data`) et le service ne démarrera plus.
