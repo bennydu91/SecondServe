@@ -52,6 +52,19 @@ async def test_init_auth_with_invalid_google_token_returns_401(client):
 
 
 @pytest.mark.asyncio
+async def test_init_auth_when_google_service_unavailable_returns_503(client):
+    with patch(
+        "app.api.v1.auth.verify_google_id_token",
+        new=AsyncMock(side_effect=Exception("timeout")),
+    ):
+        response = await client.post(
+            "/api/v1/auth/init",
+            json={"google_id_token": "some.token"},
+        )
+    assert response.status_code == 503
+
+
+@pytest.mark.asyncio
 async def test_init_auth_with_unauthorized_email_returns_403(client):
     with patch(
         "app.api.v1.auth.verify_google_id_token",

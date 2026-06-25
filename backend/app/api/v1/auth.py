@@ -21,10 +21,12 @@ class TokenResponse(BaseModel):
 async def init_auth(request: GoogleAuthRequest) -> TokenResponse:
     try:
         payload = await verify_google_id_token(request.google_id_token, settings.google_client_id)
-    except (jwt.InvalidTokenError, Exception):
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid Google token")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Authentication service unavailable")
 
-    if payload.get("email") != settings.authorized_email:
+    if not payload.get("email_verified") or payload.get("email") != settings.authorized_email:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
     manager = JWTManager(settings.jwt_secret)
