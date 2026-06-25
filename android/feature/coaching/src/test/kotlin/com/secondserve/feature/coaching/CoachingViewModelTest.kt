@@ -22,7 +22,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.delay
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -87,7 +87,8 @@ class CoachingViewModelTest {
     @Test
     fun `generateNow sets timeout error message when engine throws TimeoutCancellationException`() = runTest(testDispatcher) {
         coEvery { vpsMistralEngine.generate(any()) } coAnswers {
-            withTimeout(0L) { AppResult.Success("") }
+            delay(Long.MAX_VALUE)
+            AppResult.Success("")
         }
 
         viewModel.generateNow()
@@ -100,7 +101,8 @@ class CoachingViewModelTest {
     @Test
     fun `generateNow clears synthesisInProgress after TimeoutCancellationException`() = runTest(testDispatcher) {
         coEvery { vpsMistralEngine.generate(any()) } coAnswers {
-            withTimeout(0L) { AppResult.Success("") }
+            delay(Long.MAX_VALUE)
+            AppResult.Success("")
         }
 
         viewModel.generateNow()
