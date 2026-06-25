@@ -73,6 +73,11 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.timber)
 
+    // Google Sign-In via Credential Manager
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services)
+    implementation(libs.googleid)
+
     // HTTP & JSON (for AuthModule)
     implementation(libs.retrofit)
     implementation(libs.retrofit.moshi)
