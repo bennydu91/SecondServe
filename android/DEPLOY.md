@@ -22,18 +22,39 @@ L'authentification utilise Google Sign-In via le Credential Manager Android. Ava
 
 ### SHA-1 pour l'Android Client ID Google Cloud
 
-Pour que Google autorise l'app à émettre des ID Tokens, l'Android Client ID Google Cloud doit être lié au SHA-1 du keystore utilisé pour signer l'APK.
+Google utilise le SHA-1 du keystore pour s'assurer que seule **ton** app (et pas une app tierce avec le même package name) peut obtenir des ID Tokens. Il faut donc déclarer le SHA-1 dans Google Cloud Console au moment où tu crées l'Android Client ID.
+
+**Pourquoi deux SHA-1 ?** Android signe les APKs différemment selon le build :
+- Le build **debug** utilise un keystore automatique créé par Android Studio/Gradle sur ta machine.
+- Le build **release** utilise ton keystore personnel (`secondserve-release.jks`).
+Google a besoin des deux pour que les deux variants fonctionnent.
+
+**SHA-1 du keystore debug** (pour tester en staging) :
 
 ```bash
-# SHA-1 du keystore debug (pour les tests)
-cd android/
-./gradlew signingReport 2>&1 | grep -A3 "Variant: debug"
-
-# SHA-1 du keystore release
-keytool -list -v -keystore secondserve-release.jks -alias secondserve | grep "SHA1:"
+# Depuis le dossier android/
+./gradlew signingReport
 ```
 
-Ajouter chaque SHA-1 dans **Google Cloud Console → Credentials → Android Client ID**.
+Dans la sortie, chercher le bloc correspondant au variant `debug` :
+```
+Variant: debug
+...
+SHA1: AA:BB:CC:DD:...   ← c'est cette valeur
+```
+
+**SHA-1 du keystore release** (une fois le keystore créé à l'étape 4b) :
+
+```bash
+keytool -list -v \
+  -keystore secondserve-release.jks \
+  -alias secondserve
+```
+
+Dans la sortie, chercher la ligne `SHA1:` dans la section "Certificate fingerprints".
+
+**Où saisir ces valeurs :**
+Dans **Google Cloud Console → APIs & Services → Credentials**, ouvrir l'Android Client ID créé dans `backend/DEPLOY.md` et ajouter les deux SHA-1 (un par ligne).
 
 ---
 
