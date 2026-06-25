@@ -6,6 +6,7 @@
 - `uv` installé (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Tunnel Cloudflare configuré (remplace nginx + Certbot — le HTTPS est géré par Cloudflare)
 - Domaine géré par Cloudflare
+- Projet Google Cloud avec OAuth2 configuré (voir section [Configuration Google Sign-In](#configuration-google-sign-in) ci-dessous)
 
 > **Note Python 3.12** : Python 3.12 n'est pas forcément disponible dans les dépôts apt du VPS. Ne pas l'installer manuellement — `uv` le télécharge automatiquement via la commande `uv sync` ci-dessous (voir étape 2).
 
@@ -50,6 +51,7 @@ Variables à renseigner :
 | `MISTRAL_API_KEY` | Clé API Mistral |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./secondserve.db` (défaut SQLite) |
 | `PORT` | Port d'écoute uvicorn — choisir un port libre sur le VPS (ex. `8765`) |
+| `GOOGLE_CLIENT_ID` | Web Client ID OAuth2 Google (format `XXXXXX.apps.googleusercontent.com`) — voir section [Configuration Google Sign-In](#configuration-google-sign-in) |
 
 ### 4. Appliquer les migrations Alembic
 
@@ -100,6 +102,44 @@ sudo reboot
 sudo systemctl status secondserve-backend
 curl https://api.ton-domaine.com/api/v1/health
 ```
+
+## Configuration Google Sign-In
+
+L'authentification repose sur Google OAuth2 — aucune dépendance Firebase. Le backend vérifie les Google ID Tokens directement via les JWKS publics de Google.
+
+### 1. Créer un projet Google Cloud (une seule fois)
+
+1. Aller sur [https://console.cloud.google.com](https://console.cloud.google.com)
+2. Créer un projet "SecondServe" (ou utiliser un projet existant)
+3. **APIs & Services → Library** → activer "Google Identity" / "People API"
+
+### 2. Configurer l'écran de consentement OAuth
+
+**APIs & Services → OAuth consent screen** :
+- User Type : External
+- App name : `SecondServe`, email support : `ben.finot@gmail.com`
+- Ajouter `ben.finot@gmail.com` dans **Test users** (tant que l'app est en mode test)
+
+### 3. Créer le Web Client ID (pour le backend)
+
+**APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID** :
+- Application type : **Web application**
+- Name : `SecondServe Backend`
+- → Copier le **Client ID** (format `XXXXXX.apps.googleusercontent.com`)
+- → L'ajouter dans `/opt/secondserve-backend/.env` : `GOOGLE_CLIENT_ID=<valeur>`
+
+### 4. Créer l'Android Client ID (pour l'app)
+
+**Create Credentials → OAuth 2.0 Client ID** :
+- Application type : **Android**
+- Package name : `com.secondserve`
+- SHA-1 fingerprint (debug) : obtenir avec `./gradlew signingReport` dans `android/`
+- SHA-1 fingerprint (release) : obtenir depuis le keystore de release
+- → Ce Client ID n'a pas besoin d'être stocké côté backend, mais il doit exister pour que le Credential Manager Android fonctionne
+
+> **Important :** Le `GOOGLE_CLIENT_ID` dans `.env` doit être le **Web Client ID** (type Web application), pas l'Android Client ID. L'Android Client ID sert uniquement à Google pour autoriser l'app à émettre des tokens.
+
+---
 
 ## Mise à jour du backend
 

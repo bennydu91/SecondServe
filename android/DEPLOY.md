@@ -6,8 +6,38 @@
 - ADB installé (`adb version`) — inclus dans le SDK Android (`/root/android-sdk/platform-tools/`)
 - Backend VPS opérationnel (voir `backend/DEPLOY.md`)
 - Pixel 9 Pro et Pixel Watch sous tension, avec le mode développeur activé sur les deux
+- Web Client ID Google Cloud configuré (voir section Google Sign-In dans `backend/DEPLOY.md`)
 
-## Étape 1 — Mettre à jour l'URL du backend
+## Étape 1 — Configurer le Google Sign-In
+
+L'authentification utilise Google Sign-In via le Credential Manager Android. Avant de builder, renseigner le **Web Client ID** obtenu dans Google Cloud Console (voir `backend/DEPLOY.md` section "Configuration Google Sign-In").
+
+Éditer `app/src/main/res/values/google_auth.xml` :
+
+```xml
+<string name="google_web_client_id" translatable="false">VOTRE_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+```
+
+> Ce fichier n'est **pas** commité avec la vraie valeur (placeholder uniquement). Le modifier localement avant chaque build de déploiement.
+
+### SHA-1 pour l'Android Client ID Google Cloud
+
+Pour que Google autorise l'app à émettre des ID Tokens, l'Android Client ID Google Cloud doit être lié au SHA-1 du keystore utilisé pour signer l'APK.
+
+```bash
+# SHA-1 du keystore debug (pour les tests)
+cd android/
+./gradlew signingReport 2>&1 | grep -A3 "Variant: debug"
+
+# SHA-1 du keystore release
+keytool -list -v -keystore secondserve-release.jks -alias secondserve | grep "SHA1:"
+```
+
+Ajouter chaque SHA-1 dans **Google Cloud Console → Credentials → Android Client ID**.
+
+---
+
+## Étape 2 — Mettre à jour l'URL du backend
 
 Dans `app/build.gradle.kts`, remplacer `secondserve.example.com` par le domaine Cloudflare configuré pour le backend :
 
@@ -26,7 +56,7 @@ grep "VPS_BASE_URL" app/build.gradle.kts
 
 ---
 
-## Étape 2 — Choisir le build à installer
+## Étape 3 — Choisir le build à installer
 
 | Variant | IA Gemini Nano | IA Mistral / VPS | Usage |
 |---|---|---|---|
@@ -39,7 +69,7 @@ grep "VPS_BASE_URL" app/build.gradle.kts
 
 ---
 
-## Étape 3a — Build staging (premier test)
+## Étape 4a — Build staging (premier test)
 
 ```bash
 cd android/
@@ -53,7 +83,7 @@ app/build/outputs/apk/staging/app-staging.apk
 
 ---
 
-## Étape 3b — Build release avec IA réelle
+## Étape 4b — Build release avec IA réelle
 
 ### Générer un keystore (une seule fois)
 
@@ -103,7 +133,7 @@ app/build/outputs/apk/release/app-release.apk
 
 ---
 
-## Étape 4 — Installer sur le Pixel 9 Pro
+## Étape 5 — Installer sur le Pixel 9 Pro
 
 ### Activer le mode développeur
 
@@ -134,7 +164,7 @@ adb shell pm grant com.secondserve android.permission.POST_NOTIFICATIONS
 
 ---
 
-## Étape 5 — Installer sur la Pixel Watch
+## Étape 6 — Installer sur la Pixel Watch
 
 La Pixel Watch se connecte en ADB via WiFi (pas de câble USB).
 
@@ -167,7 +197,7 @@ adb -s <ip-montre>:5555 install wear/build/outputs/apk/debug/wear-debug.apk
 
 ---
 
-## Étape 6 — Vérifier Gemini Nano (build release uniquement)
+## Étape 7 — Vérifier Gemini Nano (build release uniquement)
 
 Gemini Nano doit être présent sur le Pixel 9 Pro. Vérifier via ADB :
 
@@ -184,8 +214,11 @@ En cas d'absence, le build `release` bascule automatiquement sur l'`OfflineCoach
 
 ## Vérification du premier lancement
 
-1. Ouvrir SecondServe sur le Pixel 9 Pro
-2. Créer un compte → l'auth JWT contacte le backend VPS
+1. Ouvrir SecondServe sur le Pixel 9 Pro → l'écran "Se connecter avec Google" s'affiche
+2. Appuyer sur **Se connecter avec Google** → sélectionner `ben.finot@gmail.com`
+   - L'app envoie le Google ID Token au backend VPS
+   - Le backend vérifie la signature RSA via les JWKS Google, contrôle l'email, émet un JWT SecondServe
+   - Le JWT est stocké en `EncryptedSharedPreferences` — les lancements suivants passent directement à l'accueil
 3. Renseigner le classement FFT et le profil
 4. Ouvrir l'app Wear sur la Pixel Watch
 5. Démarrer une session depuis la montre → vérifier que le score s'affiche sur le téléphone via DataLayer
