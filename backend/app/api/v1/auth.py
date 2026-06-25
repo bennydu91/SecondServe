@@ -1,9 +1,16 @@
-from fastapi import APIRouter, Depends
+# backend/app/api/v1/auth.py
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.core.security import JWTManager, verify_jwt
 from app.core.config import settings
+from app.core.google_auth import verify_google_id_token
+import jwt
 
 router = APIRouter()
+
+
+class GoogleAuthRequest(BaseModel):
+    google_id_token: str
 
 
 class TokenResponse(BaseModel):
@@ -11,12 +18,15 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/init")
-async def init_auth() -> TokenResponse:
-    """
-    Initialize JWT authentication.
-    Called once per client on first launch.
-    Returns a signed JWT token.
-    """
+async def init_auth(request: GoogleAuthRequest) -> TokenResponse:
+    try:
+        payload = await verify_google_id_token(request.google_id_token, settings.google_client_id)
+    except (jwt.InvalidTokenError, Exception):
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+
+    if payload.get("email") != settings.authorized_email:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
     manager = JWTManager(settings.jwt_secret)
     token = manager.create_token()
     return TokenResponse(token=token)
@@ -24,7 +34,4 @@ async def init_auth() -> TokenResponse:
 
 @router.get("/verify")
 async def verify_auth(token_payload: dict = Depends(verify_jwt)) -> dict:
-    """
-    Verify JWT token. Protected route for testing JWT validation.
-    """
     return {"message": "Token is valid"}
