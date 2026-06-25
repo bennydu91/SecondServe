@@ -92,7 +92,10 @@ class MainActivity : ComponentActivity() {
                                         try {
                                             val idToken = googleSignInHelper.signIn(this@MainActivity)
                                             authRepository.initAuth(idToken)
-                                                .onSuccess { authState = AuthState.Authenticated }
+                                                .onSuccess {
+                                                    isLoading = false
+                                                    authState = AuthState.Authenticated
+                                                }
                                                 .onFailure {
                                                     Timber.e(it, "Auth exchange failed")
                                                     error = "Connexion refusée. Vérifiez votre compte."
