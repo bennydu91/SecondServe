@@ -4,9 +4,13 @@ import android.content.Context
 import com.google.android.gms.wearable.Wearable
 import com.secondserve.data.wearable.dto.GameOverPayload
 import com.secondserve.data.wearable.dto.ScoreEventPayload
+import com.secondserve.data.wearable.dto.StartSessionPayload
+import com.secondserve.data.wearable.dto.StartSessionRequestPayload
 import com.secondserve.data.wearable.dto.toDto
 import com.secondserve.domain.AppResult
+import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.MatchScore
+import com.secondserve.domain.model.ThirdSetRule
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -27,6 +31,8 @@ class DataLayerClient @Inject constructor(
         const val PATH_SCORE_EVENT = "/secondserve/score_event"
         const val PATH_GAME_OVER = "/secondserve/game_over"
         const val PATH_CLOSE_SESSION = "/secondserve/close_session"
+        const val PATH_START_SESSION = "/secondserve/start_session"
+        const val PATH_START_SESSION_REQUEST = "/secondserve/start_session_request"
     }
 
     suspend fun sendScoreEvent(score: MatchScore): AppResult<Unit> {
@@ -44,6 +50,34 @@ class DataLayerClient @Inject constructor(
     suspend fun sendCloseRequest(): AppResult<Unit> {
         val payload = """{"type":"CLOSE_SESSION","ts":${System.currentTimeMillis()}}"""
         return sendMessage(PATH_CLOSE_SESSION, payload.toByteArray(Charsets.UTF_8))
+    }
+
+    suspend fun sendStartSession(
+        sessionId: Long,
+        matchFormat: MatchFormat,
+        thirdSetRule: ThirdSetRule
+    ): AppResult<Unit> {
+        val payload = StartSessionPayload(
+            ts = System.currentTimeMillis(),
+            sessionId = sessionId,
+            matchFormat = matchFormat.name,
+            thirdSetRule = thirdSetRule.name
+        )
+        val json = moshi.adapter(StartSessionPayload::class.java).toJson(payload)
+        return sendMessage(PATH_START_SESSION, json.toByteArray(Charsets.UTF_8))
+    }
+
+    suspend fun sendStartSessionRequest(
+        matchFormat: MatchFormat,
+        thirdSetRule: ThirdSetRule
+    ): AppResult<Unit> {
+        val payload = StartSessionRequestPayload(
+            ts = System.currentTimeMillis(),
+            matchFormat = matchFormat.name,
+            thirdSetRule = thirdSetRule.name
+        )
+        val json = moshi.adapter(StartSessionRequestPayload::class.java).toJson(payload)
+        return sendMessage(PATH_START_SESSION_REQUEST, json.toByteArray(Charsets.UTF_8))
     }
 
     private suspend fun sendMessage(path: String, payload: ByteArray): AppResult<Unit> {
