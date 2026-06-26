@@ -1,12 +1,21 @@
 package com.secondserve.data.wearable
 
+import android.content.Intent
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import com.secondserve.data.wearable.dto.GameOverPayload
 import com.secondserve.data.wearable.dto.ScoreEventPayload
+import com.secondserve.data.wearable.dto.StartSessionRequestPayload
 import com.secondserve.data.wearable.dto.toDomain
+import com.secondserve.domain.AppResult
 import com.secondserve.domain.event.DataLayerEventBus
+import com.secondserve.domain.model.MatchFormat
+import com.secondserve.domain.model.Session
+import com.secondserve.domain.model.SessionFormat
+import com.secondserve.domain.model.SessionStatus
+import com.secondserve.domain.model.ThirdSetRule
 import com.secondserve.domain.repository.ScoreRepository
+import com.secondserve.domain.repository.SessionRepository
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.EntryPoint
@@ -29,6 +38,8 @@ class DataLayerListener : WearableListenerService() {
     interface DataLayerListenerEntryPoint {
         fun scoreRepository(): ScoreRepository
         fun dataLayerEventBus(): DataLayerEventBus
+        fun sessionRepository(): SessionRepository
+        fun dataLayerClient(): DataLayerClient
     }
 
     private val moshi = Moshi.Builder()
@@ -51,6 +62,20 @@ class DataLayerListener : WearableListenerService() {
         ).dataLayerEventBus()
     }
 
+    private val sessionRepository: SessionRepository by lazy {
+        EntryPointAccessors.fromApplication(
+            applicationContext,
+            DataLayerListenerEntryPoint::class.java
+        ).sessionRepository()
+    }
+
+    private val dataLayerClient: DataLayerClient by lazy {
+        EntryPointAccessors.fromApplication(
+            applicationContext,
+            DataLayerListenerEntryPoint::class.java
+        ).dataLayerClient()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
@@ -64,6 +89,7 @@ class DataLayerListener : WearableListenerService() {
             DataLayerClient.PATH_SCORE_EVENT -> handleScoreEvent(json)
             DataLayerClient.PATH_GAME_OVER -> handleGameOver(json)
             DataLayerClient.PATH_CLOSE_SESSION -> handleCloseSession()
+            DataLayerClient.PATH_START_SESSION_REQUEST -> handleStartSessionRequest(json)
             else -> Timber.d("DataLayerListener: unknown path=%s, ignoring", messageEvent.path)
         }
     }
@@ -94,8 +120,10 @@ class DataLayerListener : WearableListenerService() {
             }
             val score = payload.scoreSnapshot.toDomain()
             serviceScope.launch {
-                withContext(NonCancellable) { scoreRepository.updateScore(score) }
-                dataLayerEventBus.emitGameOver(score)
+                withContext(NonCancellable) {
+                    scoreRepository.updateScore(score)
+                    dataLayerEventBus.emitGameOver(score)
+                }
                 Timber.d("DataLayerListener: score updated and gameOver emitted")
             }
         } catch (e: Exception) {
@@ -106,5 +134,53 @@ class DataLayerListener : WearableListenerService() {
     private fun handleCloseSession() {
         dataLayerEventBus.emitCloseRequest()
         Timber.d("DataLayerListener: close_session request received from Watch")
+    }
+
+    private fun handleStartSessionRequest(json: String) {
+        try {
+            val payload = moshi.adapter(StartSessionRequestPayload::class.java).fromJson(json)
+            if (payload == null) {
+                Timber.e("DataLayerListener: null StartSessionRequestPayload from JSON")
+                return
+            }
+            val matchFormat = runCatching { MatchFormat.valueOf(payload.matchFormat) }
+                .getOrElse { Timber.e("DataLayerListener: unknown matchFormat %s", payload.matchFormat); return }
+            val thirdSetRule = runCatching { ThirdSetRule.valueOf(payload.thirdSetRule) }
+                .getOrElse { ThirdSetRule.FULL_ADVANTAGE }
+
+            serviceScope.launch {
+                val session = Session(
+                    surface = "",
+                    format = SessionFormat(matchFormat = matchFormat, thirdSetRule = thirdSetRule),
+                    status = SessionStatus.ACTIVE,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+                val result = sessionRepository.createSession(session)
+                if (result is AppResult.Error) {
+                    Timber.e(result.exception, "DataLayerListener: failed to create session from watch request")
+                    return@launch
+                }
+                val createdSession = (result as AppResult.Success).data
+                val sessionId = createdSession.id
+
+                dataLayerEventBus.emitStartSession(sessionId)
+
+                dataLayerClient.sendStartSession(sessionId, matchFormat, thirdSetRule)
+                    .also { if (it is AppResult.Error) Timber.d("DataLayerListener: sendStartSession to watch failed") }
+
+                val intent = applicationContext.packageManager
+                    .getLaunchIntentForPackage(applicationContext.packageName)
+                    ?.apply {
+                        action = "com.secondserve.ACTION_OPEN_MATCH"
+                        putExtra("sessionId", sessionId)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    }
+                if (intent != null) applicationContext.startActivity(intent)
+                Timber.d("DataLayerListener: session %d created from watch request, phone notified", sessionId)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "DataLayerListener: failed to handle start_session_request")
+        }
     }
 }
