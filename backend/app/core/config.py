@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     port: int = 8000
     google_client_id: str = ""
     authorized_email: str = "ben.finot@gmail.com"
+    monitor_db_url: str = "sqlite+aiosqlite:///./monitor.db"
+    monitor_user: str = "admin"
+    monitor_password: str = "changeme"
 
     @model_validator(mode="after")
     def validate_jwt_secret(self) -> "Settings":
