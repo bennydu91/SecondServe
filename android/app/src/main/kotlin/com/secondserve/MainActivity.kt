@@ -3,6 +3,7 @@ package com.secondserve
 
 import android.Manifest
 import android.app.AlertDialog
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -20,6 +21,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +35,7 @@ import androidx.core.content.ContextCompat
 import com.secondserve.auth.GoogleSignInHelper
 import com.secondserve.core.ui.theme.SecondServeTheme
 import com.secondserve.data.remote.auth.AuthRepository
+import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.navigation.AppNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -45,6 +49,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var authRepository: AuthRepository
     @Inject lateinit var googleSignInHelper: GoogleSignInHelper
+    @Inject lateinit var dataLayerEventBus: DataLayerEventBus
+
+    private val _pendingSessionId = mutableStateOf<Long?>(null)
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -64,7 +71,14 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
 
                 when (authState) {
-                    AuthState.Authenticated -> AppNavGraph()
+                    AuthState.Authenticated -> {
+                        LaunchedEffect(Unit) {
+                            dataLayerEventBus.startSessionRequests.collect { sessionId ->
+                                _pendingSessionId.value = sessionId
+                            }
+                        }
+                        AppNavGraph(pendingSessionId = _pendingSessionId)
+                    }
                     AuthState.Unauthenticated -> {
                         var isLoading by remember { mutableStateOf(false) }
                         var error by remember { mutableStateOf<String?>(null) }
@@ -119,6 +133,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action == "com.secondserve.ACTION_OPEN_MATCH") {
+            val sessionId = intent.getLongExtra("sessionId", -1L)
+            if (sessionId != -1L) _pendingSessionId.value = sessionId
         }
     }
 

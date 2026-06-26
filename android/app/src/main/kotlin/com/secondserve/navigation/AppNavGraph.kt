@@ -14,7 +14,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -58,7 +61,7 @@ private val fullScreenRoutes = setOf(
 )
 
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(pendingSessionId: State<Long?> = mutableStateOf(null)) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -98,6 +101,13 @@ fun AppNavGraph() {
             }
         }
     ) { paddingValues ->
+        LaunchedEffect(pendingSessionId.value) {
+            val sessionId = pendingSessionId.value ?: return@LaunchedEffect
+            navController.navigate("match/$sessionId") {
+                popUpTo("home") { saveState = false }
+            }
+            (pendingSessionId as? androidx.compose.runtime.MutableState)?.value = null
+        }
         NavHost(
             navController = navController,
             startDestination = "home",
