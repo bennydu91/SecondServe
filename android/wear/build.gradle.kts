@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.timber)
     implementation(libs.wearable)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
     // Required to satisfy Hilt bindings for phone-side components (DataLayerListener, Workers)
     // that are included transitively via :data. The database is never actually used on the watch.
     implementation(libs.room.runtime)
