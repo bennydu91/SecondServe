@@ -156,16 +156,23 @@ class DataLayerListener : WearableListenerService() {
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis()
                 )
-                val result = sessionRepository.createSession(session)
-                if (result is AppResult.Error) {
-                    Timber.e(result.exception, "DataLayerListener: failed to create session from watch request")
-                    return@launch
+
+                // Wrap critical operations (createSession + emitStartSession) in NonCancellable
+                val sessionId = withContext(NonCancellable) {
+                    val result = sessionRepository.createSession(session)
+                    if (result is AppResult.Error) {
+                        Timber.e(result.exception, "DataLayerListener: failed to create session from watch request")
+                        null
+                    } else {
+                        val id = (result as AppResult.Success).data.id
+                        dataLayerEventBus.emitStartSession(id)
+                        id
+                    }
                 }
-                val createdSession = (result as AppResult.Success).data
-                val sessionId = createdSession.id
 
-                dataLayerEventBus.emitStartSession(sessionId)
+                if (sessionId == null) return@launch
 
+                // sendStartSession + Intent (fire-and-forget, not critical)
                 dataLayerClient.sendStartSession(sessionId, matchFormat, thirdSetRule)
                     .also { if (it is AppResult.Error) Timber.d("DataLayerListener: sendStartSession to watch failed") }
 
@@ -177,7 +184,7 @@ class DataLayerListener : WearableListenerService() {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     }
                 if (intent != null) applicationContext.startActivity(intent)
-                Timber.d("DataLayerListener: session %d created from watch request, phone notified", sessionId)
+                Timber.d("DataLayerListener: session %d created from watch request", sessionId)
             }
         } catch (e: Exception) {
             Timber.e(e, "DataLayerListener: failed to handle start_session_request")
