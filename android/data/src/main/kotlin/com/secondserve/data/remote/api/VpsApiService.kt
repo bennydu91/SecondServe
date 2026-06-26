@@ -1,5 +1,7 @@
 package com.secondserve.data.remote.api
 
+import com.secondserve.data.monitoring.dto.MonitoringEventDto
+import com.secondserve.data.monitoring.dto.MonitoringStatusDto
 import com.secondserve.data.remote.api.dto.ProfileDetailsRequest
 import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
 import com.secondserve.data.remote.api.dto.ProfileSummaryDto
@@ -52,4 +54,10 @@ interface VpsApiService {
 
     @GET("api/v1/notifications/pending")
     suspend fun getPendingNotification(@Query("session_id") sessionId: Long): PendingNotificationResponse
+
+    @POST("monitor/api/events")
+    suspend fun sendMonitoringEvent(@Body event: MonitoringEventDto): MonitoringStatusDto
+
+    @POST("monitor/api/events/batch")
+    suspend fun sendMonitoringEventBatch(@Body events: List<MonitoringEventDto>): MonitoringStatusDto
 }
