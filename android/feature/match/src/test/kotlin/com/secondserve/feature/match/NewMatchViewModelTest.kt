@@ -115,4 +115,38 @@ class NewMatchViewModelTest {
 
         coVerify(exactly = 0) { dataLayerClient.sendStartSession(any(), any(), any()) }
     }
+
+    @Test
+    fun `startMatch does not call sendStartSession when session is PLANNED`() = runTest {
+        val now = System.currentTimeMillis()
+        val futureScheduledAt = now + 2 * 60 * 60 * 1000L  // 2 hours in the future
+        val createdSession = Session(
+            id = 42L,
+            surface = "Clay",
+            format = SessionFormat(matchFormat = MatchFormat.BEST_OF_3, thirdSetRule = ThirdSetRule.FULL_ADVANTAGE),
+            status = SessionStatus.PLANNED,
+            scheduledAt = futureScheduledAt,
+            createdAt = now,
+            updatedAt = now
+        )
+        coEvery { sessionRepository.createSession(any()) } returns AppResult.Success(createdSession)
+        coEvery { notificationScheduler.schedulePreMatchReminder(any(), any()) } returns Unit
+
+        viewModel.onSurfaceSelected("Clay")
+        viewModel.onMatchFormatSelected(MatchFormat.BEST_OF_3)
+        viewModel.onThirdSetRuleSelected(ThirdSetRule.FULL_ADVANTAGE)
+        viewModel.onScheduledToggled(true)
+        viewModel.onScheduledAtChanged(futureScheduledAt)
+
+        val sideEffectDeferred = async {
+            viewModel.container.sideEffectFlow.first { it is NewMatchSideEffect.SessionPlanned }
+        }
+
+        viewModel.startMatch()
+        sideEffectDeferred.await()
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { dataLayerClient.sendStartSession(any(), any(), any()) }
+    }
 }

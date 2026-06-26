@@ -1,6 +1,7 @@
 package com.secondserve.feature.match
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
@@ -92,16 +93,6 @@ class NewMatchViewModel @Inject constructor(
             is AppResult.Success -> {
                 reduce { state.copy(isLoading = false) }
                 val createdSession = result.data
-                viewModelScope.launch {
-                    dataLayerClient.sendStartSession(
-                        sessionId = createdSession.id,
-                        matchFormat = matchFormat,
-                        thirdSetRule = thirdSetRule
-                    ).also { r ->
-                        if (r is AppResult.Error)
-                            Timber.d("NewMatchViewModel: sendStartSession to watch failed — %s", r.exception.message)
-                    }
-                }
                 val createdScheduledAt = createdSession.scheduledAt
                 if (isPlanned && createdScheduledAt != null) {
                     val triggerMs = createdScheduledAt - 2 * 60 * 60 * 1000L
@@ -110,6 +101,16 @@ class NewMatchViewModel @Inject constructor(
                 if (isPlanned) {
                     postSideEffect(NewMatchSideEffect.SessionPlanned(createdSession.id))
                 } else {
+                    viewModelScope.launch {
+                        dataLayerClient.sendStartSession(
+                            sessionId = createdSession.id,
+                            matchFormat = matchFormat,
+                            thirdSetRule = thirdSetRule
+                        ).also { r ->
+                            if (r is AppResult.Error)
+                                Timber.d("NewMatchViewModel: sendStartSession to watch failed — %s", r.exception.message)
+                        }
+                    }
                     postSideEffect(NewMatchSideEffect.SessionStarted(createdSession.id))
                 }
             }
