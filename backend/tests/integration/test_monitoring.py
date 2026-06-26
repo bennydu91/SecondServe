@@ -22,7 +22,7 @@ _test_engine = create_async_engine(
 )
 _test_session_factory = async_sessionmaker(_test_engine, expire_on_commit=False)
 
-_TEST_JWT = JWTManager("test-only-secret-do-not-use-in-production").create_token()
+_TEST_JWT = JWTManager(os.environ.get("JWT_SECRET", "test-only-secret-do-not-use-in-production")).create_token()
 
 
 @pytest.fixture(autouse=True)
