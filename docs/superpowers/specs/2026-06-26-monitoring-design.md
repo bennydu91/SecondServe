@@ -11,13 +11,18 @@ SecondServe tourne sur un VPS Hostinger KVM 4 (FastAPI + Cloudflare en frontal).
 
 - Logger toutes les requêtes HTTP (temps de réponse, codes d'erreur, endpoints)
 - Capturer automatiquement les erreurs et exceptions Python
-- Tracer les événements métier clés (match, IA, Wear OS)
+- Tracer les événements métier clés côté backend (match, IA, Wear OS)
+- Remonter événements métier et erreurs depuis l'app Android et la montre
 - Exposer un dashboard web sur `/monitor`, protégé par HTTP Basic Auth
-- Prévoir un endpoint pour recevoir des events Android dans le futur
 
 ## Architecture
 
 ```
+Wear OS ──(Data Layer)──► Téléphone Android
+                                │
+                    ┌───────────┴────────────┐
+                    │ erreurs (immédiat)      │ events métier (batch)
+                    ▼                         ▼
 Cloudflare (DNS + proxy HTTPS)
   → VPS :443 → FastAPI :8000
 
@@ -25,12 +30,13 @@ FastAPI :8000
   ├── RequestLoggingMiddleware  →  monitor.db (request_logs)
   ├── MonitoringLogHandler      →  monitor.db (error_logs)
   └── features/monitoring/
-        ├── GET  /monitor           → dashboard HTML  [Basic Auth FastAPI]
-        ├── GET  /monitor/api/stats                   [Basic Auth FastAPI]
-        ├── GET  /monitor/api/requests                [Basic Auth FastAPI]
-        ├── GET  /monitor/api/errors                  [Basic Auth FastAPI]
-        ├── GET  /monitor/api/events                  [Basic Auth FastAPI]
-        └── POST /monitor/api/events  ← stub Android (futur)
+        ├── GET  /monitor                → dashboard HTML  [Basic Auth FastAPI]
+        ├── GET  /monitor/api/stats                        [Basic Auth FastAPI]
+        ├── GET  /monitor/api/requests                     [Basic Auth FastAPI]
+        ├── GET  /monitor/api/errors                       [Basic Auth FastAPI]
+        ├── GET  /monitor/api/events                       [Basic Auth FastAPI]
+        ├── POST /monitor/api/events        ← erreur Android/Wear (immédiat) [JWT]
+        └── POST /monitor/api/events/batch  ← events métier Android/Wear (batch) [JWT]
 ```
 
 La base `monitor.db` est une SQLite distincte de la base métier. Elle est gérée indépendamment.
@@ -65,7 +71,7 @@ La base `monitor.db` est une SQLite distincte de la base métier. Elle est gér�
 | timestamp | DATETIME | heure UTC |
 | event_type | TEXT | ex. `match.started`, `ai.call`, `wear.sync` |
 | payload | TEXT | JSON arbitraire |
-| source | TEXT | `backend` ou `android` (futur) |
+| source | TEXT | `backend`, `android` ou `wear` |
 
 **Rétention :** purge automatique des entrées > 30 jours, via le scheduler existant (`features/notifications/scheduler.py`).
 
@@ -103,7 +109,8 @@ Points d'instrumentation initiaux :
 | `GET /monitor/api/requests?window=1h\|24h` | Série temporelle + top endpoints |
 | `GET /monitor/api/errors?limit=50` | Dernières erreurs avec traceback |
 | `GET /monitor/api/events?window=24h` | Comptage par type d'événement |
-| `POST /monitor/api/events` | Réception events Android (stub — 501 pour l'instant) |
+| `POST /monitor/api/events` | Réception erreur Android/Wear (immédiat) — auth JWT |
+| `POST /monitor/api/events/batch` | Réception events métier Android/Wear (batch) — auth JWT |
 
 ### Dashboard (`monitor.html`)
 
@@ -119,6 +126,52 @@ Page HTML unique avec vanilla JS + Chart.js (CDN). Aucun build tool.
 - Toggle `1h / 24h` en haut à droite, change toutes les stats simultanément
 - Auto-refresh toutes les 60 secondes
 - Bouton refresh manuel
+
+## Logging Android & Wear OS
+
+### Transport
+
+Les events Android/Wear utilisent le JWT existant (l'utilisateur est déjà authentifié dans l'app). Deux endpoints distincts selon l'urgence :
+
+- **Erreurs → `POST /monitor/api/events`** (immédiat) : une erreur par requête, envoyée dès qu'elle se produit
+- **Events métier → `POST /monitor/api/events/batch`** (batch) : tableau d'events, flush en fin de match ou toutes les 5 minutes en arrière-plan
+
+### Wear OS — relay via téléphone
+
+La montre ne fait pas d'appels réseau directs. Elle passe par le canal Data Layer existant → le téléphone relaie au backend. Ça réutilise l'infrastructure de communication déjà en place et préserve la batterie.
+
+### Composants Android (nouveaux)
+
+| Composant | Rôle |
+|---|---|
+| `MonitoringClient` (data) | Wrapper Retrofit pour `POST /monitor/api/events` et `/batch` |
+| `MonitoringEventQueue` (data) | File in-memory, flush automatique toutes les 5 min ou en fin de match |
+| `GlobalExceptionHandler` | `Thread.UncaughtExceptionHandler` + `CoroutineExceptionHandler` — capture les crashs |
+| Instrumentation ViewModels | Appels manuels à `MonitoringEventQueue.enqueue(...)` aux points clés |
+
+### Types d'events Android/Wear
+
+| Source | Type | Envoi |
+|---|---|---|
+| Android | `android.error` | Immédiat |
+| Android | `android.match.started` | Batch |
+| Android | `android.match.ended` | Batch |
+| Wear OS | `wear.score.updated` | Batch (via téléphone) |
+| Wear OS | `wear.error` | Immédiat (via téléphone) |
+| Wear OS | `wear.sync.failed` | Immédiat (via téléphone) |
+
+### Points d'instrumentation initiaux (Android)
+
+- `NewMatchViewModel` — match démarré
+- `MatchViewModel` / `ScoreViewModel` — match terminé
+- `WearDataLayerListener` — erreurs de synchro Data Layer
+- `GlobalExceptionHandler` — crashs non gérés
+
+### Dashboard — impact
+
+Les events Android/Wear alimentent la section "Événements métier" existante, distingués par leur champ `source` (`android` ou `wear`).
+
+---
 
 ## Authentification — HTTP Basic Auth FastAPI
 
@@ -145,6 +198,7 @@ def require_monitor_auth(credentials: HTTPBasicCredentials = Depends(security)):
 
 ## Structure de fichiers
 
+**Backend :**
 ```
 backend/app/features/monitoring/
 ├── __init__.py
@@ -155,6 +209,16 @@ backend/app/features/monitoring/
 ├── service.py      # queries : stats, top endpoints, erreurs, events
 ├── router.py       # routes /monitor et /monitor/api/*
 └── monitor.html    # dashboard (servi via FileResponse depuis router.py)
+```
+
+**Android :**
+```
+android/app/.../data/monitoring/
+├── MonitoringClient.kt       # Retrofit — POST /monitor/api/events + /batch
+└── MonitoringEventQueue.kt  # File in-memory + flush automatique
+
+android/app/.../core/
+└── GlobalExceptionHandler.kt  # UncaughtExceptionHandler + CoroutineExceptionHandler
 ```
 
 ## Intégration dans `main.py`
@@ -172,12 +236,11 @@ logging.getLogger().addHandler(MonitoringLogHandler())
 
 ## Évolutions prévues
 
-- **Android events (futur)** : activer le `POST /monitor/api/events` avec authentification par token, appeler depuis l'app Kotlin aux crashs et événements UI critiques.
-- **Alertes (futur)** : notif push si taux d'erreur > seuil ou si le backend est injoignable depuis > N minutes.
+- **Alertes** : notif push si taux d'erreur > seuil ou si le backend est injoignable depuis > N minutes.
+- **Persistance locale Android** : remplacer la file in-memory par Room pour survivre aux kills de process.
 
 ## Hors scope (V1)
 
 - Métriques système (CPU, RAM, disque) — le VPS a son propre panel Hostinger
-- Logs Wear OS côté client
 - Historique > 30 jours
 - Export CSV/JSON
