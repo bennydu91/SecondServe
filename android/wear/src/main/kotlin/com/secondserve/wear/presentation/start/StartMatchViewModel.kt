@@ -1,11 +1,15 @@
 package com.secondserve.wear.presentation.start
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.ThirdSetRule
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
@@ -17,6 +21,8 @@ class StartMatchViewModel @Inject constructor(
 ) : ViewModel(), ContainerHost<StartMatchUiState, StartMatchSideEffect> {
 
     override val container = container<StartMatchUiState, StartMatchSideEffect>(StartMatchUiState())
+
+    private var phoneResponseTimeoutJob: Job? = null
 
     fun selectFormat(matchFormat: MatchFormat) = intent {
         reduce { state.copy(matchFormat = matchFormat) }
@@ -35,7 +41,15 @@ class StartMatchViewModel @Inject constructor(
         when (result) {
             is AppResult.Success -> {
                 Timber.d("StartMatchViewModel: start session request sent to phone")
-                // isLoading stays true — waiting for phone to respond via WearNavGraph
+                phoneResponseTimeoutJob?.cancel()
+                phoneResponseTimeoutJob = viewModelScope.launch {
+                    delay(PHONE_RESPONSE_TIMEOUT_MS)
+                    Timber.d("StartMatchViewModel: timeout — téléphone n'a pas répondu, mode dégradé")
+                    intent {
+                        reduce { state.copy(isLoading = false) }
+                        postSideEffect(StartMatchSideEffect.StartLocal(format, rule))
+                    }
+                }
                 postSideEffect(StartMatchSideEffect.StartRemote)
             }
             is AppResult.Error -> {
@@ -51,6 +65,10 @@ class StartMatchViewModel @Inject constructor(
                 reduce { state.copy(isLoading = false) }
             }
         }
+    }
+
+    companion object {
+        const val PHONE_RESPONSE_TIMEOUT_MS = 30_000L
     }
 }
 

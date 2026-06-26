@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -37,8 +38,8 @@ class StartMatchViewModelTest {
 
     @AfterEach
     fun tearDown() {
-        // Orbit intent blocks run on Dispatchers.Default — give them time to post back to Main
-        // before resetting, to avoid "no Looper" crashes on background threads.
+        // viewModelScope.launch{} (timeout job) runs on Main/testDispatcher but the nested
+        // intent{} inside posts to Dispatchers.Default — same race as ScoreViewModelTest.
         Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
         Dispatchers.resetMain()
@@ -69,8 +70,7 @@ class StartMatchViewModelTest {
         val vm = createViewModel()
 
         vm.confirmStart()
-        Thread.sleep(50)
-        testDispatcher.scheduler.advanceUntilIdle()
+        vm.container.stateFlow.first { it.isLoading }
 
         assertTrue(vm.container.stateFlow.value.isLoading)
         coVerify {
@@ -88,8 +88,8 @@ class StartMatchViewModelTest {
         val vm = createViewModel()
 
         vm.confirmStart()
-        Thread.sleep(50)
-        testDispatcher.scheduler.advanceUntilIdle()
+        vm.container.stateFlow.first { it.isLoading }
+        vm.container.stateFlow.first { !it.isLoading }
 
         assertFalse(vm.container.stateFlow.value.isLoading)
         coVerify {
@@ -98,5 +98,20 @@ class StartMatchViewModelTest {
                 ThirdSetRule.FULL_ADVANTAGE
             )
         }
+    }
+
+    @Test
+    fun `confirmStart times out after PHONE_RESPONSE_TIMEOUT_MS and falls back to local`() = runTest {
+        coEvery { dataLayerClient.sendStartSessionRequest(any(), any()) } returns AppResult.Success(Unit)
+        val vm = createViewModel()
+
+        vm.confirmStart()
+        vm.container.stateFlow.first { it.isLoading }
+
+        advanceTimeBy(StartMatchViewModel.PHONE_RESPONSE_TIMEOUT_MS + 1)
+        Thread.sleep(50)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(vm.container.stateFlow.value.isLoading)
     }
 }

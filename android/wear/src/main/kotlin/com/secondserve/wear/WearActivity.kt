@@ -19,7 +19,10 @@ class WearActivity : ComponentActivity() {
         checkIncomingIntent(intent)
         setContent {
             WearTheme {
-                WearNavGraph(pendingStartIntent = pendingStartIntent)
+                WearNavGraph(
+                    pendingStartIntent = pendingStartIntent.value,
+                    onStartIntentConsumed = { pendingStartIntent.value = null }
+                )
             }
         }
     }

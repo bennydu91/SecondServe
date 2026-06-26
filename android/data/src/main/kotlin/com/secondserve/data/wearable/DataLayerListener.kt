@@ -176,14 +176,12 @@ class DataLayerListener : WearableListenerService() {
                 dataLayerClient.sendStartSession(sessionId, matchFormat, thirdSetRule)
                     .also { if (it is AppResult.Error) Timber.d("DataLayerListener: sendStartSession to watch failed") }
 
-                val intent = applicationContext.packageManager
-                    .getLaunchIntentForPackage(applicationContext.packageName)
-                    ?.apply {
-                        action = "com.secondserve.ACTION_OPEN_MATCH"
-                        putExtra("sessionId", sessionId)
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    }
-                if (intent != null) applicationContext.startActivity(intent)
+                val intent = Intent("com.secondserve.ACTION_OPEN_MATCH").apply {
+                    setClassName(applicationContext.packageName, "${applicationContext.packageName}.OpenMatchAlias")
+                    putExtra("sessionId", sessionId)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                }
+                applicationContext.startActivity(intent)
                 Timber.d("DataLayerListener: session %d created from watch request", sessionId)
             }
         } catch (e: Exception) {

@@ -4,6 +4,13 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Signature permission protégeant le point d'entrée ACTION_OPEN_MATCH contre le spoofing.
+         Seules les apps signées avec le même certificat peuvent obtenir cette permission. -->
+    <permission
+        android:name="com.secondserve.permission.OPEN_MATCH"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.secondserve.permission.OPEN_MATCH" />
+
     <application
         android:name=".SecondServeApp"
         android:allowBackup="true"
@@ -20,6 +27,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Alias protégé par signature permission: seul DataLayerListener (même app) peut
+             envoyer ACTION_OPEN_MATCH via ce composant. Les apps tierces sont bloquées. -->
+        <activity-alias
+            android:name=".OpenMatchAlias"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:permission="com.secondserve.permission.OPEN_MATCH" />
 
         <service
             android:name="com.secondserve.data.wearable.DataLayerListener"
