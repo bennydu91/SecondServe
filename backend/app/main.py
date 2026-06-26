@@ -5,6 +5,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api.v1.router import api_router
 from app.features.monitoring.router import monitor_router
+from app.features.monitoring.middleware import RequestLoggingMiddleware
+from app.features.monitoring.log_handler import MonitoringLogHandler
+from app.features.monitoring.database import init_monitoring_db
 from app.core.config import settings
 from app.features.notifications.scheduler import start_scheduler, stop_scheduler
 from app.shared.exceptions import SecondServeException
@@ -20,6 +23,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     from app.core.security import JWTManager
     JWTManager(settings.jwt_secret)  # eager validation: raises ValueError if JWT_SECRET < 32 chars
+    await init_monitoring_db()
+    logging.getLogger().addHandler(MonitoringLogHandler())
     try:
         start_scheduler()
         yield
@@ -35,6 +40,8 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None,
     openapi_url="/openapi.json" if settings.debug else None,
 )
+
+app.add_middleware(RequestLoggingMiddleware)
 
 
 @app.exception_handler(SecondServeException)
