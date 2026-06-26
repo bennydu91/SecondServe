@@ -86,6 +86,7 @@ class ScoreViewModel @Inject constructor(
         if (result is AppResult.Error) {
             Timber.d("ScoreViewModel: sendCloseRequest failed — %s", result.exception.message)
         }
+        postSideEffect(ScoreSideEffect.Close)
     }
 
     // Annule le point final ayant déclenché la fin du match (action explicite avec confirmation UI).
@@ -132,7 +133,9 @@ data class ScoreUiState(
     val phoneConnected: Boolean = true
 )
 
-sealed class ScoreSideEffect
+sealed class ScoreSideEffect {
+    data object Close : ScoreSideEffect()
+}
 
 private fun EngineEvent.isChangeover(): Boolean = when (this) {
     is EngineEvent.PointScored -> false

@@ -11,7 +11,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.secondserve.wear"
+        applicationId = "com.secondserve"
         minSdk = 33 // Wear OS 4 = API 33+
         targetSdk = 35
         versionCode = 1
@@ -56,6 +56,7 @@ dependencies {
 
     implementation(libs.orbit.core)
     implementation(libs.orbit.viewmodel)
+    implementation(libs.orbit.compose)
 
     implementation(libs.coroutines.android)
     implementation(libs.timber)

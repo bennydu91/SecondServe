@@ -32,13 +32,21 @@ import androidx.wear.compose.material3.Text
 import com.secondserve.domain.model.GamePoint
 import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.model.Player
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun ScoreScreen(
+    onClose: () -> Unit = {},
     viewModel: ScoreViewModel = hiltViewModel()
 ) {
     val state by viewModel.container.stateFlow.collectAsStateWithLifecycle()
     var showCancelConfirm by remember { mutableStateOf(false) }
+
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            is ScoreSideEffect.Close -> onClose()
+        }
+    }
 
     when {
         showCancelConfirm -> CancelConfirmScreen(
