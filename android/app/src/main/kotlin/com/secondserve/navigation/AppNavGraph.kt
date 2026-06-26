@@ -1,11 +1,12 @@
 package com.secondserve.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -15,8 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -43,15 +45,16 @@ private enum class BottomNavItem(
     val unselectedIcon: ImageVector
 ) {
     HOME("home", "Accueil", Icons.Filled.Home, Icons.Outlined.Home),
-    STATS("stats", "Stats", Icons.Filled.BarChart, Icons.Outlined.BarChart),
+    HISTORY("history", "Historique", Icons.Filled.History, Icons.Outlined.History),
+    COACHING("coaching", "Coaching", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome),
     PROFILE("profile", "Profil", Icons.Filled.Person, Icons.Outlined.Person)
 }
 
 private val bottomNavRoutes = BottomNavItem.entries.map { it.route }.toSet()
 
-// Routes plein écran sans Bottom Nav (match actif, formulaires, sous-pages)
+// Routes plein écran sans bottom nav
 private val fullScreenRoutes = setOf(
-    "new_match", "settings", "work_axes", "add_retro_session", "coaching"
+    "new_match", "settings", "work_axes", "add_retro_session", "stats"
 )
 
 @Composable
@@ -143,7 +146,8 @@ fun AppNavGraph() {
                         navController.navigate("session_detail/$sessionId")
                     },
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToAddRetroSession = { navController.navigate("add_retro_session") }
+                    onNavigateToAddRetroSession = { navController.navigate("add_retro_session") },
+                    onNavigateToStats = { navController.navigate("stats") }
                 )
             }
             composable("add_retro_session") {

@@ -12,15 +12,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,17 +35,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.secondserve.domain.model.Session
 import com.secondserve.domain.model.SessionStatus
+import com.secondserve.domain.model.SurfaceConstants
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val sessionDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
+private val sessionDateFormat = SimpleDateFormat("EEE d MMM yyyy", Locale.FRANCE)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +56,7 @@ fun HistoryScreen(
     onNavigateToDetail: (Long) -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToAddRetroSession: () -> Unit,
+    onNavigateToStats: (() -> Unit)? = null,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -59,10 +70,21 @@ fun HistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Historique") },
-                navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
-                        Text("← Retour")
+                title = {
+                    Text(
+                        "Historique",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                actions = {
+                    if (onNavigateToStats != null) {
+                        IconButton(onClick = onNavigateToStats) {
+                            Icon(
+                                imageVector = Icons.Filled.BarChart,
+                                contentDescription = "Statistiques"
+                            )
+                        }
                     }
                 }
             )
@@ -72,26 +94,39 @@ fun HistoryScreen(
                 onClick = onNavigateToAddRetroSession,
                 modifier = Modifier.semantics { contentDescription = "Ajouter un match passé" }
             ) {
-                Text("+")
+                Icon(imageVector = Icons.Filled.Add, contentDescription = "Ajouter")
             }
         }
     ) { padding ->
         when (val s = state) {
             is HistoryUiState.Loading -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
-            is HistoryUiState.Error -> Text(
-                text = s.message,
-                modifier = Modifier.padding(padding).padding(16.dp)
-            )
+
+            is HistoryUiState.Error -> Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = s.message,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
             is HistoryUiState.Content -> {
                 if (s.sessions.isEmpty()) {
-                    Text(
-                        text = "Aucune session enregistrée",
-                        modifier = Modifier.padding(padding).padding(16.dp)
+                    EmptyHistoryState(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
                     )
                 } else {
                     LazyColumn(
@@ -101,12 +136,14 @@ fun HistoryScreen(
                             .padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
                         items(s.sessions) { session ->
                             SessionItem(
                                 session = session,
                                 onClick = { viewModel.onSessionClicked(session.id) }
                             )
                         }
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
                     }
                 }
             }
@@ -115,57 +152,124 @@ fun HistoryScreen(
 }
 
 @Composable
+private fun EmptyHistoryState(modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Text(text = "📋", style = MaterialTheme.typography.headlineLarge)
+            Text(
+                text = "Aucune session",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Tes matchs et entraînements apparaîtront ici.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun SessionItem(session: Session, onClick: () -> Unit) {
+    val isVictory = session.result == "VICTORY"
+    val isDefeat = session.result == "DEFEAT"
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                // Date + surface
                 Text(
-                    text = session.formattedDate(),
-                    style = MaterialTheme.typography.bodyMedium
+                    text = buildString {
+                        append(session.formattedDate())
+                        val surface = SurfaceConstants.DISPLAY_NAMES[session.surface] ?: session.surface
+                        if (surface.isNotBlank()) append("  ·  $surface")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                val badge = session.statusBadge()
-                if (badge != null) {
-                    Badge { Text(badge) }
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = session.surface,
-                style = MaterialTheme.typography.bodySmall
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+
+                // Score
                 Text(
                     text = session.scoreText ?: "—",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    text = session.resultLabel(),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+
+                // Adversaire ou contexte
+                val subtitle = buildString {
+                    session.opponent?.let { append("vs $it") }
+                    session.competitionType?.let {
+                        if (isNotEmpty()) append("  ·  ")
+                        append(it)
+                    }
+                }
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            session.opponent?.let {
-                Text(
-                    text = "vs $it",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            session.competitionType?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall
-                )
+
+            // Badge résultat ou statut
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                when {
+                    isVictory -> ResultBadge(text = "V", isPositive = true)
+                    isDefeat -> ResultBadge(text = "D", isPositive = false)
+                }
+                val statusLabel = session.statusBadge()
+                if (statusLabel != null) {
+                    Badge { Text(statusLabel) }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ResultBadge(text: String, isPositive: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (isPositive) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.errorContainer
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = if (isPositive) MaterialTheme.colorScheme.onPrimaryContainer
+                    else MaterialTheme.colorScheme.onErrorContainer
+        )
     }
 }
 

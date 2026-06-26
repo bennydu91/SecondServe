@@ -106,6 +106,7 @@ fun SecondServeTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = SecondServeTypography,
         content = content
     )
 }
