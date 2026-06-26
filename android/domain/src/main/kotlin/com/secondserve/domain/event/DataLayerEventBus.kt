@@ -18,4 +18,11 @@ class DataLayerEventBus {
     fun emitGameOver(score: MatchScore) {
         _gameOverEvents.tryEmit(score)
     }
+
+    private val _startSessionRequests = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    val startSessionRequests: SharedFlow<Long> = _startSessionRequests
+
+    fun emitStartSession(sessionId: Long) {
+        _startSessionRequests.tryEmit(sessionId)
+    }
 }
