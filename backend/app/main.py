@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api.v1.router import api_router
+from app.features.monitoring.router import monitor_router
 from app.core.config import settings
 from app.features.notifications.scheduler import start_scheduler, stop_scheduler
 from app.shared.exceptions import SecondServeException
@@ -45,3 +46,4 @@ async def secondserve_exception_handler(request: Request, exc: SecondServeExcept
 
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(monitor_router)

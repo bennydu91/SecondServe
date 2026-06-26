@@ -4,6 +4,8 @@ import os
 os.environ.setdefault("JWT_SECRET", "test-only-secret-do-not-use-in-production")
 os.environ.setdefault("GOOGLE_CLIENT_ID", "test-google-client-id.apps.googleusercontent.com")
 os.environ.setdefault("AUTHORIZED_EMAIL", "ben.finot@gmail.com")
+os.environ.setdefault("MONITOR_USER", "admin")
+os.environ.setdefault("MONITOR_PASSWORD", "testpass")
 
 import pytest
 from httpx import AsyncClient, ASGITransport
