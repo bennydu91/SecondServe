@@ -2,6 +2,7 @@ package com.secondserve.wear.presentation.match
 
 import androidx.lifecycle.SavedStateHandle
 import com.secondserve.data.wearable.DataLayerClient
+import com.secondserve.wear.monitoring.WearMonitoringQueue
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.GamePoint
 import com.secondserve.domain.model.MatchFormat
@@ -31,12 +32,14 @@ class ScoreViewModelTest {
 
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var dataLayerClient: DataLayerClient
+    private lateinit var monitoringQueue: WearMonitoringQueue
 
     @BeforeEach
     fun setup() {
         testDispatcher = UnconfinedTestDispatcher()
         Dispatchers.setMain(testDispatcher)
         dataLayerClient = mockk()
+        monitoringQueue = mockk(relaxed = true)
         coEvery { dataLayerClient.sendScoreEvent(any()) } returns AppResult.Success(Unit)
         coEvery { dataLayerClient.sendGameOver(any()) } returns AppResult.Success(Unit)
     }
@@ -55,7 +58,7 @@ class ScoreViewModelTest {
 
     private fun createViewModel(
         savedStateHandle: SavedStateHandle = SavedStateHandle()
-    ) = ScoreViewModel(dataLayerClient, savedStateHandle)
+    ) = ScoreViewModel(dataLayerClient, monitoringQueue, savedStateHandle)
 
     @Test
     fun `initial state has empty score and canUndo false`() = runTest {

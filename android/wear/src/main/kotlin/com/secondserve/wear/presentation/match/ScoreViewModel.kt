@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
+import com.secondserve.wear.monitoring.WearMonitoringQueue
 import com.secondserve.domain.engine.EngineEvent
 import com.secondserve.domain.engine.TennisScoreEngine
 import com.secondserve.domain.model.MatchFormat
@@ -22,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ScoreViewModel @Inject constructor(
     private val dataLayerClient: DataLayerClient,
+    private val monitoringQueue: WearMonitoringQueue,
     savedStateHandle: SavedStateHandle
 ) : ViewModel(), ContainerHost<ScoreUiState, ScoreSideEffect> {
 
@@ -62,6 +64,7 @@ class ScoreViewModel @Inject constructor(
         }
         viewModelScope.launch { sendScoreEvent(snapshot) }
         if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
+        monitoringQueue.enqueueEvent("wear.score.updated", mapOf("points" to pointCount.toString()))
     }
 
     fun undo() = intent {

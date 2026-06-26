@@ -5,6 +5,23 @@ import androidx.room.Room
 import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
 import com.secondserve.data.local.db.SecondServeDatabase
+import com.secondserve.data.monitoring.dto.MonitoringEventDto
+import com.secondserve.data.monitoring.dto.MonitoringStatusDto
+import com.secondserve.data.remote.api.GoogleAuthRequest
+import com.secondserve.data.remote.api.HealthResponse
+import com.secondserve.data.remote.api.TokenResponse
+import com.secondserve.data.remote.api.VpsApiService
+import com.secondserve.data.remote.api.dto.PendingNotificationResponse
+import com.secondserve.data.remote.api.dto.ProfileDetailsRequest
+import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
+import com.secondserve.data.remote.api.dto.ProfileSummaryDto
+import com.secondserve.data.remote.api.dto.RankingEntryDto
+import com.secondserve.data.remote.api.dto.RankingRequest
+import com.secondserve.data.remote.api.dto.SyncPushRequest
+import com.secondserve.data.remote.api.dto.SyncPushResponse
+import com.secondserve.data.remote.api.dto.WorkAxesResponse
+import com.secondserve.data.remote.api.dto.WorkAxisRequest
+import com.secondserve.data.remote.api.dto.WorkAxisResponse
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.notification.NotificationScheduler
 import dagger.Module
@@ -52,6 +69,10 @@ object WearDataModule {
     @Provides
     @Singleton
     fun provideNotificationScheduler(): NotificationScheduler = NoOpNotificationScheduler
+
+    @Provides
+    @Singleton
+    fun provideVpsApiService(): VpsApiService = NoOpVpsApiService
 }
 
 private object NoOpNotificationScheduler : NotificationScheduler {
@@ -61,4 +82,21 @@ private object NoOpNotificationScheduler : NotificationScheduler {
     override fun cancel() {}
     override fun schedulePreMatchReminder(sessionId: Long, triggerAtMs: Long) {}
     override fun cancelPreMatchReminder(sessionId: Long) {}
+}
+
+// Stub — satisfies Hilt binding graph for MonitoringModule; never called at runtime on watch.
+private object NoOpVpsApiService : VpsApiService {
+    override suspend fun initAuth(request: GoogleAuthRequest): TokenResponse = error("N/A on Wear OS")
+    override suspend fun health(): HealthResponse = error("N/A on Wear OS")
+    override suspend fun getProfile(): ProfileSummaryDto = error("N/A on Wear OS")
+    override suspend fun saveRanking(request: RankingRequest): RankingEntryDto = error("N/A on Wear OS")
+    override suspend fun updateProfileDetails(request: ProfileDetailsRequest): ProfileDetailsResponse = error("N/A on Wear OS")
+    override suspend fun getWorkAxes(): WorkAxesResponse = error("N/A on Wear OS")
+    override suspend fun createWorkAxis(request: WorkAxisRequest): WorkAxisResponse = error("N/A on Wear OS")
+    override suspend fun updateWorkAxis(id: Long, request: WorkAxisRequest): WorkAxisResponse = error("N/A on Wear OS")
+    override suspend fun deleteWorkAxis(id: Long) = error("N/A on Wear OS")
+    override suspend fun syncPush(request: SyncPushRequest): SyncPushResponse = error("N/A on Wear OS")
+    override suspend fun getPendingNotification(sessionId: Long): PendingNotificationResponse = error("N/A on Wear OS")
+    override suspend fun sendMonitoringEvent(event: MonitoringEventDto): MonitoringStatusDto = error("N/A on Wear OS")
+    override suspend fun sendMonitoringEventBatch(events: List<MonitoringEventDto>): MonitoringStatusDto = error("N/A on Wear OS")
 }

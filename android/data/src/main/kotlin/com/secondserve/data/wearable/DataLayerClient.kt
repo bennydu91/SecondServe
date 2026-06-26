@@ -33,6 +33,8 @@ class DataLayerClient @Inject constructor(
         const val PATH_CLOSE_SESSION = "/secondserve/close_session"
         const val PATH_START_SESSION = "/secondserve/start_session"
         const val PATH_START_SESSION_REQUEST = "/secondserve/start_session_request"
+        const val PATH_MONITOR_EVENT = "/secondserve/monitor_event"
+        const val PATH_MONITOR_ERROR = "/secondserve/monitor_error"
     }
 
     suspend fun sendScoreEvent(score: MatchScore): AppResult<Unit> {
@@ -79,6 +81,20 @@ class DataLayerClient @Inject constructor(
         val json = moshi.adapter(StartSessionRequestPayload::class.java).toJson(payload)
         return sendMessage(PATH_START_SESSION_REQUEST, json.toByteArray(Charsets.UTF_8))
     }
+
+    suspend fun sendMonitorEvent(eventType: String, payload: Map<String, String>): AppResult<Unit> {
+        val json = """{"event_type":"$eventType","payload":${payloadToJson(payload)},"source":"wear"}"""
+        return sendMessage(PATH_MONITOR_EVENT, json.toByteArray(Charsets.UTF_8))
+    }
+
+    suspend fun sendMonitorError(error: String, stacktrace: String): AppResult<Unit> {
+        val escaped = stacktrace.replace("\"", "'").take(2000)
+        val json = """{"event_type":"wear.error","payload":{"error":"$error","stacktrace":"$escaped"},"source":"wear"}"""
+        return sendMessage(PATH_MONITOR_ERROR, json.toByteArray(Charsets.UTF_8))
+    }
+
+    private fun payloadToJson(map: Map<String, String>): String =
+        "{" + map.entries.joinToString(",") { (k, v) -> "\"$k\":\"$v\"" } + "}"
 
     private suspend fun sendMessage(path: String, payload: ByteArray): AppResult<Unit> {
         return try {

@@ -1,5 +1,6 @@
 package com.secondserve.feature.match
 
+import com.secondserve.data.monitoring.MonitoringEventQueue
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
@@ -32,6 +33,7 @@ class NewMatchViewModelTest {
     private lateinit var sessionRepository: SessionRepository
     private lateinit var notificationScheduler: NotificationScheduler
     private lateinit var dataLayerClient: DataLayerClient
+    private lateinit var monitoringEventQueue: MonitoringEventQueue
     private lateinit var viewModel: NewMatchViewModel
 
     @BeforeEach
@@ -40,11 +42,13 @@ class NewMatchViewModelTest {
         sessionRepository = mockk()
         notificationScheduler = mockk(relaxed = true)
         dataLayerClient = mockk(relaxed = true)
+        monitoringEventQueue = mockk(relaxed = true)
 
         viewModel = NewMatchViewModel(
             sessionRepository = sessionRepository,
             notificationScheduler = notificationScheduler,
-            dataLayerClient = dataLayerClient
+            dataLayerClient = dataLayerClient,
+            monitoringEventQueue = monitoringEventQueue,
         )
     }
 

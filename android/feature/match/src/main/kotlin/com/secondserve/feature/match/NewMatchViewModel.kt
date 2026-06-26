@@ -2,6 +2,7 @@ package com.secondserve.feature.match
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.secondserve.data.monitoring.MonitoringEventQueue
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
@@ -22,7 +23,8 @@ import javax.inject.Inject
 class NewMatchViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val notificationScheduler: NotificationScheduler,
-    private val dataLayerClient: DataLayerClient
+    private val dataLayerClient: DataLayerClient,
+    private val monitoringEventQueue: MonitoringEventQueue,
 ) : ViewModel(), ContainerHost<NewMatchUiState, NewMatchSideEffect> {
 
     override val container = container<NewMatchUiState, NewMatchSideEffect>(NewMatchUiState())
@@ -112,6 +114,12 @@ class NewMatchViewModel @Inject constructor(
                         }
                     }
                     postSideEffect(NewMatchSideEffect.SessionStarted(createdSession.id))
+                    viewModelScope.launch {
+                        monitoringEventQueue.enqueue(
+                            "android.match.started",
+                            mapOf("session_id" to createdSession.id, "format" to matchFormat.name),
+                        )
+                    }
                 }
             }
             is AppResult.Error -> {

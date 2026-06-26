@@ -18,6 +18,8 @@ import com.secondserve.domain.repository.ScoreRepository
 import com.secondserve.domain.repository.SessionRepository
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.secondserve.data.monitoring.MonitoringClient
+import com.secondserve.data.monitoring.dto.MonitoringEventDto
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -29,6 +31,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import timber.log.Timber
 
 class DataLayerListener : WearableListenerService() {
@@ -40,6 +43,7 @@ class DataLayerListener : WearableListenerService() {
         fun dataLayerEventBus(): DataLayerEventBus
         fun sessionRepository(): SessionRepository
         fun dataLayerClient(): DataLayerClient
+        fun monitoringClient(): MonitoringClient
     }
 
     private val moshi = Moshi.Builder()
@@ -76,6 +80,13 @@ class DataLayerListener : WearableListenerService() {
         ).dataLayerClient()
     }
 
+    private val monitoringClient: MonitoringClient by lazy {
+        EntryPointAccessors.fromApplication(
+            applicationContext,
+            DataLayerListenerEntryPoint::class.java
+        ).monitoringClient()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
@@ -90,6 +101,8 @@ class DataLayerListener : WearableListenerService() {
             DataLayerClient.PATH_GAME_OVER -> handleGameOver(json)
             DataLayerClient.PATH_CLOSE_SESSION -> handleCloseSession()
             DataLayerClient.PATH_START_SESSION_REQUEST -> handleStartSessionRequest(json)
+            DataLayerClient.PATH_MONITOR_EVENT -> handleMonitorEvent(json)
+            DataLayerClient.PATH_MONITOR_ERROR -> handleMonitorError(json)
             else -> Timber.d("DataLayerListener: unknown path=%s, ignoring", messageEvent.path)
         }
     }
@@ -186,6 +199,40 @@ class DataLayerListener : WearableListenerService() {
             }
         } catch (e: Exception) {
             Timber.e(e, "DataLayerListener: failed to handle start_session_request")
+        }
+    }
+
+    private fun handleMonitorEvent(json: String) {
+        serviceScope.launch {
+            try {
+                val obj = JSONObject(json)
+                monitoringClient.sendEvent(MonitoringEventDto(
+                    eventType = obj.getString("event_type"),
+                    payload = emptyMap(),
+                    source = "wear",
+                ))
+            } catch (e: Exception) {
+                Timber.e(e, "DataLayerListener: handleMonitorEvent failed")
+            }
+        }
+    }
+
+    private fun handleMonitorError(json: String) {
+        serviceScope.launch {
+            try {
+                val obj = JSONObject(json)
+                val payload = obj.getJSONObject("payload")
+                monitoringClient.sendEvent(MonitoringEventDto(
+                    eventType = "wear.error",
+                    payload = mapOf(
+                        "error" to payload.optString("error"),
+                        "stacktrace" to payload.optString("stacktrace"),
+                    ),
+                    source = "wear",
+                ))
+            } catch (e: Exception) {
+                Timber.e(e, "DataLayerListener: handleMonitorError failed")
+            }
         }
     }
 }
