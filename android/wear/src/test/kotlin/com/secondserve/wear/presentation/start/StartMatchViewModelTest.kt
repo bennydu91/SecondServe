@@ -109,9 +109,10 @@ class StartMatchViewModelTest {
         vm.container.stateFlow.first { it.isLoading }
 
         advanceTimeBy(StartMatchViewModel.PHONE_RESPONSE_TIMEOUT_MS + 1)
-        Thread.sleep(50)
-        testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(vm.container.stateFlow.value.isLoading)
+        // Orbit dispatches intent{} on Dispatchers.Default (real thread pool). Suspending on
+        // stateFlow.first{} idles the test scheduler and lets that thread emit the state change.
+        val finalState = vm.container.stateFlow.first { !it.isLoading }
+        assertFalse(finalState.isLoading)
     }
 }
