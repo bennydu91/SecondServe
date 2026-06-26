@@ -1,6 +1,7 @@
 package com.secondserve.feature.match
 
 import androidx.lifecycle.ViewModel
+import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.Session
@@ -10,14 +11,17 @@ import com.secondserve.domain.model.ThirdSetRule
 import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.repository.SessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class NewMatchViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
-    private val notificationScheduler: NotificationScheduler
+    private val notificationScheduler: NotificationScheduler,
+    private val dataLayerClient: DataLayerClient
 ) : ViewModel(), ContainerHost<NewMatchUiState, NewMatchSideEffect> {
 
     override val container = container<NewMatchUiState, NewMatchSideEffect>(NewMatchUiState())
@@ -88,6 +92,16 @@ class NewMatchViewModel @Inject constructor(
             is AppResult.Success -> {
                 reduce { state.copy(isLoading = false) }
                 val createdSession = result.data
+                viewModelScope.launch {
+                    dataLayerClient.sendStartSession(
+                        sessionId = createdSession.id,
+                        matchFormat = matchFormat,
+                        thirdSetRule = thirdSetRule
+                    ).also { r ->
+                        if (r is AppResult.Error)
+                            Timber.d("NewMatchViewModel: sendStartSession to watch failed — %s", r.exception.message)
+                    }
+                }
                 val createdScheduledAt = createdSession.scheduledAt
                 if (isPlanned && createdScheduledAt != null) {
                     val triggerMs = createdScheduledAt - 2 * 60 * 60 * 1000L
