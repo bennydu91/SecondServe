@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.sync.schemas import SyncPushRequest, SyncPushResponse
 from app.features.sessions.models import SessionModel
+from app.features.monitoring.events import emit_event
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class SyncService:
         )
         existing = result.scalar_one_or_none()
         if existing is not None:
+            emit_event("match.ended", {"session_id": session_id})
             await self.db.delete(existing)
             logger.info("SyncService: session %d supprimée (cascade: pending_notifications)", session_id)
 
