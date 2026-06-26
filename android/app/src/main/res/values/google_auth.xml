@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Web Client ID créé dans Google Cloud Console (étape D des prérequis) -->
-    <string name="google_web_client_id" translatable="false">REMPLACER_PAR_VOTRE_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+	<string name="google_web_client_id" translatable="false">818757691184-rrtkh7mpu19envd7t6esg22j8e45qrvg.apps.googleusercontent.com</string>
+    
 </resources>
