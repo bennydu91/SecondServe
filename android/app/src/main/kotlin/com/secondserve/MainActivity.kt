@@ -22,7 +22,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +58,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIntent(intent)
         enableEdgeToEdge()
         requestNotificationPermissionIfNeeded()
         setContent {
@@ -77,7 +77,10 @@ class MainActivity : ComponentActivity() {
                                 _pendingSessionId.value = sessionId
                             }
                         }
-                        AppNavGraph(pendingSessionId = _pendingSessionId)
+                        AppNavGraph(
+                            pendingSessionId = _pendingSessionId.value,
+                            onPendingSessionConsumed = { _pendingSessionId.value = null }
+                        )
                     }
                     AuthState.Unauthenticated -> {
                         var isLoading by remember { mutableStateOf(false) }
@@ -138,6 +141,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
         if (intent.action == "com.secondserve.ACTION_OPEN_MATCH") {
             val sessionId = intent.getLongExtra("sessionId", -1L)
             if (sessionId != -1L) _pendingSessionId.value = sessionId
