@@ -5,11 +5,10 @@ import com.secondserve.data.monitoring.dto.MonitoringEventDto
 import com.secondserve.data.remote.api.VpsApiService
 import com.secondserve.domain.AppResult
 import timber.log.Timber
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MonitoringClient @Inject constructor(
+class MonitoringClient(
     private val api: VpsApiService,
 ) {
     suspend fun sendEvent(dto: MonitoringEventDto): AppResult<Unit> = try {

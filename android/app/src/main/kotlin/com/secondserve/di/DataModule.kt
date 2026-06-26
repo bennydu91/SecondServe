@@ -29,13 +29,22 @@ import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.repository.NotificationRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.WorkAxisRepository
+import com.secondserve.data.monitoring.MonitoringClient
+import com.secondserve.data.monitoring.MonitoringEventQueue
 import com.secondserve.domain.sync.SyncScheduler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AppCoroutineScope
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -160,5 +169,17 @@ object DataModule {
         notificationScheduler: NotificationScheduler
     ): NotificationRepository =
         NotificationRepositoryImpl(playerDataStore, notificationScheduler)
+
+    @Provides
+    @Singleton
+    @AppCoroutineScope
+    fun provideAppCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob())
+
+    @Provides
+    @Singleton
+    fun provideMonitoringEventQueue(
+        client: MonitoringClient,
+        @AppCoroutineScope scope: CoroutineScope,
+    ): MonitoringEventQueue = MonitoringEventQueue(client, scope)
 
 }

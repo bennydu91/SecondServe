@@ -8,14 +8,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
-import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val FLUSH_INTERVAL_MS = 5 * 60 * 1000L
 private const val MAX_QUEUE_SIZE = 50
 
 @Singleton
-class MonitoringEventQueue @Inject constructor(
+class MonitoringEventQueue(
     private val client: MonitoringClient,
     private val appScope: CoroutineScope,
 ) {
