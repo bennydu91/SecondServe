@@ -1,11 +1,185 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>SecondServe Monitor</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SecondServe Monitor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding:1.5rem}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+h1{font-size:1.2rem;font-weight:600}
+.controls{display:flex;gap:.5rem;align-items:center}
+.meta{font-size:.75rem;color:#94a3b8}
+.btn{background:#1e293b;color:#e2e8f0;border:1px solid #334155;padding:.35rem .75rem;border-radius:6px;cursor:pointer;font-size:.8rem}
+.btn.active{background:#3b82f6;border-color:#3b82f6}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.kpi{background:#1e293b;border-radius:8px;padding:1rem}
+.kpi .lbl{font-size:.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+.kpi .val{font-size:1.75rem;font-weight:700;margin-top:.25rem}
+.kpi .val.err{color:#ef4444}
+.card{background:#1e293b;border-radius:8px;padding:1rem;margin-bottom:1rem}
+.card h2{font-size:.8rem;font-weight:600;color:#94a3b8;margin-bottom:.75rem}
+.chart-wrap{height:150px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{color:#64748b;font-weight:500;font-size:.7rem;text-transform:uppercase;padding:.3rem .4rem;text-align:left}
+td{padding:.35rem .4rem}
+tr:not(:last-child) td{border-bottom:1px solid #0f172a}
+.badge{font-size:.65rem;padding:.1rem .35rem;border-radius:4px;background:#334155}
+.badge.android{background:#065f46;color:#6ee7b7}
+.badge.wear{background:#1e3a5f;color:#93c5fd}
+.badge.backend{background:#44403c;color:#d6d3d1}
+.lvl{font-size:.65rem;padding:.1rem .35rem;border-radius:4px;font-weight:600}
+.lvl.ERROR,.lvl.CRITICAL{background:#450a0a;color:#fca5a5}
+.lvl.WARNING{background:#422006;color:#fdba74}
+.err-row{cursor:pointer}
+.err-row:hover td{background:#162032}
+.traceback{display:none;background:#0f172a;padding:.6rem;font-family:monospace;font-size:.7rem;color:#94a3b8;white-space:pre-wrap;word-break:break-all}
+.footer{font-size:.7rem;color:#64748b;text-align:right;margin-top:1rem}
+</style>
 </head>
 <body>
-    <h1>SecondServe Monitoring Dashboard</h1>
-    <p>Dashboard complet à venir (Task 5).</p>
+<div class="header">
+  <h1>SecondServe Monitor</h1>
+  <div class="controls">
+    <span class="meta" id="last-refresh"></span>
+    <button class="btn active" onclick="setWindow(1)" id="btn1">1h</button>
+    <button class="btn" onclick="setWindow(24)" id="btn24">24h</button>
+    <button class="btn" onclick="refresh()">↺</button>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><div class="lbl">Requêtes</div><div class="val" id="kReq">—</div></div>
+  <div class="kpi"><div class="lbl">Taux d'erreur</div><div class="val" id="kErr">—</div></div>
+  <div class="kpi"><div class="lbl">Temps moyen</div><div class="val" id="kRt">—</div></div>
+  <div class="kpi"><div class="lbl">Uptime</div><div class="val" id="kUp">—</div></div>
+</div>
+
+<div class="card">
+  <h2>Requêtes / heure</h2>
+  <div class="chart-wrap"><canvas id="chartReq"></canvas></div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Top endpoints</h2>
+    <table><thead><tr><th>Endpoint</th><th>Appels</th><th>Moy. ms</th></tr></thead>
+    <tbody id="tEndpoints"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>Événements métier</h2>
+    <table><thead><tr><th>Type</th><th>Source</th><th>Nb</th></tr></thead>
+    <tbody id="tEvents"></tbody></table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Dernières erreurs</h2>
+  <table><thead><tr><th>Heure</th><th>Niveau</th><th>Logger</th><th>Message</th></tr></thead>
+  <tbody id="tErrors"></tbody></table>
+</div>
+
+<div class="footer">Auto-refresh dans <span id="cd">60</span>s</div>
+
+<script>
+let W=1,chart=null,cd=60,timer=null;
+
+function setWindow(h){
+  W=h;
+  document.getElementById('btn1').classList.toggle('active',h===1);
+  document.getElementById('btn24').classList.toggle('active',h===24);
+  refresh();
+}
+
+async function get(url){const r=await fetch(url);if(!r.ok)throw new Error(r.status);return r.json();}
+
+function fmt(iso){return new Date(iso+'Z').toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+
+async function refresh(){
+  resetCd();
+  document.getElementById('last-refresh').textContent='Chargement…';
+  try{
+    const[s,req,errs,evts]=await Promise.all([
+      get(`/monitor/api/stats?window=${W}`),
+      get(`/monitor/api/requests?window=${W}`),
+      get('/monitor/api/errors?limit=50'),
+      get(`/monitor/api/events?window=${W}`),
+    ]);
+    renderKpis(s);renderChart(req.by_hour);
+    renderEndpoints(req.top_endpoints);renderEvents(evts);renderErrors(errs);
+    document.getElementById('last-refresh').textContent='Actualisé '+new Date().toLocaleTimeString('fr-FR');
+  }catch(e){document.getElementById('last-refresh').textContent='Erreur';}
+}
+
+function renderKpis(s){
+  document.getElementById('kReq').textContent=s.total_requests.toLocaleString('fr-FR');
+  const el=document.getElementById('kErr');
+  el.textContent=s.error_rate+'%';el.className='val'+(s.error_rate>5?' err':'');
+  document.getElementById('kRt').textContent=s.avg_response_time_ms+' ms';
+  document.getElementById('kUp').textContent=s.uptime_pct+'%';
+}
+
+function renderChart(data){
+  const labels=data.map(d=>d.hour.substring(11,16));
+  const vals=data.map(d=>d.count);
+  if(chart){chart.data.labels=labels;chart.data.datasets[0].data=vals;chart.update();return;}
+  chart=new Chart(document.getElementById('chartReq'),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:'#3b82f6',borderRadius:4}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},
+        y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function renderEndpoints(data){
+  document.getElementById('tEndpoints').innerHTML=data.map(e=>
+    `<tr><td>${e.path}</td><td>${e.count}</td><td>${e.avg_ms}</td></tr>`
+  ).join('');
+}
+
+function renderEvents(data){
+  document.getElementById('tEvents').innerHTML=data.map(e=>
+    `<tr><td>${e.event_type}</td><td><span class="badge ${e.source}">${e.source}</span></td><td>${e.count}</td></tr>`
+  ).join('');
+}
+
+function renderErrors(data){
+  document.getElementById('tErrors').innerHTML=data.map((e,i)=>
+    `<tr class="err-row" onclick="toggle(${i})">
+      <td>${fmt(e.timestamp)}</td>
+      <td><span class="lvl ${e.level}">${e.level}</span></td>
+      <td>${e.logger}</td>
+      <td>${e.message.substring(0,80)}</td>
+    </tr>
+    ${e.traceback?`<tr id="tb${i}"><td colspan="4"><div class="traceback">${e.traceback}</div></td></tr>`:''}`
+  ).join('');
+}
+
+function toggle(i){
+  const r=document.getElementById('tb'+i);
+  if(!r)return;
+  const tb=r.querySelector('.traceback');
+  tb.style.display=tb.style.display==='block'?'none':'block';
+}
+
+function resetCd(){
+  cd=60;clearInterval(timer);
+  timer=setInterval(()=>{
+    document.getElementById('cd').textContent=--cd;
+    if(cd<=0)refresh();
+  },1000);
+}
+
+refresh();
+</script>
 </body>
 </html>
