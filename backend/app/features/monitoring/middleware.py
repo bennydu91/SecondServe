@@ -9,6 +9,8 @@ from starlette.requests import Request
 from app.features.monitoring.database import MonitoringSessionLocal
 from app.features.monitoring.models import RequestLog
 
+_background_tasks: set = set()
+
 
 async def _write_request_log(
     method: str, path: str, status_code: int, response_time: int, ip: str
@@ -38,11 +40,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         elapsed_ms = int((time.monotonic() - start) * 1000)
 
         ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "unknown")
-        asyncio.create_task(_write_request_log(
+        task = asyncio.create_task(_write_request_log(
             method=request.method,
             path=request.url.path,
             status_code=response.status_code,
             response_time=elapsed_ms,
             ip=ip.split(",")[0].strip(),
         ))
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
         return response

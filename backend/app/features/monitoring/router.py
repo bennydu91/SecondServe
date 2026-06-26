@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.security import verify_jwt
 from app.features.monitoring.database import MonitoringSessionLocal
 from app.features.monitoring import service as svc
 
@@ -77,7 +78,7 @@ async def api_events(
     return await svc.get_events_summary(db, window)
 
 
-@monitor_router.post("/monitor/api/events", status_code=201)
+@monitor_router.post("/monitor/api/events", status_code=201, dependencies=[Depends(verify_jwt)])
 async def receive_event(
     payload: MonitoringEventPayload,
     db: AsyncSession = Depends(get_monitor_db),
@@ -87,7 +88,7 @@ async def receive_event(
     return {"status": "ok"}
 
 
-@monitor_router.post("/monitor/api/events/batch", status_code=201)
+@monitor_router.post("/monitor/api/events/batch", status_code=201, dependencies=[Depends(verify_jwt)])
 async def receive_event_batch(
     events: list[MonitoringEventPayload],
     db: AsyncSession = Depends(get_monitor_db),

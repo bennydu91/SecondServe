@@ -7,6 +7,8 @@ from datetime import datetime
 from app.features.monitoring.database import MonitoringSessionLocal
 from app.features.monitoring.models import ErrorLog
 
+_background_tasks: set = set()
+
 
 async def _write_error_log(
     level: str, logger_name: str, message: str, tb: str | None
@@ -38,11 +40,13 @@ class MonitoringLogHandler(logging.Handler):
 
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(_write_error_log(
+            task = loop.create_task(_write_error_log(
                 level=record.levelname,
                 logger_name=record.name,
                 message=record.getMessage(),
                 tb=tb,
             ))
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
         except RuntimeError:
             pass  # pas de boucle en cours (ex: startup) — on ignore

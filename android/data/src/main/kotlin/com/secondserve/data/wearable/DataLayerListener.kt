@@ -19,6 +19,7 @@ import com.secondserve.domain.repository.SessionRepository
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.secondserve.data.monitoring.MonitoringClient
+import com.secondserve.data.monitoring.MonitoringEventQueue
 import com.secondserve.data.monitoring.dto.MonitoringEventDto
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -44,6 +45,7 @@ class DataLayerListener : WearableListenerService() {
         fun sessionRepository(): SessionRepository
         fun dataLayerClient(): DataLayerClient
         fun monitoringClient(): MonitoringClient
+        fun monitoringEventQueue(): MonitoringEventQueue
     }
 
     private val moshi = Moshi.Builder()
@@ -85,6 +87,13 @@ class DataLayerListener : WearableListenerService() {
             applicationContext,
             DataLayerListenerEntryPoint::class.java
         ).monitoringClient()
+    }
+
+    private val monitoringEventQueue: MonitoringEventQueue by lazy {
+        EntryPointAccessors.fromApplication(
+            applicationContext,
+            DataLayerListenerEntryPoint::class.java
+        ).monitoringEventQueue()
     }
 
     override fun onDestroy() {
@@ -206,11 +215,8 @@ class DataLayerListener : WearableListenerService() {
         serviceScope.launch {
             try {
                 val obj = JSONObject(json)
-                monitoringClient.sendEvent(MonitoringEventDto(
-                    eventType = obj.getString("event_type"),
-                    payload = emptyMap(),
-                    source = "wear",
-                ))
+                val eventType = obj.getString("event_type")
+                monitoringEventQueue.enqueue(eventType, emptyMap(), "wear")
             } catch (e: Exception) {
                 Timber.e(e, "DataLayerListener: handleMonitorEvent failed")
             }

@@ -22,6 +22,8 @@ import com.secondserve.data.remote.api.dto.SyncPushResponse
 import com.secondserve.data.remote.api.dto.WorkAxesResponse
 import com.secondserve.data.remote.api.dto.WorkAxisRequest
 import com.secondserve.data.remote.api.dto.WorkAxisResponse
+import com.secondserve.data.monitoring.MonitoringClient
+import com.secondserve.data.monitoring.MonitoringEventQueue
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.notification.NotificationScheduler
 import dagger.Module
@@ -29,6 +31,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import javax.inject.Singleton
 
 /**
@@ -73,6 +77,13 @@ object WearDataModule {
     @Provides
     @Singleton
     fun provideVpsApiService(): VpsApiService = NoOpVpsApiService
+
+    // Stub — satisfies Hilt binding graph for DataLayerListener.monitoringEventQueue(); never
+    // called at runtime on Wear OS (DataLayerListener runs on phone only).
+    @Provides
+    @Singleton
+    fun provideMonitoringEventQueue(client: MonitoringClient): MonitoringEventQueue =
+        MonitoringEventQueue(client, CoroutineScope(SupervisorJob()))
 }
 
 private object NoOpNotificationScheduler : NotificationScheduler {

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.main import app
+from app.core.security import JWTManager
 from app.features.monitoring.database import MonitoringBase
 from app.features.monitoring.router import get_monitor_db
 
@@ -20,6 +21,8 @@ _test_engine = create_async_engine(
     poolclass=StaticPool,
 )
 _test_session_factory = async_sessionmaker(_test_engine, expire_on_commit=False)
+
+_TEST_JWT = JWTManager("test-only-secret-do-not-use-in-production").create_token()
 
 
 @pytest.fixture(autouse=True)
@@ -62,10 +65,19 @@ async def test_stats_returns_zero_on_empty_db(client):
     assert data["uptime_pct"] == 100.0
 
 
+async def test_post_event_requires_jwt(client):
+    r = await client.post(
+        "/monitor/api/events",
+        json={"event_type": "test", "payload": {}, "source": "android"},
+    )
+    assert r.status_code == 401
+
+
 async def test_post_event_and_retrieve(client):
     r = await client.post(
         "/monitor/api/events",
         json={"event_type": "match.started", "payload": {"session_id": 1}, "source": "android"},
+        headers={"Authorization": f"Bearer {_TEST_JWT}"},
     )
     assert r.status_code == 201
 
@@ -79,6 +91,10 @@ async def test_post_batch_events(client):
         {"event_type": "wear.score.updated", "payload": {}, "source": "wear"},
         {"event_type": "wear.score.updated", "payload": {}, "source": "wear"},
     ]
-    r = await client.post("/monitor/api/events/batch", json=payload)
+    r = await client.post(
+        "/monitor/api/events/batch",
+        json=payload,
+        headers={"Authorization": f"Bearer {_TEST_JWT}"},
+    )
     assert r.status_code == 201
     assert r.json()["count"] == 2

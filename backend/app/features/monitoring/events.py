@@ -6,6 +6,8 @@ from datetime import datetime
 from app.features.monitoring.database import MonitoringSessionLocal
 from app.features.monitoring.models import BusinessEvent
 
+_background_tasks: set = set()
+
 
 async def _persist_event(event_type: str, payload: dict, source: str) -> None:
     try:
@@ -25,6 +27,8 @@ def emit_event(event_type: str, payload: dict, source: str = "backend") -> None:
     """Fire-and-forget — ne pas awaiter."""
     try:
         loop = asyncio.get_running_loop()
-        loop.create_task(_persist_event(event_type, payload, source))
+        task = loop.create_task(_persist_event(event_type, payload, source))
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
     except RuntimeError:
         pass

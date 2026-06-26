@@ -15,6 +15,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -83,18 +84,32 @@ class DataLayerClient @Inject constructor(
     }
 
     suspend fun sendMonitorEvent(eventType: String, payload: Map<String, String>): AppResult<Unit> {
-        val json = """{"event_type":"$eventType","payload":${payloadToJson(payload)},"source":"wear"}"""
-        return sendMessage(PATH_MONITOR_EVENT, json.toByteArray(Charsets.UTF_8))
+        val obj = JSONObject().apply {
+            put("event_type", eventType)
+            put("payload", JSONObject().apply { payload.forEach { (k, v) -> put(k, v) } })
+            put("source", "wear")
+        }
+        return sendMessage(PATH_MONITOR_EVENT, obj.toString().toByteArray(Charsets.UTF_8))
     }
 
     suspend fun sendMonitorError(error: String, stacktrace: String): AppResult<Unit> {
-        val escaped = stacktrace.replace("\"", "'").take(2000)
-        val json = """{"event_type":"wear.error","payload":{"error":"$error","stacktrace":"$escaped"},"source":"wear"}"""
-        return sendMessage(PATH_MONITOR_ERROR, json.toByteArray(Charsets.UTF_8))
+        val payloadObj = JSONObject().apply {
+            put("error", error)
+            put("stacktrace", stacktrace.take(2000))
+        }
+        val obj = JSONObject().apply {
+            put("event_type", "wear.error")
+            put("payload", payloadObj)
+            put("source", "wear")
+        }
+        return sendMessage(PATH_MONITOR_ERROR, obj.toString().toByteArray(Charsets.UTF_8))
     }
 
-    private fun payloadToJson(map: Map<String, String>): String =
-        "{" + map.entries.joinToString(",") { (k, v) -> "\"$k\":\"$v\"" } + "}"
+    private fun payloadToJson(map: Map<String, String>): String {
+        val obj = JSONObject()
+        map.forEach { (k, v) -> obj.put(k, v) }
+        return obj.toString()
+    }
 
     private suspend fun sendMessage(path: String, payload: ByteArray): AppResult<Unit> {
         return try {
