@@ -21,7 +21,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,7 +33,6 @@ import androidx.core.content.ContextCompat
 import com.secondserve.auth.GoogleSignInHelper
 import com.secondserve.core.ui.theme.SecondServeTheme
 import com.secondserve.data.remote.auth.AuthRepository
-import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.navigation.AppNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -48,7 +46,6 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var authRepository: AuthRepository
     @Inject lateinit var googleSignInHelper: GoogleSignInHelper
-    @Inject lateinit var dataLayerEventBus: DataLayerEventBus
 
     private val _pendingSessionId = mutableStateOf<Long?>(null)
 
@@ -72,11 +69,6 @@ class MainActivity : ComponentActivity() {
 
                 when (authState) {
                     AuthState.Authenticated -> {
-                        LaunchedEffect(Unit) {
-                            dataLayerEventBus.startSessionRequests.collect { sessionId ->
-                                _pendingSessionId.value = sessionId
-                            }
-                        }
                         AppNavGraph(
                             pendingSessionId = _pendingSessionId.value,
                             onPendingSessionConsumed = { _pendingSessionId.value = null }
