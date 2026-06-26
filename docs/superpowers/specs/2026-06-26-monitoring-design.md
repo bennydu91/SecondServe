@@ -5,7 +5,7 @@
 
 ## Contexte
 
-SecondServe tourne sur un VPS Hostinger KVM 4 (FastAPI + nginx). Il n'y a actuellement aucune visibilité sur la santé du backend, les erreurs, ou les événements métier (sessions de match, appels IA, synchro montre). Ce spec décrit un système de logging complet avec un dashboard maison hébergé sur le même VPS.
+SecondServe tourne sur un VPS Hostinger KVM 4 (FastAPI + Cloudflare en frontal). Il n'y a actuellement aucune visibilité sur la santé du backend, les erreurs, ou les événements métier (sessions de match, appels IA, synchro montre). Ce spec décrit un système de logging complet avec un dashboard maison hébergé sur le même VPS.
 
 ## Objectifs
 
@@ -18,18 +18,18 @@ SecondServe tourne sur un VPS Hostinger KVM 4 (FastAPI + nginx). Il n'y a actuel
 ## Architecture
 
 ```
-Nginx (HTTPS :443)
-  /monitor/*  → Basic Auth → FastAPI :8000
-  /api/*      → (inchangé) → FastAPI :8000
+Cloudflare (DNS + proxy HTTPS)
+  → VPS :443 → FastAPI :8000
 
 FastAPI :8000
   ├── RequestLoggingMiddleware  →  monitor.db (request_logs)
   ├── MonitoringLogHandler      →  monitor.db (error_logs)
   └── features/monitoring/
-        ├── GET  /monitor           → dashboard HTML
-        ├── GET  /monitor/api/stats
-        ├── GET  /monitor/api/requests
-        ├── GET  /monitor/api/errors
+        ├── GET  /monitor           → dashboard HTML  [Basic Auth FastAPI]
+        ├── GET  /monitor/api/stats                   [Basic Auth FastAPI]
+        ├── GET  /monitor/api/requests                [Basic Auth FastAPI]
+        ├── GET  /monitor/api/errors                  [Basic Auth FastAPI]
+        ├── GET  /monitor/api/events                  [Basic Auth FastAPI]
         └── POST /monitor/api/events  ← stub Android (futur)
 ```
 
@@ -120,23 +120,28 @@ Page HTML unique avec vanilla JS + Chart.js (CDN). Aucun build tool.
 - Auto-refresh toutes les 60 secondes
 - Bouton refresh manuel
 
-## Nginx — configuration
+## Authentification — HTTP Basic Auth FastAPI
 
-Ajout d'un bloc `location /monitor` dans `nginx-secondserve.conf` :
+Le routing est géré par Cloudflare (pas de nginx). La protection du dashboard est donc implémentée directement dans FastAPI via `fastapi.security.HTTPBasic`.
 
-```nginx
-location /monitor {
-    auth_basic "SecondServe Monitor";
-    auth_basic_user_file /etc/nginx/.htpasswd-monitor;
-    proxy_pass http://127.0.0.1:8000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
+Une dépendance `require_monitor_auth` est appliquée à toutes les routes `/monitor/*`. Elle vérifie le login/mot de passe contre des valeurs stockées dans les variables d'environnement (`MONITOR_USER`, `MONITOR_PASSWORD`), en comparaison à temps constant (`secrets.compare_digest`) pour éviter les timing attacks.
+
+```python
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
+
+security = HTTPBasic()
+
+def require_monitor_auth(credentials: HTTPBasicCredentials = Depends(security)):
+    ok = (
+        secrets.compare_digest(credentials.username, settings.monitor_user)
+        and secrets.compare_digest(credentials.password, settings.monitor_password)
+    )
+    if not ok:
+        raise HTTPException(status_code=401, headers={"WWW-Authenticate": "Basic"})
 ```
 
-Le fichier `.htpasswd-monitor` est créé sur le VPS avec `htpasswd`. Il n'est pas versionné.
+`MONITOR_USER` et `MONITOR_PASSWORD` sont ajoutés au `.env` (et au `.env.example` avec des valeurs fictives). Ils ne sont pas versionnés.
 
 ## Structure de fichiers
 
