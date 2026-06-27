@@ -86,28 +86,34 @@ class CoachingViewModelTest {
 
     @Test
     fun `generateNow sets timeout error message when engine throws TimeoutCancellationException`() = runTest(testDispatcher) {
+        viewModel.generateTimeoutMs = 50L
         coEvery { vpsMistralEngine.generate(any()) } coAnswers {
             delay(Long.MAX_VALUE)
             AppResult.Success("")
         }
 
         viewModel.generateNow()
-        testDispatcher.scheduler.advanceUntilIdle()
 
+        // Attendre le cycle complet : démarrage (synthesisInProgress=true) PUIS fin (false).
+        // Sans l'attente de l'état "true", first{!synthesisInProgress} court-circuiterait sur
+        // l'état initial (synthesisInProgress=false par défaut), car Orbit exécute l'intent sur
+        // Dispatchers.Default de façon asynchrone vis-à-vis du scheduler de test.
+        viewModel.container.stateFlow.first { it.synthesisInProgress }
         val state = viewModel.container.stateFlow.first { !it.synthesisInProgress }
         assertEquals("Délai dépassé — réessayez", state.error)
     }
 
     @Test
     fun `generateNow clears synthesisInProgress after TimeoutCancellationException`() = runTest(testDispatcher) {
+        viewModel.generateTimeoutMs = 50L
         coEvery { vpsMistralEngine.generate(any()) } coAnswers {
             delay(Long.MAX_VALUE)
             AppResult.Success("")
         }
 
         viewModel.generateNow()
-        testDispatcher.scheduler.advanceUntilIdle()
 
+        viewModel.container.stateFlow.first { it.synthesisInProgress }
         val state = viewModel.container.stateFlow.first { !it.synthesisInProgress }
         assertFalse(state.synthesisInProgress)
     }
