@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import com.secondserve.domain.model.MatchFormat
+import com.secondserve.domain.model.SurfaceConstants
 import com.secondserve.domain.model.ThirdSetRule
 import org.orbitmvi.orbit.compose.collectSideEffect
 
@@ -46,6 +49,7 @@ fun StartMatchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -57,7 +61,20 @@ fun StartMatchScreen(
             textAlign = TextAlign.Center
         )
 
+        // Surface selector — obligatoire (parité avec le formulaire téléphone)
+        SectionLabel("Surface :")
+        SurfaceConstants.ALL.forEach { surface ->
+            SelectChip(
+                label = SurfaceConstants.DISPLAY_NAMES[surface] ?: surface,
+                selected = state.surface == surface,
+                onClick = { viewModel.selectSurface(surface) }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(2.dp))
+
         // Format selector — filled = selected, tonal = not selected
+        SectionLabel("Format :")
         SelectChip(
             label = "1 set",
             selected = state.matchFormat == MatchFormat.BEST_OF_1,
@@ -72,12 +89,7 @@ fun StartMatchScreen(
         // Third-set rule — visible only for BEST_OF_3
         if (state.matchFormat == MatchFormat.BEST_OF_3) {
             Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "3e set :",
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            SectionLabel("3e set :")
             SelectChip(
                 label = "Avantage",
                 selected = state.thirdSetRule == ThirdSetRule.FULL_ADVANTAGE,
@@ -95,12 +107,12 @@ fun StartMatchScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Confirmation button — disabled while waiting for phone response
+        // Confirmation button — disabled tant que la surface n'est pas choisie / en attente
         Button(
             onClick = { viewModel.confirmStart() },
-            enabled = !state.isLoading,
+            enabled = state.canStart,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
@@ -109,6 +121,16 @@ fun StartMatchScreen(
             )
         }
     }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        fontSize = 10.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
 }
 
 @Composable

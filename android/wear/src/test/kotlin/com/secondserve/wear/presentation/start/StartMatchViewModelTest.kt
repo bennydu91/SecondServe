@@ -65,9 +65,38 @@ class StartMatchViewModelTest {
     }
 
     @Test
-    fun `confirmStart with phone available keeps isLoading true and calls DataLayerClient`() = runTest {
-        coEvery { dataLayerClient.sendStartSessionRequest(any(), any()) } returns AppResult.Success(Unit)
+    fun `initial state has no surface selected and canStart is false`() = runTest {
         val vm = createViewModel()
+        val state = vm.container.stateFlow.value
+        assertEquals(null, state.surface)
+        assertFalse(state.canStart)
+    }
+
+    @Test
+    fun `selectSurface updates surface and enables canStart`() = runTest {
+        val vm = createViewModel()
+        vm.selectSurface("CLAY")
+        val state = vm.container.stateFlow.first { it.surface == "CLAY" }
+        assertEquals("CLAY", state.surface)
+        assertTrue(state.canStart)
+    }
+
+    @Test
+    fun `confirmStart without surface does nothing`() = runTest {
+        val vm = createViewModel()
+
+        vm.confirmStart()
+
+        assertFalse(vm.container.stateFlow.value.isLoading)
+        coVerify(exactly = 0) { dataLayerClient.sendStartSessionRequest(any(), any(), any()) }
+    }
+
+    @Test
+    fun `confirmStart with phone available keeps isLoading true and calls DataLayerClient with surface`() = runTest {
+        coEvery { dataLayerClient.sendStartSessionRequest(any(), any(), any()) } returns AppResult.Success(Unit)
+        val vm = createViewModel()
+        vm.selectSurface("CLAY")
+        vm.container.stateFlow.first { it.surface == "CLAY" }
 
         vm.confirmStart()
         vm.container.stateFlow.first { it.isLoading }
@@ -76,16 +105,19 @@ class StartMatchViewModelTest {
         coVerify {
             dataLayerClient.sendStartSessionRequest(
                 MatchFormat.BEST_OF_3,
-                ThirdSetRule.FULL_ADVANTAGE
+                ThirdSetRule.FULL_ADVANTAGE,
+                "CLAY"
             )
         }
     }
 
     @Test
     fun `confirmStart in degraded mode clears isLoading and calls DataLayerClient`() = runTest {
-        coEvery { dataLayerClient.sendStartSessionRequest(any(), any()) } returns
+        coEvery { dataLayerClient.sendStartSessionRequest(any(), any(), any()) } returns
             AppResult.Error(Exception("No connected phone node"))
         val vm = createViewModel()
+        vm.selectSurface("HARD")
+        vm.container.stateFlow.first { it.surface == "HARD" }
 
         vm.confirmStart()
         vm.container.stateFlow.first { it.isLoading }
@@ -95,15 +127,18 @@ class StartMatchViewModelTest {
         coVerify {
             dataLayerClient.sendStartSessionRequest(
                 MatchFormat.BEST_OF_3,
-                ThirdSetRule.FULL_ADVANTAGE
+                ThirdSetRule.FULL_ADVANTAGE,
+                "HARD"
             )
         }
     }
 
     @Test
     fun `confirmStart times out after PHONE_RESPONSE_TIMEOUT_MS and falls back to local`() = runTest {
-        coEvery { dataLayerClient.sendStartSessionRequest(any(), any()) } returns AppResult.Success(Unit)
+        coEvery { dataLayerClient.sendStartSessionRequest(any(), any(), any()) } returns AppResult.Success(Unit)
         val vm = createViewModel()
+        vm.selectSurface("CLAY")
+        vm.container.stateFlow.first { it.surface == "CLAY" }
 
         vm.confirmStart()
         vm.container.stateFlow.first { it.isLoading }

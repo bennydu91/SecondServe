@@ -26,10 +26,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Pas d'android:permission ici : exiger "com.google.android.gms.wearable.BIND_LISTENER"
+             (permission héritée non détenue par le GMS moderne) fait échouer le bind du service
+             par Google Play Services ("bind: Permission denied") → onMessageReceived jamais appelé. -->
         <service
             android:name="com.secondserve.wear.WearDataLayerListener"
-            android:exported="true"
-            android:permission="com.google.android.gms.wearable.BIND_LISTENER">
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <data

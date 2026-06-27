@@ -36,12 +36,33 @@ class StartSessionPayloadTest {
     }
 
     @Test
-    fun `StartSessionRequestPayload serializes with correct type field`() {
+    fun `StartSessionRequestPayload serializes with correct type field and surface`() {
         val payload = StartSessionRequestPayload(
-            ts = 1000L, matchFormat = "BEST_OF_3", thirdSetRule = "SUPER_TIE_BREAK_10"
+            ts = 1000L, matchFormat = "BEST_OF_3", thirdSetRule = "SUPER_TIE_BREAK_10",
+            surface = "CLAY"
         )
         val json = moshi.adapter(StartSessionRequestPayload::class.java).toJson(payload)
         assertTrue(json.contains("\"type\":\"START_SESSION_REQUEST\""))
         assertTrue(json.contains("\"thirdSetRule\":\"SUPER_TIE_BREAK_10\""))
+        assertTrue(json.contains("\"surface\":\"CLAY\""))
+    }
+
+    @Test
+    fun `StartSessionRequestPayload round-trips surface through Moshi`() {
+        val original = StartSessionRequestPayload(
+            ts = 1000L, matchFormat = "BEST_OF_1", thirdSetRule = "FULL_ADVANTAGE",
+            surface = "GRASS"
+        )
+        val json = moshi.adapter(StartSessionRequestPayload::class.java).toJson(original)
+        val restored = moshi.adapter(StartSessionRequestPayload::class.java).fromJson(json)!!
+        assertEquals("GRASS", restored.surface)
+        assertEquals(original.matchFormat, restored.matchFormat)
+    }
+
+    @Test
+    fun `StartSessionRequestPayload defaults surface to empty when absent from JSON`() {
+        val json = """{"type":"START_SESSION_REQUEST","ts":1,"matchFormat":"BEST_OF_3","thirdSetRule":"FULL_ADVANTAGE"}"""
+        val restored = moshi.adapter(StartSessionRequestPayload::class.java).fromJson(json)!!
+        assertEquals("", restored.surface)
     }
 }

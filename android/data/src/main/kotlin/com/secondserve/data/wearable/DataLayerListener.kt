@@ -172,7 +172,7 @@ class DataLayerListener : WearableListenerService() {
 
             serviceScope.launch {
                 val session = Session(
-                    surface = "",
+                    surface = payload.surface,
                     format = SessionFormat(matchFormat = matchFormat, thirdSetRule = thirdSetRule),
                     status = SessionStatus.ACTIVE,
                     createdAt = System.currentTimeMillis(),

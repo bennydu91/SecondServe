@@ -32,12 +32,18 @@ class StartMatchViewModel @Inject constructor(
         reduce { state.copy(thirdSetRule = rule) }
     }
 
+    fun selectSurface(surface: String) = intent {
+        reduce { state.copy(surface = surface) }
+    }
+
     fun confirmStart() = intent {
+        // Surface obligatoire : impossible de démarrer sans l'avoir choisie (cf. canStart côté UI).
+        val surface = state.surface ?: return@intent
         val format = state.matchFormat
         val rule = state.thirdSetRule
         reduce { state.copy(isLoading = true, errorMessage = null) }
 
-        val result = dataLayerClient.sendStartSessionRequest(format, rule)
+        val result = dataLayerClient.sendStartSessionRequest(format, rule, surface)
         when (result) {
             is AppResult.Success -> {
                 Timber.d("StartMatchViewModel: start session request sent to phone")
@@ -75,9 +81,13 @@ class StartMatchViewModel @Inject constructor(
 data class StartMatchUiState(
     val matchFormat: MatchFormat = MatchFormat.BEST_OF_3,
     val thirdSetRule: ThirdSetRule = ThirdSetRule.FULL_ADVANTAGE,
+    val surface: String? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
-)
+) {
+    // Surface obligatoire avant de pouvoir démarrer (parité avec le formulaire téléphone).
+    val canStart: Boolean get() = surface != null && !isLoading
+}
 
 sealed class StartMatchSideEffect {
     data class StartLocal(
