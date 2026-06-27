@@ -1,6 +1,7 @@
 package com.secondserve.feature.match
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -34,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -83,13 +85,18 @@ fun MatchScreen(
                 LiveScoreDisplay(score = liveScore)
             }
 
-            AnimatedVisibility(
-                visible = state.coachingAdvice != null,
-                enter = fadeIn() + slideInVertically { it / 2 },
-                exit = fadeOut() + slideOutVertically { it / 2 }
-            ) {
-                state.coachingAdvice?.let { advice ->
-                    CoachingAdviceCard(text = advice.text)
+            // key(coachingAdviceSeq) : recrée le AnimatedVisibility à chaque changement de côté
+            // pour rejouer l'animation d'apparition, même si le texte du conseil est identique.
+            key(state.coachingAdviceSeq) {
+                AnimatedVisibility(
+                    visibleState = remember { MutableTransitionState(false) }
+                        .apply { targetState = state.coachingAdvice != null },
+                    enter = fadeIn() + slideInVertically { it / 2 },
+                    exit = fadeOut() + slideOutVertically { it / 2 }
+                ) {
+                    state.coachingAdvice?.let { advice ->
+                        CoachingAdviceCard(text = advice.text)
+                    }
                 }
             }
 

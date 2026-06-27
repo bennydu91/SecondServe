@@ -4,6 +4,9 @@
     <uses-feature android:name="android.hardware.type.watch" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Permet d'ouvrir l'app au démarrage d'un match depuis le téléphone via une
+         notification full-screen-intent (contourne le blocage Background Activity Launch). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
         android:name=".WearApp"

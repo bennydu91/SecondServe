@@ -105,6 +105,20 @@ Logcat capturé sur les deux appareils (`logs/log_phone-20260627-155245.txt`, `l
 ### Final Conclusion (révisée) — Confidence: HIGH
 Cause racine **confirmée par observation directe runtime** : `android:permission="com.google.android.gms.wearable.BIND_LISTENER"` sur les deux `WearableListenerService` empêche Google Play Services de les binder (« bind: Permission denied »), donc aucun message DataLayer n'est traité dans aucun sens. Correctif déterministe : retirer cet attribut des deux manifests.
 
+## Follow-up: 2026-06-27 #2 — Après fix manifest : BAL confirmé + coaching à un seul affichage
+
+Logs `logs/*-181728.txt`. Le pont fonctionne (plus de « Permission denied »), montre→téléphone OK.
+
+### Finding 8 (CONFIRMÉ) — startActivity depuis le service montre bloqué par BAL
+**Evidence:** `log_watch:10` — `E/ActivityTaskManager: Background activity launch blocked! ... callingUidProcState: CACHED_EMPTY ... cmp=.../.wear.WearActivity ... result code=102 (BAL_BLOCK)`. Le lancement manuel ultérieur passe (`log_watch:19`, `BAL_ALLOW_VISIBLE_WINDOW`).
+**Detail:** Confirme la Deduction 1 (réhabilitée pour ce cas précis) : une fois le service capable de tourner, le `startActivity` à froid est refusé. Côté téléphone le launch a réussi car l'app était au premier plan (fenêtre visible).
+**Fix appliqué:** remplacement des `startActivity` par une notification full-screen-intent dans `WearDataLayerListener` ET `DataLayerListener` (+ permission `USE_FULL_SCREEN_INTENT` sur les deux manifests).
+
+### Finding 9 (DÉDUIT) — Un seul conseil visible : pas de ré-annonce dans l'UI
+**Evidence:** `log_phone:154` (gameOver 1-0) et `log_phone:181` (gameOver 1-2) tous deux émis. `CoachingResolver.resolve` ne retourne jamais null (fallback statique). `MatchScreen.kt:86` affichait la carte via `AnimatedVisibility(visible = coachingAdvice != null)` jamais remis à null.
+**Reasoning:** patterns différents (1-0 → FIRST_GAME_WON, 1-2 → NEUTRAL_TRANSITION) mais la carte restant visible en continu, un nouveau conseil change le texte en place sans se ré-annoncer (et aucune recomposition si texte identique).
+**Fix appliqué:** `coachingAdviceSeq` incrémenté à chaque changement de côté + `key(seq)` autour du `AnimatedVisibility` (animation rejouée à chaque conseil). À confirmer via capture (filtre `capture-logs.sh` élargi à `Coaching`).
+
 ## Diagnostic / Verification Plan
 
 1. Logcat filtré `secondserve` pendant un démarrage téléphone : vérifier `WearDataLayerListener: received path=/secondserve/start_session` puis observer si `WearActivity` s'ouvre (lève H1 et confirme BAL).

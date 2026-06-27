@@ -15,7 +15,7 @@
 set -euo pipefail
 
 # --- Filtre des tags pertinents (Timber utilise le nom de classe comme tag) ---
-FILTER='DataLayer|secondserve|SecondServe|ScoreViewModel|StartMatch|NewMatch|MatchViewModel|BackgroundActivity|Background activity|Abort background'
+FILTER='DataLayer|secondserve|SecondServe|ScoreViewModel|StartMatch|NewMatch|MatchViewModel|Coaching|BackgroundActivity|Background activity|Abort background'
 
 OUT_DIR="./logs"
 while getopts "o:h" opt; do

@@ -49,7 +49,10 @@ class MatchViewModel @Inject constructor(
             dataLayerEventBus.gameOverEvents.collect { score ->
                 val result = coachingResolver.resolve(sessionId, score)
                 result?.let { advice ->
-                    intent { reduce { state.copy(coachingAdvice = advice) } }
+                    // coachingAdviceSeq s'incrémente à chaque changement de côté pour garantir
+                    // une nouvelle émission d'état (même si le texte est identique) et permettre
+                    // à l'UI de ré-animer la carte → chaque conseil est visiblement annoncé.
+                    intent { reduce { state.copy(coachingAdvice = advice, coachingAdviceSeq = state.coachingAdviceSeq + 1) } }
                     coachingCachePrefetcher.refreshPostChangeover(sessionId, score)
                 }
             }
@@ -106,7 +109,8 @@ data class MatchUiState(
     val feelingRating: Int? = null,
     val feelingComment: String = "",
     val isClosing: Boolean = false,
-    val coachingAdvice: CoachingResult? = null
+    val coachingAdvice: CoachingResult? = null,
+    val coachingAdviceSeq: Int = 0
 )
 
 sealed class MatchSideEffect {

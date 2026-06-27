@@ -1,5 +1,10 @@
 package com.secondserve.data.wearable
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
@@ -203,12 +208,48 @@ class DataLayerListener : WearableListenerService() {
                     putExtra("sessionId", sessionId)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 }
-                applicationContext.startActivity(intent)
+                // Ce service tourne en arrière-plan (réveillé par GMS) : un startActivity() direct
+                // est bloqué par le Background Activity Launch quand le téléphone n'est pas au
+                // premier plan (usage watch-first, téléphone en poche). On passe par une
+                // notification full-screen-intent, chemin de lancement autorisé depuis l'arrière-plan.
+                launchViaFullScreenIntent(intent, sessionId)
                 Timber.d("DataLayerListener: session %d created from watch request", sessionId)
             }
         } catch (e: Exception) {
             Timber.e(e, "DataLayerListener: failed to handle start_session_request")
         }
+    }
+
+    private fun launchViaFullScreenIntent(launchIntent: Intent, sessionId: Long) {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.createNotificationChannel(
+            NotificationChannel(
+                MATCH_LAUNCH_CHANNEL_ID,
+                "Démarrage de match",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Ouvre le suivi de match quand une session est démarrée depuis la montre"
+            }
+        )
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            sessionId.toInt(),
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = Notification.Builder(this, MATCH_LAUNCH_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setContentTitle("Match en cours")
+            .setContentText("Touchez pour suivre le match et recevoir le coaching")
+            .setCategory(Notification.CATEGORY_CALL)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setFullScreenIntent(pendingIntent, true)
+            .build()
+
+        nm.notify(MATCH_LAUNCH_NOTIFICATION_ID, notification)
     }
 
     private fun handleMonitorEvent(json: String) {
@@ -240,5 +281,10 @@ class DataLayerListener : WearableListenerService() {
                 Timber.e(e, "DataLayerListener: handleMonitorError failed")
             }
         }
+    }
+
+    companion object {
+        private const val MATCH_LAUNCH_CHANNEL_ID = "match_launch"
+        private const val MATCH_LAUNCH_NOTIFICATION_ID = 4202
     }
 }

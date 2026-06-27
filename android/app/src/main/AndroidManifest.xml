@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Permet d'ouvrir l'écran de match au démarrage d'une session depuis la montre via une
+         notification full-screen-intent (contourne le blocage Background Activity Launch quand
+         le téléphone est en arrière-plan). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <!-- Signature permission protégeant le point d'entrée ACTION_OPEN_MATCH contre le spoofing.
          Seules les apps signées avec le même certificat peuvent obtenir cette permission. -->
