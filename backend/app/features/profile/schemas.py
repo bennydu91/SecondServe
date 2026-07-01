@@ -40,6 +40,8 @@ class RankingResponse(BaseModel):
 
 
 class ProfileDetailsRequest(BaseModel):
+    display_name: Optional[str] = Field(None, max_length=100)
+    club: Optional[str] = Field(None, max_length=100)
     play_style: Optional[str] = None
     preferred_surfaces: Optional[str] = None
     coach_instruction_1: Optional[str] = Field(None, max_length=500)
@@ -75,6 +77,8 @@ class ProfileDetailsResponse(BaseModel):
 
 
 class ProfileSummaryResponse(BaseModel):
+    display_name: Optional[str] = None
+    club: Optional[str] = None
     current_series: Optional[str] = None
     current_points: Optional[int] = None
     ranking_history: list[RankingResponse] = []

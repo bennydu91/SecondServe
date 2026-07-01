@@ -57,6 +57,10 @@ class SyncService:
                 created_at=dto.created_at,
                 updated_at=dto.updated_at,
                 scheduled_at=dto.scheduled_at,
+                first_serve_percent_self=dto.first_serve_percent_self,
+                first_serve_percent_opponent=dto.first_serve_percent_opponent,
+                winners_self=dto.winners_self,
+                winners_opponent=dto.winners_opponent,
             )
             self.db.add(model)
         else:
@@ -69,3 +73,7 @@ class SyncService:
                 existing.feeling_comment = dto.feeling_comment
                 existing.updated_at = dto.updated_at
                 existing.scheduled_at = dto.scheduled_at
+                existing.first_serve_percent_self = dto.first_serve_percent_self
+                existing.first_serve_percent_opponent = dto.first_serve_percent_opponent
+                existing.winners_self = dto.winners_self
+                existing.winners_opponent = dto.winners_opponent

@@ -27,7 +27,16 @@ class ScoreViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel(), ContainerHost<ScoreUiState, ScoreSideEffect> {
 
-    override val container = container<ScoreUiState, ScoreSideEffect>(ScoreUiState())
+    // Vient du téléphone (Session.opponent, via le DataLayer) — absent dans le flux "démarrage
+    // depuis la montre" (l'adversaire n'existe pas encore côté serveur à ce stade) ou en mode
+    // dégradé hors-ligne. Trim + null-si-vide ici ; le fallback d'affichage ("ADVERSAIRE") et la
+    // troncature pour l'écran rond sont gérés côté UI (ScoreScreen.sanitizeOpponentLabel).
+    private val opponentName: String? = savedStateHandle
+        .get<String>(ARG_OPPONENT)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+
+    override val container = container<ScoreUiState, ScoreSideEffect>(ScoreUiState(opponentName = opponentName))
 
     private val matchFormat: MatchFormat = savedStateHandle
         .get<String>(ARG_MATCH_FORMAT)
@@ -50,9 +59,15 @@ class ScoreViewModel @Inject constructor(
     private val engine = TennisScoreEngine(SessionFormat(matchFormat, thirdSetRule))
     private var pointCount = 0
 
+    // Miroir léger de la pile d'historique interne de l'engine (qui ne renvoie que Boolean côté
+    // undo()) : nécessaire pour savoir QUI a marqué le dernier point, afin de pouvoir le basculer
+    // vers l'autre joueur (swapLast) sans changer le comportement de undo().
+    private val scorerHistory = ArrayDeque<Player>()
+
     fun recordPoint(scorer: Player) = intent {
         if (engine.currentScore.isMatchOver) return@intent
         val event = engine.recordPoint(scorer)
+        scorerHistory.addLast(scorer)
         val changeover = event.isChangeover()
         pointCount++
         val snapshot = engine.currentScore
@@ -72,6 +87,7 @@ class ScoreViewModel @Inject constructor(
         if (pointCount <= 0) return@intent
         val undone = engine.undo()
         if (undone) {
+            scorerHistory.removeLastOrNull()
             pointCount--
             val snapshot = engine.currentScore
             reduce {
@@ -82,6 +98,34 @@ class ScoreViewModel @Inject constructor(
             }
             viewModelScope.launch { sendScoreEvent(snapshot) }
         }
+    }
+
+    // Bascule le dernier point vers l'autre joueur : annule puis rejoue immédiatement pour
+    // l'adversaire, sans perdre le point (contrairement à undo() qui se contente de l'annuler).
+    fun swapLast() = intent {
+        if (engine.currentScore.isMatchOver) return@intent
+        if (pointCount <= 0) return@intent
+        val lastScorer = scorerHistory.lastOrNull() ?: return@intent
+        if (!engine.undo()) return@intent
+        scorerHistory.removeLast()
+        pointCount--
+
+        val otherScorer = if (lastScorer == Player.A) Player.B else Player.A
+        val event = engine.recordPoint(otherScorer)
+        scorerHistory.addLast(otherScorer)
+        pointCount++
+
+        val changeover = event.isChangeover()
+        val snapshot = engine.currentScore
+        reduce {
+            state.copy(
+                score = snapshot,
+                canUndo = pointCount > 0
+            )
+        }
+        viewModelScope.launch { sendScoreEvent(snapshot) }
+        if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
+        monitoringQueue.enqueueEvent("wear.score.swapped", mapOf("points" to pointCount.toString()))
     }
 
     fun requestClose() = intent {
@@ -98,6 +142,7 @@ class ScoreViewModel @Inject constructor(
         if (!engine.currentScore.isMatchOver) return@intent
         val undone = engine.undo()
         if (undone) {
+            scorerHistory.removeLastOrNull()
             pointCount--
             val snapshot = engine.currentScore
             reduce {
@@ -127,13 +172,15 @@ class ScoreViewModel @Inject constructor(
     companion object {
         const val ARG_MATCH_FORMAT = "matchFormat"
         const val ARG_THIRD_SET_RULE = "thirdSetRule"
+        const val ARG_OPPONENT = "opponent"
     }
 }
 
 data class ScoreUiState(
     val score: MatchScore = MatchScore(),
     val canUndo: Boolean = false,
-    val phoneConnected: Boolean = true
+    val phoneConnected: Boolean = true,
+    val opponentName: String? = null
 )
 
 sealed class ScoreSideEffect {

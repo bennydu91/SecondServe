@@ -65,6 +65,7 @@ class NewMatchViewModelTest {
             id = 42L,
             surface = "Clay",
             format = SessionFormat(matchFormat = MatchFormat.BEST_OF_3, thirdSetRule = ThirdSetRule.FULL_ADVANTAGE),
+            opponent = "Marceau",
             status = SessionStatus.ACTIVE,
             createdAt = now,
             updatedAt = now
@@ -74,13 +75,15 @@ class NewMatchViewModelTest {
             dataLayerClient.sendStartSession(
                 sessionId = 42L,
                 matchFormat = MatchFormat.BEST_OF_3,
-                thirdSetRule = ThirdSetRule.FULL_ADVANTAGE
+                thirdSetRule = ThirdSetRule.FULL_ADVANTAGE,
+                opponent = "Marceau"
             )
         } returns AppResult.Success(Unit)
 
         viewModel.onSurfaceSelected("Clay")
         viewModel.onMatchFormatSelected(MatchFormat.BEST_OF_3)
         viewModel.onThirdSetRuleSelected(ThirdSetRule.FULL_ADVANTAGE)
+        viewModel.onOpponentChanged("Marceau")
 
         val sideEffectDeferred = async {
             viewModel.container.sideEffectFlow.first { it is NewMatchSideEffect.SessionStarted }
@@ -95,7 +98,54 @@ class NewMatchViewModelTest {
             dataLayerClient.sendStartSession(
                 sessionId = 42L,
                 matchFormat = MatchFormat.BEST_OF_3,
-                thirdSetRule = ThirdSetRule.FULL_ADVANTAGE
+                thirdSetRule = ThirdSetRule.FULL_ADVANTAGE,
+                opponent = "Marceau"
+            )
+        }
+    }
+
+    @Test
+    fun `startMatch sends null opponent to DataLayer when opponent field left blank`() = runTest {
+        val now = System.currentTimeMillis()
+        val createdSession = Session(
+            id = 43L,
+            surface = "Clay",
+            format = SessionFormat(matchFormat = MatchFormat.BEST_OF_3, thirdSetRule = ThirdSetRule.FULL_ADVANTAGE),
+            opponent = null,
+            status = SessionStatus.ACTIVE,
+            createdAt = now,
+            updatedAt = now
+        )
+        coEvery { sessionRepository.createSession(any()) } returns AppResult.Success(createdSession)
+        coEvery {
+            dataLayerClient.sendStartSession(
+                sessionId = 43L,
+                matchFormat = MatchFormat.BEST_OF_3,
+                thirdSetRule = ThirdSetRule.FULL_ADVANTAGE,
+                opponent = null
+            )
+        } returns AppResult.Success(Unit)
+
+        viewModel.onSurfaceSelected("Clay")
+        viewModel.onMatchFormatSelected(MatchFormat.BEST_OF_3)
+        viewModel.onThirdSetRuleSelected(ThirdSetRule.FULL_ADVANTAGE)
+        // opponent field never touched — reste vide ("") côté state, Session.opponent = null
+
+        val sideEffectDeferred = async {
+            viewModel.container.sideEffectFlow.first { it is NewMatchSideEffect.SessionStarted }
+        }
+
+        viewModel.startMatch()
+        sideEffectDeferred.await()
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            dataLayerClient.sendStartSession(
+                sessionId = 43L,
+                matchFormat = MatchFormat.BEST_OF_3,
+                thirdSetRule = ThirdSetRule.FULL_ADVANTAGE,
+                opponent = null
             )
         }
     }
@@ -117,7 +167,7 @@ class NewMatchViewModelTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 0) { dataLayerClient.sendStartSession(any(), any(), any()) }
+        coVerify(exactly = 0) { dataLayerClient.sendStartSession(any(), any(), any(), any()) }
     }
 
     @Test
@@ -151,6 +201,6 @@ class NewMatchViewModelTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 0) { dataLayerClient.sendStartSession(any(), any(), any()) }
+        coVerify(exactly = 0) { dataLayerClient.sendStartSession(any(), any(), any(), any()) }
     }
 }

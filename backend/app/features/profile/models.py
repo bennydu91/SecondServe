@@ -6,6 +6,8 @@ class PlayerProfile(Base):
     __tablename__ = "player_profiles"
 
     id = Column(Integer, primary_key=True, default=1)
+    display_name = Column(String, nullable=True)
+    club = Column(String, nullable=True)
     current_series = Column(String, nullable=True)
     current_points = Column(Integer, nullable=True)
     updated_at = Column(Integer, nullable=False)

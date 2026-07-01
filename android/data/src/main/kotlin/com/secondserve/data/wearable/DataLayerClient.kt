@@ -58,13 +58,15 @@ class DataLayerClient @Inject constructor(
     suspend fun sendStartSession(
         sessionId: Long,
         matchFormat: MatchFormat,
-        thirdSetRule: ThirdSetRule
+        thirdSetRule: ThirdSetRule,
+        opponent: String? = null
     ): AppResult<Unit> {
         val payload = StartSessionPayload(
             ts = System.currentTimeMillis(),
             sessionId = sessionId,
             matchFormat = matchFormat.name,
-            thirdSetRule = thirdSetRule.name
+            thirdSetRule = thirdSetRule.name,
+            opponent = opponent
         )
         val json = moshi.adapter(StartSessionPayload::class.java).toJson(payload)
         return sendMessage(PATH_START_SESSION, json.toByteArray(Charsets.UTF_8))

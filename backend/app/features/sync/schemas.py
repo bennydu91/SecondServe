@@ -19,6 +19,10 @@ class SyncSessionDto(BaseModel):
     updated_at: int
     scheduled_at: Optional[int] = None
     score_text: Optional[str] = None
+    first_serve_percent_self: Optional[int] = None
+    first_serve_percent_opponent: Optional[int] = None
+    winners_self: Optional[int] = None
+    winners_opponent: Optional[int] = None
 
 
 class SyncPushRequest(BaseModel):

@@ -6,7 +6,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,39 +17,47 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.secondserve.core.ui.components.CoachingCard
+import com.secondserve.core.ui.components.GamecastPlayerRow
+import com.secondserve.core.ui.components.GamecastTable
+import com.secondserve.core.ui.components.LiveChip
+import com.secondserve.core.ui.components.StatBar
+import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.domain.model.GamePoint
 import com.secondserve.domain.model.MatchScore
+import com.secondserve.domain.model.Player
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -61,6 +71,7 @@ fun MatchScreen(
     val score by viewModel.currentScore.collectAsStateWithLifecycle(initialValue = MatchScore())
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val colors = LocalBroadcastColors.current
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
@@ -70,23 +81,126 @@ fun MatchScreen(
         }
     }
 
+    var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            nowMillis = System.currentTimeMillis()
+        }
+    }
+
     Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
-                .padding(top = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 18.dp)
+                .padding(top = 6.dp, bottom = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            LiveIndicator()
+            val opponentName = state.opponentName ?: "Adversaire"
+            val setNumber = (score?.completedSets?.size ?: 0) + 1
+            val elapsedMinutes = if (state.sessionStartedAt > 0) {
+                ((nowMillis - state.sessionStartedAt) / 60_000L).coerceAtLeast(0L)
+            } else null
 
-            score?.let { liveScore ->
-                LiveScoreDisplay(score = liveScore)
+            // Header : LIVE + "Set n · mm min" + fermeture
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LiveChip()
+                Text(
+                    text = buildString {
+                        append("Set $setNumber")
+                        if (elapsedMinutes != null) append(" · $elapsedMinutes min")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.muted
+                )
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(colors.panel, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    IconButton(onClick = viewModel::onCloseRequested, enabled = !state.isClosing) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Terminer la session",
+                            tint = colors.muted
+                        )
+                    }
+                }
             }
 
-            // key(coachingAdviceSeq) : recrée le AnimatedVisibility à chaque changement de côté
-            // pour rejouer l'animation d'apparition, même si le texte du conseil est identique.
+            score?.let { liveScore ->
+                val (pointsA, pointsB) = liveScore.currentPointsDisplay()
+                GamecastTable(
+                    rows = listOf(
+                        GamecastPlayerRow(
+                            name = "Vous",
+                            isYou = true,
+                            setScores = liveScore.completedSets.map { it.gamesA },
+                            currentGames = liveScore.currentSetGamesA,
+                            leadingInCurrentSet = liveScore.currentSetGamesA > liveScore.currentSetGamesB,
+                            points = pointsA
+                        ),
+                        GamecastPlayerRow(
+                            name = opponentName,
+                            isYou = false,
+                            setScores = liveScore.completedSets.map { it.gamesB },
+                            currentGames = liveScore.currentSetGamesB,
+                            leadingInCurrentSet = liveScore.currentSetGamesB > liveScore.currentSetGamesA,
+                            points = pointsB
+                        )
+                    )
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "DÉROULÉ · SET $setNumber",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.faint
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        state.currentSetGameLog.forEach { winner ->
+                            GameResultBox(won = winner == Player.A, modifier = Modifier.weight(1f))
+                        }
+                        if (!liveScore.isMatchOver) {
+                            GameResultBox(won = null, modifier = Modifier.weight(1f))
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Momentum",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.muted
+                        )
+                        StatBar(
+                            progress = state.momentumPercent / 100f,
+                            color = colors.lime,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "${state.momentumPercent}%",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colors.lime
+                        )
+                    }
+                }
+            }
+
             key(state.coachingAdviceSeq) {
                 AnimatedVisibility(
                     visibleState = remember { MutableTransitionState(false) }
@@ -95,28 +209,12 @@ fun MatchScreen(
                     exit = fadeOut() + slideOutVertically { it / 2 }
                 ) {
                     state.coachingAdvice?.let { advice ->
-                        CoachingAdviceCard(text = advice.text)
+                        CoachingCard(label = "Conseil coaching", text = advice.text)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.weight(1f))
-
-            OutlinedButton(
-                onClick = viewModel::onCloseRequested,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                enabled = !state.isClosing,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            ) {
-                Text(
-                    text = if (state.isClosing) "Clôture en cours…" else "Terminer la session",
-                    style = MaterialTheme.typography.titleSmall
-                )
-            }
         }
     }
 
@@ -133,242 +231,30 @@ fun MatchScreen(
 }
 
 @Composable
-private fun LiveIndicator() {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+private fun GameResultBox(won: Boolean?, modifier: Modifier = Modifier) {
+    val colors = LocalBroadcastColors.current
+    when (won) {
+        true -> Box(
+            modifier = modifier
+                .height(28.dp)
+                .background(colors.lime.copy(alpha = 0.16f), RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center
         ) {
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(8.dp)
-            ) {}
-            Text(
-                text = "EN COURS",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.error,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp
-            )
+            Text(text = "V", style = MaterialTheme.typography.labelMedium, color = colors.lime)
         }
-    }
-}
-
-@Composable
-private fun LiveScoreDisplay(score: MatchScore) {
-    val setsA = score.completedSets.count { it.gamesA > it.gamesB }
-    val setsB = score.completedSets.count { it.gamesB > it.gamesA }
-    val (pointsA, pointsB) = score.currentPointsDisplay()
-    val pointsLabel = when {
-        score.isSuperTieBreak -> "SUPER TIE-BREAK"
-        score.isTieBreak -> "TIE-BREAK"
-        score.isDeuce -> "ÉGALITÉ"
-        else -> "POINTS"
-    }
-    val gamesA = score.currentSetGamesA
-    val gamesB = score.currentSetGamesB
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        // Labels VOUS / EUX
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+        false -> Box(
+            modifier = modifier
+                .height(28.dp)
+                .background(colors.panelHigh, RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "VOUS",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            )
-            Text(
-                text = "EUX",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                letterSpacing = 2.sp
-            )
+            Text(text = "E", style = MaterialTheme.typography.labelMedium, color = colors.faint)
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Sets
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        null -> Box(
+            modifier = modifier.height(28.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "$setsA",
-                style = MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "tnum"),
-                fontWeight = FontWeight.Bold,
-                color = if (setsA > setsB) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "SETS",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                letterSpacing = 2.sp
-            )
-            Text(
-                text = "$setsB",
-                style = MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "tnum"),
-                fontWeight = FontWeight.Bold,
-                color = if (setsB > setsA) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 12.dp),
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
-
-        // JEUX — la star de l'écran (80sp)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "$gamesA",
-                style = MaterialTheme.typography.displayLarge.copy(fontFeatureSettings = "tnum"),
-                color = if (gamesA > gamesB) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = "—",
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "$gamesB",
-                style = MaterialTheme.typography.displayLarge.copy(fontFeatureSettings = "tnum"),
-                color = if (gamesB > gamesA) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Text(
-            text = "JEUX",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            letterSpacing = 2.sp,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 4.dp)
-        )
-
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 12.dp),
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
-
-        // Points
-        if (score.isDeuce) {
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "ÉGALITÉ",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 12.dp)
-                )
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = pointsA,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "—",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = pointsB,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        Text(
-            text = pointsLabel,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            letterSpacing = 2.sp,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 4.dp)
-        )
-    }
-}
-
-@Composable
-private fun CoachingAdviceCard(text: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.primaryContainer
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.AutoAwesome,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(20.dp)
-                    .padding(top = 2.dp)
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = "Conseil coaching",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+            Text(text = "•", style = MaterialTheme.typography.labelMedium, color = colors.faint)
         }
     }
 }

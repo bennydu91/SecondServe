@@ -2,6 +2,7 @@ package com.secondserve
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.Session
 import com.secondserve.domain.model.SessionStatus
 import com.secondserve.domain.model.SessionType
@@ -16,11 +17,14 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class HomeUiState(
+    val firstName: String? = null,
     val currentSeries: String? = null,
     val currentPoints: Int? = null,
     val lastSession: Session? = null,
+    val recentMatchSessions: List<Session> = emptyList(),
     val winRatePercent: Int? = null,
     val streakLabel: String? = null,
+    val activeStreakCount: Int? = null,
     val isLoading: Boolean = true
 )
 
@@ -35,6 +39,9 @@ class HomeViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            val profileResult = playerProfileRepository.getProfile()
+            val firstName = (profileResult as? AppResult.Success)?.data?.displayName
+                ?.trim()?.substringBefore(" ")?.takeIf { it.isNotBlank() }
             combine(
                 sessionRepository.getAllSessions(),
                 playerProfileRepository.getRankingHistory()
@@ -56,11 +63,16 @@ class HomeViewModel @Inject constructor(
                 val latestRanking = rankingHistory.maxByOrNull { it.recordedAt }
 
                 HomeUiState(
+                    firstName = firstName,
                     currentSeries = latestRanking?.series,
                     currentPoints = latestRanking?.points,
                     lastSession = lastSession,
+                    recentMatchSessions = sortedByDate.take(3),
                     winRatePercent = winRate,
                     streakLabel = streak,
+                    activeStreakCount = sortedByDate.firstOrNull()?.result?.let { firstResult ->
+                        sortedByDate.takeWhile { it.result == firstResult }.size.takeIf { it >= 1 }
+                    },
                     isLoading = false
                 )
             }.collect { _uiState.value = it }

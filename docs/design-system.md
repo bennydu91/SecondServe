@@ -1,57 +1,62 @@
-# SecondServe — Design System
+# SecondServe — Design System « Broadcast »
 
 ## Identité visuelle
 
-**Références** : Strava (données sportives denses) · Nike Run Club (émotion typographique) · ESPN (hiérarchie du score)  
-**Principe directeur** : dark mode first, plein soleil first, chiffres first.
+**Langage** : scoreboard TV — fond noir, chiffres géants, un seul accent néon (lime).
+**Origine** : handoff design importé depuis claude.ai/design (projet *SecondServe UX/UI redesign*),
+implémenté dans `core/ui/src/main/kotlin/com/secondserve/core/ui/theme/`.
+**Principe directeur** : dark mode first (mobile + montre), plein soleil first, chiffres first.
 
 ---
 
 ## Couleurs
 
-### Palette principale (dark mode — valeurs de fallback)
+Tokens définis dans `BroadcastColors.kt`, exposés via `LocalBroadcastColors.current`. Le
+`ColorScheme` Material 3 (`Theme.kt`) est mappé dessus pour les composants standards, mais les
+écrans doivent lire `LocalBroadcastColors.current` directement pour les valeurs exactes (lime,
+data, surfaces de court...) que M3 ne modélise pas nativement.
 
 | Rôle | Token | Hex | Usage |
 |------|-------|-----|-------|
-| Primary | `primary` | `#52D68A` | Actions primaires, scores actifs |
-| On Primary | `onPrimary` | `#00391B` | Texte sur primary |
-| Primary Container | `primaryContainer` | `#00522A` | Fond des chips, badges |
-| On Primary Container | `onPrimaryContainer` | `#7FFDB5` | Texte dans primaryContainer |
-| Secondary | `secondary` | `#E8C73E` | Accents, jaune balle de tennis |
-| Secondary Container | `secondaryContainer` | `#554400` | Fond des éléments secondaires |
-| On Secondary Container | `onSecondaryContainer` | `#FFE178` | Texte dans secondaryContainer |
-| Tertiary | `tertiary` | `#7BCFFB` | Data viz, graphiques |
-| Background | `background` | `#0B160E` | Fond global (vert noir profond) |
-| Surface | `surface` | `#0B160E` | Fond des cards |
-| Surface Variant | `surfaceVariant` | `#1C2B1E` | Fond des inputs, séparateurs |
-| On Surface | `onSurface` | `#DCE9DC` | Texte principal |
-| On Surface Variant | `onSurfaceVariant` | `#9EB5A1` | Texte secondaire, labels |
-| Outline | `outline` | `#45644A` | Bordures des inputs |
-| Outline Variant | `outlineVariant` | `#2B3D2E` | Séparateurs légers |
-| Error | `error` | `#FFB3BA` | Erreurs, alertes |
+| Void | `void` | `#0C0D0F` | Fond de l'app |
+| Panel | `panel` | `#16181C` | Avatar/chip/éléments de chrome |
+| Panel élevé | `panelHigh` | `#131518` | Fond des cards principales |
+| Line | `line` | `#24272D` | Bordures |
+| Text | `text` | `#F2F3F0` | Texte principal |
+| Muted | `muted` | `#8A8F98` | Texte secondaire |
+| Faint | `faint` | `#6B7079` | Labels de section (uppercase, tracking) |
+| Lime | `lime` / `onLime` | `#C8FF3D` / `#0C0D0F` | Accent primaire unique, joueur actif |
+| Hot | `hot` | `#FF5C7A` | Live, erreur, défaite |
+| Data | `data` | `#4EA8FF` | Points, liens, stats |
+| Clay / Hard / Grass / Indoor | `clay`/`hard`/`grass`/`indoor` | `#E0703F`/`#3E8EF0`/`#4FB477`/`#A97CF0` | Accent par surface de court |
 
-### Dynamic Color
-Sur API 31+ (Android 12+), le Color Scheme s'adapte aux couleurs du fond d'écran via `dynamicDarkColorScheme` / `dynamicLightColorScheme`. Les couleurs ci-dessus servent de fallback.
+**Pas de dynamic color, pas de variante light mobile** — le thème est forcé en dark Broadcast
+(`SecondServeTheme` dans `Theme.kt`), le handoff ne définissant aucun token clair pour le
+téléphone/la montre (réservé au web desktop, hors scope Android).
 
 ---
 
 ## Typographie
 
-**Règle scores** : toujours utiliser `fontFeatureSettings = "tnum"` pour les chiffres afin d'éviter les décalages visuels lors des changements de score.
+Deux familles (polices statiques bundlées dans `core/ui/src/main/res/font/`, téléchargées depuis
+Google Fonts) :
+- **Barlow Semi Condensed** (500/600/700/800) — scores, JEUX/SETS/PTS, labels de section uppercase.
+- **Space Grotesk** (400/500/600/700) — interface, titres, corps de texte.
 
-### Échelle d'usage dans l'app
+**Règle scores** : toujours `fontFeatureSettings = "tnum"` sur les chiffres pour éviter les
+décalages visuels lors des changements de score.
 
-| Style MD3 | Taille | Gras | Usage |
-|-----------|--------|------|-------|
-| `displayLarge` | 57sp | Non | Jamais utilisé |
-| `headlineLarge` | 32sp | Oui | Score sets (jamais plus grand) |
-| `headlineMedium` | 28sp | Semi | Score jeux en cours |
-| `titleLarge` | 22sp | Semi | Score points |
-| `titleMedium` | 16sp | Oui | Titres de section |
-| `bodyLarge` | 16sp | Non | Contenu principal |
-| `bodyMedium` | 14sp | Non | Cartes, listes |
-| `labelMedium` | 12sp | Oui | Labels, badges |
-| `labelSmall` | 11sp | Non | Métadonnées, dates |
+### Échelle d'usage dans l'app (`SecondServeTypography`, `Typography.kt`)
+
+| Style MD3 | Police | Taille | Usage |
+|-----------|--------|--------|-------|
+| `displayLarge` | Barlow ExtraBold | 80sp | Jamais utilisé tel quel (référence d'échelle) |
+| `displayMedium`/`displaySmall` | Barlow ExtraBold/Bold | 56/40sp | Scores géants (détail session, gamecast) |
+| `headlineLarge` | Barlow Bold | 32sp | JEUX (l'élément dominant du gamecast) |
+| `headlineMedium`/`headlineSmall` | Space Grotesk SemiBold | 26/22sp | Titres d'écran |
+| `titleLarge`/`titleMedium`/`titleSmall` | Space Grotesk | 18/16/14sp | Sections, boutons |
+| `bodyLarge`/`bodyMedium`/`bodySmall` | Space Grotesk | 16/14/12sp | Contenu, cartes, listes |
+| `labelMedium`/`labelSmall` | Barlow Bold, tracking 2sp | 12/10sp | Labels uppercase, badges |
 
 ### Hierarchy tennis
 ```
@@ -78,50 +83,52 @@ Base : **4dp**. Toutes les valeurs sont des multiples de 4.
 
 ---
 
-## Composants
+## Composants partagés (`core/ui/src/main/kotlin/com/secondserve/core/ui/components/`)
 
-### ScoreCard (composant central)
-- Fond : `surfaceVariant` avec border radius 16dp
-- Hiérarchie verticale : Sets (petit, haut) → Jeux (XXL, centre) → Points (grand, bas)
-- Le joueur "actif" (dernier à avoir marqué) reçoit la couleur `primary`
-- Taille minimale : ne jamais comprimer en dessous de 140dp de hauteur
-
-### Button hierarchy
-1. `FilledButton` — un seul par écran, action principale (Nouveau match, Confirmer)
-2. `FilledTonalButton` — action secondaire positive (Générer l'analyse)
-3. `OutlinedButton` — action neutre (Annuler, Retour)
-4. `TextButton` — action tertiaire (Voir plus, Filtrer)
-
-**Jamais deux `FilledButton` sur le même écran.**
-
-### NavigationBar (Bottom Nav)
-3 destinations :
-1. **Accueil** — tableau de bord, dernières données
-2. **Stats** — historique + statistiques (routes unifiées)
-3. **Profil** — profil joueur + paramètres + axes de travail
+### GamecastTable
+- Tableau broadcast (JOUEUR / S1 / S2 / JEUX / PTS), une `Row` par joueur.
+- JEUX en Barlow 34sp (lime si meneur du set), PTS en Barlow 26sp `data`, sets en Barlow 24sp `faint`.
+- Pas d'indicateur de serveur (aucune source fiable sans changer le protocole watch↔téléphone).
 
 ### MatchListItem
-- Score en `bodyMedium` **bold** à gauche
-- Résultat (V/D) en badge coloré à droite : `primaryContainer` pour V, `errorContainer` pour D
-- Surface et adversaire en `labelSmall` sous le score
-- Taille minimale 64dp pour le tap en plein air
+- Barre latérale 4dp couleur-surface (`forSurfaceKey`) + score Barlow ExtraBold 22sp + méta + badge V/D.
+- Utilisé par Accueil (derniers matchs) et Historique (variante entraînement : badge `indoor`).
 
-### StatBar (barre comparative)
-- Barre horizontale duale : joueur à gauche (primary), adversaire à droite (outlineVariant)
-- Valeur en chiffre centré au-dessus
-- Pas de camembert. Jamais.
+### StatBar / DualStatBar
+- Barre comparative horizontale. Jamais de camembert.
+- `StatBar` : un seul segment proportionnel (win rate, par surface).
+- `DualStatBar` : deux segments proportionnels (stats face-à-face).
+
+### CoachingCard
+- Bordure gauche 3dp `lime`, icône `✦`, label uppercase + texte.
+
+### LiveChip
+- Pill `hot`, point pulsant (`InfiniteTransition`, alpha 1→0.2→1 sur 1.4s).
+
+### SurfaceChip
+- Pill de sélection : plein `color` si sélectionné, contour `line` sinon.
+
+### NavigationBar (Bottom Nav)
+3 destinations (conforme au handoff, remplace les 4 onglets historiques Accueil/Historique/Coaching/Profil) :
+1. **Accueil** — tableau de bord, dernières données, cartes vers Historique/Coaching
+2. **Stats** — statistiques agrégées
+3. **Profil** — profil joueur + paramètres + axes de travail
+
+Historique et Coaching restent des routes du `NavHost`, jointes depuis des cartes sur l'Accueil.
 
 ---
 
 ## Règles non négociables
 
-1. **Dark mode always on** — ne jamais forcer le light mode
+1. **Dark mode always on (mobile)** — pas de dynamic color, pas de fallback light sur téléphone/montre
 2. **Tabular nums sur les scores** — `fontFeatureSettings = "tnum"`
 3. **Cibles tactiles ≥ 48×48dp** — contexte court en plein soleil, mains moites
 4. **Empty states designés** — jamais juste un `Text("Aucune donnée")`
-5. **Un seul FilledButton par écran** — si tout est important, rien ne l'est
-6. **Coaching cards** — fond `primaryContainer`, jamais `secondary` (trop agressif)
-7. **Animations intentionnelles** — uniquement `animateContentSize` et `AnimatedVisibility`, pas de transitions aléatoires
+5. **Un seul bouton primaire (lime) par écran** — si tout est important, rien ne l'est
+6. **Coaching cards** — bordure gauche lime, jamais de fond agressif
+7. **Pas de données fabriquées** — si une donnée du mockup n'existe pas dans le domaine (ex.
+   nom du joueur, % 1re balle en détail de session), l'élément est omis plutôt qu'inventé
+8. **Animations intentionnelles** — `animateContentSize`, `AnimatedVisibility`, `InfiniteTransition` ciblée ; pas de transitions par défaut non maîtrisées
 
 ---
 

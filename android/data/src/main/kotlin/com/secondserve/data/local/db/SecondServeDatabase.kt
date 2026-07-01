@@ -36,7 +36,7 @@ import com.secondserve.data.local.db.entity.WorkAxisEntity
         CoachingSynthesisEntity::class,
         AxisSuggestionEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 abstract class SecondServeDatabase : RoomDatabase() {
@@ -207,6 +207,17 @@ abstract class SecondServeDatabase : RoomDatabase() {
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE sessions ADD COLUMN scheduled_at INTEGER")
+            }
+        }
+
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE player_profiles ADD COLUMN display_name TEXT")
+                database.execSQL("ALTER TABLE player_profiles ADD COLUMN club TEXT")
+                database.execSQL("ALTER TABLE sessions ADD COLUMN first_serve_percent_self INTEGER")
+                database.execSQL("ALTER TABLE sessions ADD COLUMN first_serve_percent_opponent INTEGER")
+                database.execSQL("ALTER TABLE sessions ADD COLUMN winners_self INTEGER")
+                database.execSQL("ALTER TABLE sessions ADD COLUMN winners_opponent INTEGER")
             }
         }
     }

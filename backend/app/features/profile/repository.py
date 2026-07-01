@@ -43,6 +43,8 @@ class ProfileRepository:
 
     async def update_profile_details(
         self,
+        display_name: str | None,
+        club: str | None,
         play_style: str | None,
         preferred_surfaces: str | None,
         coach_instruction_1: str | None,
@@ -52,6 +54,8 @@ class ProfileRepository:
         now = int(time.time() * 1000)
         profile = await self.get_profile()
         if profile:
+            profile.display_name = display_name
+            profile.club = club
             profile.play_style = play_style
             profile.preferred_surfaces = preferred_surfaces
             profile.coach_instruction_1 = coach_instruction_1
@@ -60,7 +64,8 @@ class ProfileRepository:
             profile.updated_at = now
         else:
             profile = PlayerProfile(
-                id=1, play_style=play_style, preferred_surfaces=preferred_surfaces,
+                id=1, display_name=display_name, club=club,
+                play_style=play_style, preferred_surfaces=preferred_surfaces,
                 coach_instruction_1=coach_instruction_1, coach_instruction_2=coach_instruction_2,
                 coach_instruction_3=coach_instruction_3, updated_at=now
             )

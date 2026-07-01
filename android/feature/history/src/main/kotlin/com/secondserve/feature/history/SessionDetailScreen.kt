@@ -1,60 +1,78 @@
 package com.secondserve.feature.history
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.core.ui.components.CoachingCard
+import com.secondserve.core.ui.components.DualStatBar
+import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.domain.model.CoachingAnalysis
 import com.secondserve.domain.model.CoachingCacheEntry
 import com.secondserve.domain.model.Session
 import com.secondserve.domain.model.SessionStatus
+import com.secondserve.domain.model.SurfaceConstants
+import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val sessionDetailDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
+private val sessionDetailDateFormat = SimpleDateFormat("dd MMM · HH:mm", Locale.FRANCE)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionDetailScreen(
     onNavigateBack: () -> Unit,
     viewModel: SessionDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
+    val colors = LocalBroadcastColors.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -79,9 +97,7 @@ fun SessionDetailScreen(
                         showDeleteConfirm = false
                         viewModel.deleteSession()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.hot)
                 ) {
                     Text("Supprimer")
                 }
@@ -94,36 +110,59 @@ fun SessionDetailScreen(
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Détail de la session") },
-                navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
-                        Text("← Retour")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        when (val s = state) {
-            is SessionDetailUiState.Loading -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
+    Column(modifier = Modifier.fillMaxSize()) {
+        SnackbarHost(snackbarHostState)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .padding(top = 10.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onNavigateBack)
+                    .background(colors.panel, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Retour",
+                    tint = colors.muted
+                )
+            }
+            val title = (state as? SessionDetailUiState.Content)?.session?.opponent?.let { "vs $it" }
+                ?: "Détail de la session"
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = colors.text
+            )
+        }
+
+        when (val s = state) {
+            is SessionDetailUiState.Loading -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = colors.lime)
             }
             is SessionDetailUiState.Error -> Text(
                 text = s.message,
-                modifier = Modifier.padding(padding).padding(16.dp)
+                color = colors.hot,
+                modifier = Modifier.padding(18.dp)
             )
             is SessionDetailUiState.Content -> SessionDetailContent(
                 session = s.session,
                 advices = s.advices,
                 analysis = s.analysis,
                 onDeletePlanned = { showDeleteConfirm = true },
-                modifier = Modifier.padding(padding)
+                onSaveMatchStats = viewModel::updateMatchStats
             )
         }
     }
@@ -135,101 +174,196 @@ private fun SessionDetailContent(
     advices: List<CoachingCacheEntry>,
     analysis: CoachingAnalysis?,
     onDeletePlanned: () -> Unit,
-    modifier: Modifier = Modifier
+    onSaveMatchStats: (Int?, Int?, Int?, Int?) -> Unit
 ) {
+    val colors = LocalBroadcastColors.current
+    val isVictory = session.result == "VICTORY"
+    val isDefeat = session.result == "DEFEAT"
+    var showStatsEditor by remember { mutableStateOf(false) }
+
+    if (showStatsEditor) {
+        MatchStatsEditorDialog(
+            session = session,
+            onDismiss = { showStatsEditor = false },
+            onSave = { a, b, c, d ->
+                onSaveMatchStats(a, b, c, d)
+                showStatsEditor = false
+            }
+        )
+    }
+
     LazyColumn(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(bottom = 20.dp)
     ) {
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Session", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    DetailRow("Date", formatDate(session.createdAt, sessionDetailDateFormat))
-                    DetailRow("Surface", session.surface)
-                    DetailRow("Format", session.format.matchFormat.name)
-                    session.opponent?.let { DetailRow("Adversaire", it) }
-                    session.competitionType?.let { DetailRow("Compétition", it) }
-                    session.tournament?.let { DetailRow("Tournoi", it) }
-                    DetailRow("Score", session.scoreText ?: "—")
-                    DetailRow("Résultat", session.resultLabel())
-                    session.feelingRating?.let { DetailRow("Ressenti", "$it/5") }
-                    session.feelingComment?.let { DetailRow("Commentaire", it) }
-                    session.scheduledAt?.let {
-                        DetailRow("Match planifié", formatDate(it, sessionDetailDateFormat))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = colors.panelHigh
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    when {
+                        isVictory -> ResultPill(text = "VICTOIRE", color = colors.lime, background = colors.victoryBg)
+                        isDefeat -> ResultPill(text = "DÉFAITE", color = colors.hot, background = colors.defeatBg)
                     }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = session.scoreText ?: "—",
+                        style = MaterialTheme.typography.displaySmall.copy(fontSize = 48.sp, fontFeatureSettings = "tnum"),
+                        color = colors.lime
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = buildString {
+                            append(SurfaceConstants.DISPLAY_NAMES[session.surface] ?: session.surface)
+                            session.tournament?.let { append(" · $it") }
+                            append(" · ")
+                            append(formatDate(session.createdAt, sessionDetailDateFormat))
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.muted
+                    )
                 }
             }
         }
 
         if (session.status == SessionStatus.PLANNED) {
             item {
-                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedButton(
                     onClick = onDeletePlanned,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.hot)
                 ) {
                     Text("Annuler ce match planifié")
                 }
             }
         }
 
-        if (analysis != null) {
+        if (session.status == SessionStatus.COMPLETED) {
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Analyse IA post-match", style = MaterialTheme.typography.titleMedium)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                MatchStatsSection(session = session, onEditClick = { showStatsEditor = true })
             }
+        }
+
+        if (session.feelingRating != null || session.feelingComment != null) {
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(analysis.content, style = MaterialTheme.typography.bodyMedium)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "Générée le ${sessionDetailDateFormat.format(Date(analysis.generatedAt))}",
-                            style = MaterialTheme.typography.labelSmall
-                        )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = colors.panelHigh
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(text = "Ressenti", style = MaterialTheme.typography.bodySmall, color = colors.muted)
+                            session.feelingRating?.let { rating ->
+                                Text(
+                                    text = "★".repeat(rating) + "☆".repeat(5 - rating),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = colors.lime
+                                )
+                            }
+                        }
+                        session.feelingComment?.let {
+                            Text(
+                                text = "« $it »",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.muted,
+                                modifier = Modifier.padding(start = 12.dp)
+                            )
+                        }
                     }
                 }
             }
-        } else {
+        }
+
+        if (analysis != null) {
             item {
-                Text(
-                    "Analyse IA en cours de génération...",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
+                CoachingCard(label = "Analyse post-match", text = analysis.content)
             }
         }
 
         if (advices.isNotEmpty()) {
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Conseils coaching", style = MaterialTheme.typography.titleMedium)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Text(
+                    text = "CONSEILS COACHING",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
             }
-
             items(advices) { advice ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = advice.pattern.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = advice.content,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                CoachingCard(label = advice.pattern.name, text = advice.content)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultPill(text: String, color: Color, background: Color) {
+    Surface(shape = RoundedCornerShape(100.dp), color = background) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = color
+        )
+    }
+}
+
+@Composable
+private fun MatchStatsSection(session: Session, onEditClick: () -> Unit) {
+    val colors = LocalBroadcastColors.current
+    val hasStats = session.firstServePercentSelf != null || session.firstServePercentOpponent != null ||
+        session.winnersSelf != null || session.winnersOpponent != null
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = colors.panelHigh
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "STATISTIQUES DU MATCH", style = MaterialTheme.typography.labelSmall, color = colors.faint)
+                TextButton(onClick = onEditClick) {
+                    Text(if (hasStats) "Modifier" else "Ajouter", color = colors.lime)
+                }
+            }
+            if (hasStats) {
+                Spacer(modifier = Modifier.height(12.dp))
+                if (session.firstServePercentSelf != null || session.firstServePercentOpponent != null) {
+                    StatRow(
+                        label = "1re balle",
+                        valueA = session.firstServePercentSelf,
+                        valueB = session.firstServePercentOpponent,
+                        suffix = "%"
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                if (session.winnersSelf != null || session.winnersOpponent != null) {
+                    StatRow(
+                        label = "Coups gagnants",
+                        valueA = session.winnersSelf,
+                        valueB = session.winnersOpponent,
+                        suffix = ""
+                    )
                 }
             }
         }
@@ -237,9 +371,105 @@ private fun SessionDetailContent(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 2.dp)) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+private fun StatRow(label: String, valueA: Int?, valueB: Int?, suffix: String) {
+    val colors = LocalBroadcastColors.current
+    Column {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(text = "${valueA ?: 0}$suffix", style = MaterialTheme.typography.bodyMedium, color = colors.lime)
+            Text(text = label, style = MaterialTheme.typography.bodySmall, color = colors.muted)
+            Text(text = "${valueB ?: 0}$suffix", style = MaterialTheme.typography.bodyMedium, color = colors.data)
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        DualStatBar(
+            valueA = (valueA ?: 0).toFloat(),
+            valueB = (valueB ?: 0).toFloat(),
+            colorA = colors.lime,
+            colorB = colors.data,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
+}
+
+@Composable
+private fun MatchStatsEditorDialog(
+    session: Session,
+    onDismiss: () -> Unit,
+    onSave: (Int?, Int?, Int?, Int?) -> Unit
+) {
+    val colors = LocalBroadcastColors.current
+    var firstServeSelf by remember { mutableStateOf(session.firstServePercentSelf?.toString() ?: "") }
+    var firstServeOpponent by remember { mutableStateOf(session.firstServePercentOpponent?.toString() ?: "") }
+    var winnersSelf by remember { mutableStateOf(session.winnersSelf?.toString() ?: "") }
+    var winnersOpponent by remember { mutableStateOf(session.winnersOpponent?.toString() ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Statistiques du match") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatsNumberField(
+                    label = "1re balle % (vous)",
+                    value = firstServeSelf,
+                    onValueChange = { firstServeSelf = it }
+                )
+                StatsNumberField(
+                    label = "1re balle % (adversaire)",
+                    value = firstServeOpponent,
+                    onValueChange = { firstServeOpponent = it }
+                )
+                StatsNumberField(
+                    label = "Coups gagnants (vous)",
+                    value = winnersSelf,
+                    onValueChange = { winnersSelf = it }
+                )
+                StatsNumberField(
+                    label = "Coups gagnants (adversaire)",
+                    value = winnersOpponent,
+                    onValueChange = { winnersOpponent = it }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(
+                        firstServeSelf.toIntOrNull(),
+                        firstServeOpponent.toIntOrNull(),
+                        winnersSelf.toIntOrNull(),
+                        winnersOpponent.toIntOrNull()
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = colors.lime, contentColor = colors.void)
+            ) {
+                Text("Enregistrer")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Annuler") }
+        }
+    )
+}
+
+@Composable
+private fun StatsNumberField(label: String, value: String, onValueChange: (String) -> Unit) {
+    val colors = LocalBroadcastColors.current
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onValueChange(it.filter { c -> c.isDigit() }) },
+        label = { Text(label) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = colors.panel,
+            unfocusedContainerColor = colors.panel,
+            focusedBorderColor = colors.lime,
+            unfocusedBorderColor = colors.line,
+            focusedTextColor = colors.text,
+            unfocusedTextColor = colors.text,
+            focusedLabelColor = colors.lime,
+            unfocusedLabelColor = colors.muted,
+            cursorColor = colors.lime
+        )
+    )
 }

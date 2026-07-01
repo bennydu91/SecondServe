@@ -9,5 +9,6 @@ data class StartSessionPayload(
     @Json(name = "ts") val ts: Long,
     @Json(name = "sessionId") val sessionId: Long,
     @Json(name = "matchFormat") val matchFormat: String,
-    @Json(name = "thirdSetRule") val thirdSetRule: String
+    @Json(name = "thirdSetRule") val thirdSetRule: String,
+    @Json(name = "opponent") val opponent: String? = null
 )

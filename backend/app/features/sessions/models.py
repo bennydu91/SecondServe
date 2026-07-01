@@ -21,3 +21,7 @@ class SessionModel(Base):
     created_at = Column(Integer, nullable=False)
     updated_at = Column(Integer, nullable=False)
     scheduled_at = Column(Integer, nullable=True)
+    first_serve_percent_self = Column(Integer, nullable=True)
+    first_serve_percent_opponent = Column(Integer, nullable=True)
+    winners_self = Column(Integer, nullable=True)
+    winners_opponent = Column(Integer, nullable=True)

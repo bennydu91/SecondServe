@@ -1,5 +1,6 @@
 package com.secondserve.feature.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,37 +11,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material3.Badge
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.core.ui.components.MatchListItem
+import com.secondserve.core.ui.components.MatchResultBadge
+import com.secondserve.core.ui.theme.LocalBroadcastColors
+import com.secondserve.core.ui.theme.forSurfaceKey
 import com.secondserve.domain.model.Session
-import com.secondserve.domain.model.SessionStatus
+import com.secondserve.domain.model.SessionType
 import com.secondserve.domain.model.SurfaceConstants
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -48,18 +49,23 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val sessionDateFormat = SimpleDateFormat("EEE d MMM yyyy", Locale.FRANCE)
+private val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.FRANCE)
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class HistoryFilter(val label: String) {
+    ALL("Tous"),
+    MATCHES("Matchs"),
+    TRAININGS("Entraînements")
+}
+
 @Composable
 fun HistoryScreen(
     onNavigateToDetail: (Long) -> Unit,
-    onNavigateBack: () -> Unit,
     onNavigateToAddRetroSession: () -> Unit,
-    onNavigateToStats: (() -> Unit)? = null,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
+    val colors = LocalBroadcastColors.current
+    var filter by remember { mutableStateOf(HistoryFilter.ALL) }
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
@@ -67,81 +73,98 @@ fun HistoryScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Historique",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                actions = {
-                    if (onNavigateToStats != null) {
-                        IconButton(onClick = onNavigateToStats) {
-                            Icon(
-                                imageVector = Icons.Filled.BarChart,
-                                contentDescription = "Statistiques"
-                            )
-                        }
-                    }
-                }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .padding(top = 10.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Historique",
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                fontWeight = FontWeight.Bold,
+                color = colors.text
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddRetroSession,
-                modifier = Modifier.semantics { contentDescription = "Ajouter un match passé" }
-            ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = "Ajouter")
-            }
-        }
-    ) { padding ->
-        when (val s = state) {
-            is HistoryUiState.Loading -> Box(
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onNavigateToAddRetroSession)
+                    .background(colors.panel, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                Icon(imageVector = Icons.Filled.Add, contentDescription = "Ajouter un match passé", tint = colors.muted)
+            }
+        }
+
+        when (val s = state) {
+            is HistoryUiState.Loading -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = colors.lime)
             }
 
             is HistoryUiState.Error -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = s.message,
                     modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.error
+                    color = colors.hot
                 )
             }
 
             is HistoryUiState.Content -> {
-                if (s.sessions.isEmpty()) {
-                    EmptyHistoryState(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                    )
+                val filtered = when (filter) {
+                    HistoryFilter.ALL -> s.sessions
+                    HistoryFilter.MATCHES -> s.sessions.filter { it.sessionType == SessionType.MATCH }
+                    HistoryFilter.TRAININGS -> s.sessions.filter { it.sessionType == SessionType.TRAINING }
+                }
+                if (filtered.isEmpty()) {
+                    EmptyHistoryState(modifier = Modifier.fillMaxSize())
                 } else {
+                    val grouped = filtered.groupBy { monthFormat.format(Date(it.createdAt)).replaceFirstChar { c -> c.uppercase() } }
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(padding)
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(horizontal = 18.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        item { Spacer(modifier = Modifier.height(8.dp)) }
-                        items(s.sessions) { session ->
-                            SessionItem(
-                                session = session,
-                                onClick = { viewModel.onSessionClicked(session.id) }
-                            )
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                HistoryFilter.entries.forEach { f ->
+                                    FilterChip(
+                                        label = f.label,
+                                        selected = filter == f,
+                                        onClick = { filter = f }
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                        grouped.forEach { (month, sessions) ->
+                            item {
+                                Text(
+                                    text = month.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.faint,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                            items(sessions) { session ->
+                                HistorySessionItem(
+                                    session = session,
+                                    onClick = { viewModel.onSessionClicked(session.id) }
+                                )
+                            }
                         }
                         item { Spacer(modifier = Modifier.height(8.dp)) }
                     }
@@ -152,7 +175,25 @@ fun HistoryScreen(
 }
 
 @Composable
+private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = LocalBroadcastColors.current
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(100.dp),
+        color = if (selected) colors.lime else colors.panel
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) colors.void else colors.text.copy(alpha = 0.8f)
+        )
+    }
+}
+
+@Composable
 private fun EmptyHistoryState(modifier: Modifier = Modifier) {
+    val colors = LocalBroadcastColors.current
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -164,12 +205,12 @@ private fun EmptyHistoryState(modifier: Modifier = Modifier) {
                 text = "Aucune session",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = colors.text
             )
             Text(
                 text = "Tes matchs et entraînements apparaîtront ici.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = colors.muted,
                 textAlign = TextAlign.Center
             )
         }
@@ -177,108 +218,35 @@ private fun EmptyHistoryState(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SessionItem(session: Session, onClick: () -> Unit) {
-    val isVictory = session.result == "VICTORY"
-    val isDefeat = session.result == "DEFEAT"
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                // Date + surface
-                Text(
-                    text = buildString {
-                        append(session.formattedDate())
-                        val surface = SurfaceConstants.DISPLAY_NAMES[session.surface] ?: session.surface
-                        if (surface.isNotBlank()) append("  ·  $surface")
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Score
-                Text(
-                    text = session.scoreText ?: "—",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                // Adversaire ou contexte
-                val subtitle = buildString {
-                    session.opponent?.let { append("vs $it") }
-                    session.competitionType?.let {
-                        if (isNotEmpty()) append("  ·  ")
-                        append(it)
-                    }
-                }
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // Badge résultat ou statut
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                when {
-                    isVictory -> ResultBadge(text = "V", isPositive = true)
-                    isDefeat -> ResultBadge(text = "D", isPositive = false)
-                }
-                val statusLabel = session.statusBadge()
-                if (statusLabel != null) {
-                    Badge { Text(statusLabel) }
-                }
-            }
+private fun HistorySessionItem(session: Session, onClick: () -> Unit) {
+    val colors = LocalBroadcastColors.current
+    val isTraining = session.sessionType == SessionType.TRAINING
+    val meta = buildString {
+        append(SurfaceConstants.DISPLAY_NAMES[session.surface] ?: session.surface)
+        if (isTraining) {
+            append(" · ")
+            append(session.formattedDate())
+        } else {
+            session.opponent?.let { append(" · vs $it") }
+            append(" · ")
+            append(session.formattedDate())
         }
     }
+    MatchListItem(
+        accentColor = if (isTraining) colors.indoor else colors.forSurfaceKey(session.surface),
+        scoreOrTitle = if (isTraining) "Entraînement" else session.scoreText ?: "—",
+        meta = meta,
+        badge = when {
+            isTraining -> MatchResultBadge.NONE
+            session.result == "VICTORY" -> MatchResultBadge.VICTORY
+            session.result == "DEFEAT" -> MatchResultBadge.DEFEAT
+            else -> MatchResultBadge.NONE
+        },
+        badgeLabel = if (isTraining) "ENTR." else null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    )
 }
 
-@Composable
-private fun ResultBadge(text: String, isPositive: Boolean) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = if (isPositive) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.errorContainer
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = if (isPositive) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onErrorContainer
-        )
-    }
-}
-
-private fun Session.statusBadge(): String? = when (status) {
-    SessionStatus.ACTIVE -> "En cours"
-    SessionStatus.INTERRUPTED -> "Interrompue"
-    SessionStatus.PLANNED -> "Planifié"
-    SessionStatus.CANCELLED -> "Annulé"
-    SessionStatus.COMPLETED -> null
-}
-
-private fun Session.formattedDate(): String = formatDate(createdAt, sessionDateFormat)
+private fun Session.formattedDate(): String = formatDate(createdAt, SimpleDateFormat("d MMM", Locale.FRANCE))

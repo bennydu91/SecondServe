@@ -16,6 +16,8 @@ fun String?.toPreferredSurfacesList(): List<String> =
 
 fun PlayerProfileEntity.toDomain(): PlayerProfile = PlayerProfile(
     id = id,
+    displayName = displayName,
+    club = club,
     currentSeries = currentSeries,
     currentPoints = currentPoints,
     playStyle = playStyle,
@@ -61,7 +63,11 @@ fun SessionEntity.toDomain(): Session = Session(
     feelingComment = feelingComment,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    scheduledAt = scheduledAt
+    scheduledAt = scheduledAt,
+    firstServePercentSelf = firstServePercentSelf,
+    firstServePercentOpponent = firstServePercentOpponent,
+    winnersSelf = winnersSelf,
+    winnersOpponent = winnersOpponent
 )
 
 fun Session.toEntity(): SessionEntity = SessionEntity(
@@ -80,7 +86,11 @@ fun Session.toEntity(): SessionEntity = SessionEntity(
     feelingComment = feelingComment,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    scheduledAt = scheduledAt
+    scheduledAt = scheduledAt,
+    firstServePercentSelf = firstServePercentSelf,
+    firstServePercentOpponent = firstServePercentOpponent,
+    winnersSelf = winnersSelf,
+    winnersOpponent = winnersOpponent
 )
 
 fun Session.toSyncDto(): SyncSessionDto = SyncSessionDto(
@@ -99,5 +109,9 @@ fun Session.toSyncDto(): SyncSessionDto = SyncSessionDto(
     createdAt = createdAt,
     updatedAt = updatedAt,
     scheduledAt = scheduledAt,
-    scoreText = scoreText
+    scoreText = scoreText,
+    firstServePercentSelf = firstServePercentSelf,
+    firstServePercentOpponent = firstServePercentOpponent,
+    winnersSelf = winnersSelf,
+    winnersOpponent = winnersOpponent
 )

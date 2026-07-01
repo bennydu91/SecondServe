@@ -68,6 +68,36 @@ class ScoreViewModelTest {
     }
 
     @Test
+    fun `opponentName is null when no opponent arg is provided`() = runTest {
+        val vm = createViewModel()
+        assertEquals(null, vm.container.stateFlow.value.opponentName)
+    }
+
+    @Test
+    fun `opponentName reflects the nav arg when present`() = runTest {
+        val vm = createViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ScoreViewModel.ARG_OPPONENT to "Marceau"))
+        )
+        assertEquals("Marceau", vm.container.stateFlow.value.opponentName)
+    }
+
+    @Test
+    fun `opponentName is trimmed`() = runTest {
+        val vm = createViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ScoreViewModel.ARG_OPPONENT to "  Marceau  "))
+        )
+        assertEquals("Marceau", vm.container.stateFlow.value.opponentName)
+    }
+
+    @Test
+    fun `opponentName falls back to null when the arg is blank`() = runTest {
+        val vm = createViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ScoreViewModel.ARG_OPPONENT to "   "))
+        )
+        assertEquals(null, vm.container.stateFlow.value.opponentName)
+    }
+
+    @Test
     fun `recordPoint updates score to FIFTEEN`() = runTest {
         val vm = createViewModel()
         vm.recordPoint(Player.A)
@@ -180,6 +210,73 @@ class ScoreViewModelTest {
         coVerify(exactly = 2) { dataLayerClient.sendScoreEvent(any()) }
         // And the second call carries the corrected (restored) score
         coVerify { dataLayerClient.sendScoreEvent(match { it.currentGamePointsA == GamePoint.ZERO }) }
+    }
+
+    @Test
+    fun `swapLast moves the last point to the other player without losing it`() = runTest {
+        val vm = createViewModel()
+        vm.recordPoint(Player.A)
+        vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
+
+        vm.swapLast()
+
+        val state = vm.container.stateFlow.first { it.score.currentGamePointsB == GamePoint.FIFTEEN }
+        assertEquals(GamePoint.ZERO, state.score.currentGamePointsA)
+        assertTrue(state.canUndo)
+    }
+
+    @Test
+    fun `swapLast twice returns the point to the original scorer`() = runTest {
+        val vm = createViewModel()
+        vm.recordPoint(Player.A)
+        vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
+
+        vm.swapLast()
+        vm.container.stateFlow.first { it.score.currentGamePointsB == GamePoint.FIFTEEN }
+        vm.swapLast()
+
+        val state = vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
+        assertEquals(GamePoint.ZERO, state.score.currentGamePointsB)
+    }
+
+    @Test
+    fun `swapLast when no points does nothing`() = runTest {
+        val vm = createViewModel()
+        vm.swapLast()
+        assertEquals(MatchScore(), vm.container.stateFlow.value.score)
+        assertFalse(vm.container.stateFlow.value.canUndo)
+    }
+
+    @Test
+    fun `swapLast sends corrected score_event to DataLayer`() = runTest {
+        val vm = createViewModel()
+        vm.recordPoint(Player.A)
+        vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
+
+        vm.swapLast()
+        vm.container.stateFlow.first { it.score.currentGamePointsB == GamePoint.FIFTEEN }
+        Thread.sleep(50)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // sendScoreEvent must be called twice: once after recordPoint, once after swapLast
+        coVerify(exactly = 2) { dataLayerClient.sendScoreEvent(any()) }
+        coVerify { dataLayerClient.sendScoreEvent(match { it.currentGamePointsB == GamePoint.FIFTEEN }) }
+    }
+
+    @Test
+    fun `swapLast does nothing when match is over`() = runTest {
+        val vm = createViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_1.name)
+            )
+        )
+        repeat(24) { vm.recordPoint(Player.A) }
+        val matchOverState = vm.container.stateFlow.first { it.score.isMatchOver }
+
+        vm.swapLast()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(matchOverState.score, vm.container.stateFlow.value.score)
     }
 
     @Test

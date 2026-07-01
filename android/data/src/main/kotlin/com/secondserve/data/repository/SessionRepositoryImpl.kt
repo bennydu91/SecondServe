@@ -88,6 +88,40 @@ class SessionRepositoryImpl @Inject constructor(
         return Pair(self, opponent)
     }
 
+    override suspend fun updateMatchStats(
+        sessionId: Long,
+        firstServePercentSelf: Int?,
+        firstServePercentOpponent: Int?,
+        winnersSelf: Int?,
+        winnersOpponent: Int?
+    ): AppResult<Unit> = try {
+        val now = System.currentTimeMillis()
+        val existing = dao.getById(sessionId) ?: return AppResult.Error(
+            IllegalArgumentException("Session $sessionId introuvable")
+        )
+        database.withTransaction {
+            dao.update(existing.copy(
+                firstServePercentSelf = firstServePercentSelf,
+                firstServePercentOpponent = firstServePercentOpponent,
+                winnersSelf = winnersSelf,
+                winnersOpponent = winnersOpponent,
+                updatedAt = now
+            ))
+            syncQueueDao.insert(SyncQueueEntity(
+                entityType = SyncQueueEntity.ENTITY_TYPE_SESSION,
+                entityId = sessionId,
+                operation = SyncQueueEntity.OPERATION_UPSERT,
+                createdAt = now
+            ))
+        }
+        Timber.d("SessionRepository: stats fines mises à jour pour session %d", sessionId)
+        AppResult.Success(Unit)
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Timber.e(e, "SessionRepository: updateMatchStats failed")
+        AppResult.Error(e)
+    }
+
     override suspend fun countCompletedSince(afterMs: Long): Int =
         dao.countCompletedSince(afterMs)
 

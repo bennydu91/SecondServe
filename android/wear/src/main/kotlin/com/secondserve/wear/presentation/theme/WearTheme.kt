@@ -1,52 +1,71 @@
 package com.secondserve.wear.presentation.theme
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Typography
 
+// Design system "Broadcast" — même identité que le téléphone (cf. SecondServe Design System.dc.html
+// et :core:ui/theme/Theme.kt) : fond quasi noir, accent lime unique, Barlow Semi Condensed pour
+// les scores/labels, Space Grotesk pour l'interface.
 private val WearColorScheme = ColorScheme(
-    primary = Color(0xFF52D68A),
-    primaryDim = Color(0xFF3AB070),
-    onPrimary = Color(0xFF00391B),
-    primaryContainer = Color(0xFF00522A),
-    onPrimaryContainer = Color(0xFF7FFDB5),
+    primary = BroadcastColors.lime,
+    primaryDim = BroadcastColors.limeDim,
+    onPrimary = BroadcastColors.onLime,
+    primaryContainer = BroadcastColors.lime.copy(alpha = 0.14f),
+    onPrimaryContainer = BroadcastColors.lime,
 
-    secondary = Color(0xFFE8C73E),
-    secondaryDim = Color(0xFFB89D2E),
-    onSecondary = Color(0xFF3B2F00),
-    secondaryContainer = Color(0xFF554400),
-    onSecondaryContainer = Color(0xFFFFE178),
+    secondary = BroadcastColors.data,
+    secondaryDim = BroadcastColors.dataDim,
+    onSecondary = BroadcastColors.void,
+    secondaryContainer = BroadcastColors.panelHigh,
+    onSecondaryContainer = BroadcastColors.data,
 
-    tertiary = Color(0xFF7BCFFB),
-    tertiaryDim = Color(0xFF5BA0C8),
-    onTertiary = Color(0xFF003549),
-    tertiaryContainer = Color(0xFF004D6A),
-    onTertiaryContainer = Color(0xFFBDE9FF),
+    tertiary = BroadcastColors.data,
+    tertiaryDim = BroadcastColors.dataDim,
+    onTertiary = BroadcastColors.void,
+    tertiaryContainer = BroadcastColors.panelHigh,
+    onTertiaryContainer = BroadcastColors.data,
 
-    surfaceContainerLow = Color(0xFF080F0A),
-    surfaceContainer = Color(0xFF0B160E),
-    surfaceContainerHigh = Color(0xFF1C2B1E),
-    onSurface = Color(0xFFDCE9DC),
-    onSurfaceVariant = Color(0xFF9EB5A1),
+    surfaceContainerLow = BroadcastColors.void,
+    surfaceContainer = BroadcastColors.panel,
+    surfaceContainerHigh = BroadcastColors.panelHigh,
+    onSurface = BroadcastColors.text,
+    onSurfaceVariant = BroadcastColors.muted,
 
-    outline = Color(0xFF45644A),
-    outlineVariant = Color(0xFF2B3D2E),
+    outline = BroadcastColors.line,
+    outlineVariant = BroadcastColors.line,
 
-    background = Color(0xFF0B160E),
-    onBackground = Color(0xFFDCE9DC),
+    background = BroadcastColors.void,
+    onBackground = BroadcastColors.text,
 
-    error = Color(0xFFFFB3BA),
-    errorDim = Color(0xFFCC7070),
-    onError = Color(0xFF680020),
-    errorContainer = Color(0xFF93002F),
-    onErrorContainer = Color(0xFFFFDADE)
+    error = BroadcastColors.hot,
+    errorDim = BroadcastColors.hotDim,
+    onError = BroadcastColors.void,
+    errorContainer = BroadcastColors.defeatBg,
+    onErrorContainer = BroadcastColors.hot
+)
+
+private val WearTypography = Typography(
+    bodyLarge = Typography().bodyLarge.copy(fontFamily = SpaceGrotesk),
+    bodyMedium = Typography().bodyMedium.copy(fontFamily = SpaceGrotesk),
+    bodySmall = Typography().bodySmall.copy(fontFamily = SpaceGrotesk),
+    labelLarge = Typography().labelLarge.copy(fontFamily = SpaceGrotesk),
+    labelMedium = Typography().labelMedium.copy(fontFamily = SpaceGrotesk),
+    labelSmall = Typography().labelSmall.copy(fontFamily = SpaceGrotesk),
+    displayLarge = Typography().displayLarge.copy(fontFamily = BarlowSemiCondensed),
+    displayMedium = Typography().displayMedium.copy(fontFamily = BarlowSemiCondensed),
+    displaySmall = Typography().displaySmall.copy(fontFamily = BarlowSemiCondensed),
+    titleLarge = Typography().titleLarge.copy(fontFamily = BarlowSemiCondensed),
+    titleMedium = Typography().titleMedium.copy(fontFamily = BarlowSemiCondensed),
+    titleSmall = Typography().titleSmall.copy(fontFamily = BarlowSemiCondensed)
 )
 
 @Composable
 fun WearTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = WearColorScheme,
+        typography = WearTypography,
         content = content
     )
 }

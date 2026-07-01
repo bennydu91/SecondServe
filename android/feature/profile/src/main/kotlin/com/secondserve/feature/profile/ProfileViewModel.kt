@@ -32,6 +32,8 @@ class ProfileViewModel @Inject constructor(
             is AppResult.Success -> reduce {
                 state.copy(
                     isLoading = false,
+                    displayName = result.data?.displayName,
+                    club = result.data?.club,
                     currentSeries = result.data?.currentSeries,
                     currentPoints = result.data?.currentPoints,
                     playStyle = result.data?.playStyle,
@@ -117,6 +119,21 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun saveIdentity(displayName: String?, club: String?) = intent {
+        reduce { state.copy(isIdentitySaving = true) }
+        when (profileRepository.saveIdentity(displayName, club)) {
+            is AppResult.Success -> {
+                reduce { state.copy(isIdentitySaving = false, displayName = displayName, club = club) }
+                postSideEffect(ProfileSideEffect.IdentitySaved)
+            }
+            is AppResult.Error -> {
+                reduce { state.copy(isIdentitySaving = false) }
+                postSideEffect(ProfileSideEffect.ShowError("Erreur lors de la sauvegarde"))
+            }
+            AppResult.Loading -> {}
+        }
+    }
+
     fun saveFftLicense(licenseNumber: String) = intent {
         playerDataStore.saveFftLicenseNumber(licenseNumber)
         reduce { state.copy(fftLicenseNumber = licenseNumber) }
@@ -132,6 +149,9 @@ data class ProfileUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val isDetailsSaving: Boolean = false,
+    val isIdentitySaving: Boolean = false,
+    val displayName: String? = null,
+    val club: String? = null,
     val currentSeries: String? = null,
     val currentPoints: Int? = null,
     val rankingHistory: List<RankingEntry> = emptyList(),
@@ -148,5 +168,6 @@ data class ProfileUiState(
 sealed class ProfileSideEffect {
     data object RankingSaved : ProfileSideEffect()
     data object ProfileDetailsSaved : ProfileSideEffect()
+    data object IdentitySaved : ProfileSideEffect()
     data class ShowError(val message: String) : ProfileSideEffect()
 }

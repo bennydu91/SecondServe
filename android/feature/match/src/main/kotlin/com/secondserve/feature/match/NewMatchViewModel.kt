@@ -107,7 +107,8 @@ class NewMatchViewModel @Inject constructor(
                         dataLayerClient.sendStartSession(
                             sessionId = createdSession.id,
                             matchFormat = matchFormat,
-                            thirdSetRule = thirdSetRule
+                            thirdSetRule = thirdSetRule,
+                            opponent = createdSession.opponent
                         ).also { r ->
                             if (r is AppResult.Error)
                                 Timber.d("NewMatchViewModel: sendStartSession to watch failed — %s", r.exception.message)

@@ -68,7 +68,8 @@ object DataModule {
             SecondServeDatabase.MIGRATION_7_8,
             SecondServeDatabase.MIGRATION_8_9,
             SecondServeDatabase.MIGRATION_9_10,
-            SecondServeDatabase.MIGRATION_10_11
+            SecondServeDatabase.MIGRATION_10_11,
+            SecondServeDatabase.MIGRATION_11_12
         )
         .build()
 

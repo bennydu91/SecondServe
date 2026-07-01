@@ -33,6 +33,8 @@ import androidx.core.content.ContextCompat
 import com.secondserve.auth.GoogleSignInHelper
 import com.secondserve.core.ui.theme.SecondServeTheme
 import com.secondserve.data.remote.auth.AuthRepository
+import com.secondserve.domain.AppResult
+import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.navigation.AppNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -46,6 +48,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var authRepository: AuthRepository
     @Inject lateinit var googleSignInHelper: GoogleSignInHelper
+    @Inject lateinit var playerProfileRepository: PlayerProfileRepository
 
     private val _pendingSessionId = mutableStateOf<Long?>(null)
 
@@ -99,11 +102,12 @@ class MainActivity : ComponentActivity() {
                                     error = null
                                     scope.launch {
                                         try {
-                                            val idToken = googleSignInHelper.signIn(this@MainActivity)
-                                            authRepository.initAuth(idToken)
+                                            val signInResult = googleSignInHelper.signIn(this@MainActivity)
+                                            authRepository.initAuth(signInResult.idToken)
                                                 .onSuccess {
                                                     isLoading = false
                                                     authState = AuthState.Authenticated
+                                                    seedDisplayNameIfMissing(signInResult.displayName)
                                                 }
                                                 .onFailure {
                                                     Timber.e(it, "Auth exchange failed")
@@ -134,6 +138,14 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)
+    }
+
+    private suspend fun seedDisplayNameIfMissing(googleDisplayName: String?) {
+        if (googleDisplayName.isNullOrBlank()) return
+        val profileResult = playerProfileRepository.getProfile()
+        if (profileResult is AppResult.Success && profileResult.data?.displayName.isNullOrBlank()) {
+            playerProfileRepository.saveIdentity(displayName = googleDisplayName, club = profileResult.data?.club)
+        }
     }
 
     private fun handleIntent(intent: Intent) {

@@ -1,12 +1,11 @@
 package com.secondserve.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -18,7 +17,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -46,16 +44,17 @@ private enum class BottomNavItem(
     val unselectedIcon: ImageVector
 ) {
     HOME("home", "Accueil", Icons.Filled.Home, Icons.Outlined.Home),
-    HISTORY("history", "Historique", Icons.Filled.History, Icons.Outlined.History),
-    COACHING("coaching", "Coaching", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome),
+    STATS("stats", "Stats", Icons.Filled.BarChart, Icons.Outlined.BarChart),
     PROFILE("profile", "Profil", Icons.Filled.Person, Icons.Outlined.Person)
 }
 
 private val bottomNavRoutes = BottomNavItem.entries.map { it.route }.toSet()
 
-// Routes plein écran sans bottom nav
+// Routes plein écran sans bottom nav (historique/coaching restent joignables depuis
+// des cartes sur l'Accueil, mais ne font plus partie de la bottom nav — cf. mockup Broadcast
+// qui n'affiche que 3 onglets : Accueil / Stats / Profil)
 private val fullScreenRoutes = setOf(
-    "new_match", "settings", "work_axes", "add_retro_session", "stats"
+    "new_match", "settings", "work_axes", "add_retro_session", "history", "coaching"
 )
 
 @Composable
@@ -117,12 +116,11 @@ fun AppNavGraph(pendingSessionId: Long? = null, onPendingSessionConsumed: () -> 
                     onNavigateToNewMatch = { navController.navigate("new_match") },
                     onNavigateToProfile = { navController.navigate("profile") },
                     onNavigateToHistory = { navController.navigate("history") },
-                    onNavigateToStats = { navController.navigate("stats") },
                     onNavigateToCoaching = { navController.navigate("coaching") }
                 )
             }
             composable("coaching") {
-                CoachingScreen(onNavigateBack = { navController.popBackStack() })
+                CoachingScreen()
             }
             composable("new_match") {
                 NewMatchScreen(
@@ -147,16 +145,14 @@ fun AppNavGraph(pendingSessionId: Long? = null, onPendingSessionConsumed: () -> 
                 )
             }
             composable("stats") {
-                StatsScreen(onNavigateBack = { navController.popBackStack() })
+                StatsScreen()
             }
             composable("history") {
                 HistoryScreen(
                     onNavigateToDetail = { sessionId ->
                         navController.navigate("session_detail/$sessionId")
                     },
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToAddRetroSession = { navController.navigate("add_retro_session") },
-                    onNavigateToStats = { navController.navigate("stats") }
+                    onNavigateToAddRetroSession = { navController.navigate("add_retro_session") }
                 )
             }
             composable("add_retro_session") {
@@ -170,7 +166,6 @@ fun AppNavGraph(pendingSessionId: Long? = null, onPendingSessionConsumed: () -> 
             }
             composable("profile") {
                 ProfileScreen(
-                    onNavigateBack = { navController.popBackStack() },
                     onNavigateToWorkAxes = { navController.navigate("work_axes") },
                     onNavigateToSettings = { navController.navigate("settings") }
                 )

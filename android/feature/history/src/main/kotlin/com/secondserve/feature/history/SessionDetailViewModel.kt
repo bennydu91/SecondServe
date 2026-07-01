@@ -48,6 +48,33 @@ class SessionDetailViewModel @Inject constructor(
         }
     }
 
+    fun updateMatchStats(
+        firstServePercentSelf: Int?,
+        firstServePercentOpponent: Int?,
+        winnersSelf: Int?,
+        winnersOpponent: Int?
+    ) = intent {
+        val s = (state as? SessionDetailUiState.Content) ?: return@intent
+        when (val result = sessionRepository.updateMatchStats(
+            s.session.id, firstServePercentSelf, firstServePercentOpponent, winnersSelf, winnersOpponent
+        )) {
+            is AppResult.Success -> {
+                val updatedSession = s.session.copy(
+                    firstServePercentSelf = firstServePercentSelf,
+                    firstServePercentOpponent = firstServePercentOpponent,
+                    winnersSelf = winnersSelf,
+                    winnersOpponent = winnersOpponent
+                )
+                reduce { s.copy(session = updatedSession) }
+            }
+            is AppResult.Error -> {
+                Timber.e(result.exception, "SessionDetailViewModel: updateMatchStats failed for id=%d", s.session.id)
+                postSideEffect(SessionDetailSideEffect.ShowError("Impossible d'enregistrer les statistiques"))
+            }
+            AppResult.Loading -> {}
+        }
+    }
+
     fun deleteSession() = intent {
         val s = (state as? SessionDetailUiState.Content) ?: return@intent
         when (val result = sessionRepository.deleteSession(s.session.id)) {

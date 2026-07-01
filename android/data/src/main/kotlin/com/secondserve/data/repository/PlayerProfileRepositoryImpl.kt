@@ -46,6 +46,8 @@ class PlayerProfileRepositoryImpl(
             dao.saveProfileAndHistory(
                 PlayerProfileEntity(
                     id = 1,
+                    displayName = current?.displayName,
+                    club = current?.club,
                     currentSeries = series,
                     currentPoints = points,
                     playStyle = current?.playStyle,
@@ -97,12 +99,15 @@ class PlayerProfileRepositoryImpl(
         coachInstruction2: String?,
         coachInstruction3: String?
     ): AppResult<Unit> = try {
+        val current: PlayerProfileEntity?
         profileWriteMutex.withLock {
             val now = System.currentTimeMillis()
-            val current = dao.getProfile()
+            current = dao.getProfile()
             dao.upsertProfile(
                 PlayerProfileEntity(
                     id = 1,
+                    displayName = current?.displayName,
+                    club = current?.club,
                     currentSeries = current?.currentSeries,
                     currentPoints = current?.currentPoints,
                     playStyle = playStyle,
@@ -117,6 +122,8 @@ class PlayerProfileRepositoryImpl(
         try {
             vpsApiService.updateProfileDetails(
                 ProfileDetailsRequest(
+                    displayName = current?.displayName,
+                    club = current?.club,
                     playStyle = playStyle,
                     preferredSurfaces = preferredSurfaces.toPreferredSurfacesString(),
                     coachInstruction1 = coachInstruction1?.takeIf { it.isNotBlank() },
@@ -127,6 +134,49 @@ class PlayerProfileRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Timber.w(e, "VPS profile details sync failed — local save succeeded")
+        }
+        AppResult.Success(Unit)
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        AppResult.Error(e)
+    }
+
+    override suspend fun saveIdentity(displayName: String?, club: String?): AppResult<Unit> = try {
+        val current: PlayerProfileEntity?
+        profileWriteMutex.withLock {
+            val now = System.currentTimeMillis()
+            current = dao.getProfile()
+            dao.upsertProfile(
+                PlayerProfileEntity(
+                    id = 1,
+                    displayName = displayName?.takeIf { it.isNotBlank() },
+                    club = club?.takeIf { it.isNotBlank() },
+                    currentSeries = current?.currentSeries,
+                    currentPoints = current?.currentPoints,
+                    playStyle = current?.playStyle,
+                    preferredSurfaces = current?.preferredSurfaces,
+                    coachInstruction1 = current?.coachInstruction1,
+                    coachInstruction2 = current?.coachInstruction2,
+                    coachInstruction3 = current?.coachInstruction3,
+                    updatedAt = now
+                )
+            )
+        }
+        try {
+            vpsApiService.updateProfileDetails(
+                ProfileDetailsRequest(
+                    displayName = displayName?.takeIf { it.isNotBlank() },
+                    club = club?.takeIf { it.isNotBlank() },
+                    playStyle = current?.playStyle,
+                    preferredSurfaces = current?.preferredSurfaces,
+                    coachInstruction1 = current?.coachInstruction1,
+                    coachInstruction2 = current?.coachInstruction2,
+                    coachInstruction3 = current?.coachInstruction3
+                )
+            )
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Timber.w(e, "VPS identity sync failed — local save succeeded")
         }
         AppResult.Success(Unit)
     } catch (e: Exception) {

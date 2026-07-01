@@ -7,6 +7,8 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "player_profiles")
 data class PlayerProfileEntity(
     @PrimaryKey val id: Int = 1,
+    @ColumnInfo(name = "display_name") val displayName: String? = null,
+    @ColumnInfo(name = "club") val club: String? = null,
     @ColumnInfo(name = "current_series") val currentSeries: String?,
     @ColumnInfo(name = "current_points") val currentPoints: Int?,
     @ColumnInfo(name = "play_style") val playStyle: String?,

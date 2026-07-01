@@ -25,5 +25,9 @@ data class SessionEntity(
     @ColumnInfo(name = "feeling_comment") val feelingComment: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
-    @ColumnInfo(name = "scheduled_at") val scheduledAt: Long? = null
+    @ColumnInfo(name = "scheduled_at") val scheduledAt: Long? = null,
+    @ColumnInfo(name = "first_serve_percent_self") val firstServePercentSelf: Int? = null,
+    @ColumnInfo(name = "first_serve_percent_opponent") val firstServePercentOpponent: Int? = null,
+    @ColumnInfo(name = "winners_self") val winnersSelf: Int? = null,
+    @ColumnInfo(name = "winners_opponent") val winnersOpponent: Int? = null
 )

@@ -8,9 +8,13 @@ import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 
+/** Résultat du sign-in : le token à échanger côté backend + le nom affiché par le compte Google
+ *  (simple valeur de pré-remplissage pour le profil, l'utilisateur peut la changer ensuite). */
+data class GoogleSignInResult(val idToken: String, val displayName: String?)
+
 class GoogleSignInHelper(private val webClientId: String) {
 
-    suspend fun signIn(activity: Activity): String {
+    suspend fun signIn(activity: Activity): GoogleSignInResult {
         val credentialManager = CredentialManager.create(activity)
 
         // Tenter d'abord avec les comptes déjà autorisés (silent sign-in)
@@ -26,7 +30,7 @@ class GoogleSignInHelper(private val webClientId: String) {
         credentialManager: CredentialManager,
         activity: Activity,
         filterByAuthorizedAccounts: Boolean,
-    ): String {
+    ): GoogleSignInResult {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(filterByAuthorizedAccounts)
             .setServerClientId(webClientId)
@@ -38,6 +42,9 @@ class GoogleSignInHelper(private val webClientId: String) {
 
         val result = credentialManager.getCredential(activity, request)
         val googleIdCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
-        return googleIdCredential.idToken
+        return GoogleSignInResult(
+            idToken = googleIdCredential.idToken,
+            displayName = googleIdCredential.displayName
+        )
     }
 }

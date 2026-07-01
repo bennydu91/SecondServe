@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 interface PlayerProfileRepository {
     suspend fun getProfile(): AppResult<PlayerProfile?>
     suspend fun saveRanking(series: String, points: Int): AppResult<Unit>
+    suspend fun saveIdentity(displayName: String?, club: String?): AppResult<Unit>
     fun getRankingHistory(): Flow<List<RankingEntry>>
     suspend fun buildMatchContextProfile(): MatchContextProfile
     suspend fun saveProfileDetails(

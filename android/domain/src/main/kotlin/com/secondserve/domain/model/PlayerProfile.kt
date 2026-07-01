@@ -2,6 +2,8 @@ package com.secondserve.domain.model
 
 data class PlayerProfile(
     val id: Int = 1,
+    val displayName: String?,
+    val club: String?,
     val currentSeries: String?,
     val currentPoints: Int?,
     val playStyle: String?,

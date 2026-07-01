@@ -18,5 +18,9 @@ data class Session(
     val feelingComment: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
-    val scheduledAt: Long? = null
+    val scheduledAt: Long? = null,
+    val firstServePercentSelf: Int? = null,
+    val firstServePercentOpponent: Int? = null,
+    val winnersSelf: Int? = null,
+    val winnersOpponent: Int? = null
 )

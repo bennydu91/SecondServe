@@ -18,6 +18,8 @@ class ProfileService:
         profile = await self.repository.get_profile()
         history = await self.repository.get_ranking_history()
         return ProfileSummaryResponse(
+            display_name=profile.display_name if profile else None,
+            club=profile.club if profile else None,
             current_series=profile.current_series if profile else None,
             current_points=profile.current_points if profile else None,
             ranking_history=[
@@ -33,6 +35,8 @@ class ProfileService:
 
     async def update_profile_details(self, request: ProfileDetailsRequest) -> ProfileDetailsResponse:
         profile = await self.repository.update_profile_details(
+            request.display_name,
+            request.club,
             request.play_style,
             request.preferred_surfaces,
             request.coach_instruction_1,

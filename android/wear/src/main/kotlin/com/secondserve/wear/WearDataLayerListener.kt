@@ -40,6 +40,7 @@ class WearDataLayerListener : WearableListenerService() {
             val intent = Intent(applicationContext, WearActivity::class.java).apply {
                 putExtra("matchFormat", payload.matchFormat)
                 putExtra("thirdSetRule", payload.thirdSetRule)
+                putExtra("opponent", payload.opponent)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             // On NE fait PAS un startActivity() direct : ce service tourne en arrière-plan

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #E7E4DA; }
+  @keyframes ssPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+</style>
+</helmet>
+<div style="padding: 52px 60px 90px; font-family: 'Space Grotesk', sans-serif; color: #14161A;">
+
+  <div style="max-width: 760px; margin-bottom: 36px;">
+    <div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: #918B7C;">SecondServe · Prototype interactif</div>
+    <h1 style="font-size: 40px; margin: 10px 0 14px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.02;">Match live — jouable</h1>
+    <p style="font-size: 16px; line-height: 1.55; color: #5c584c; margin: 0;">La variante <strong>3B gamecast</strong> rendue cliquable. Tape <strong>Point Benjamin</strong> ou <strong>Point Marceau</strong> : le score de tennis évolue pour de vrai (points, avantages, jeux, sets, tie-break à 6-6). Correction <strong>2B</strong> intégrée : <strong>↩ annuler</strong> le dernier point ou <strong>⇄ basculer</strong> vers l'autre joueur.</p>
+  </div>
+
+  <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+    <div style="height: 100%; background: #0C0D0F; font-family: 'Space Grotesk', sans-serif; color: #F2F3F0; display: flex; flex-direction: column; padding: 6px 18px 20px;">
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0 14px;">
+        <span style="display: inline-flex; align-items: center; gap: 7px; background: #FF5C7A; color: #0C0D0F; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 1.5px; padding: 6px 11px; border-radius: 100px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #0C0D0F; animation: ssPulse 1.4s infinite;"></span>LIVE</span>
+        <span style="font-size: 13px; font-weight: 500; color: #8A8F98;">{{ statusText }}</span>
+        <span style="width: 38px; height: 38px; border-radius: 50%; background: #16181C; border: 1px solid #24272D; display: flex; align-items: center; justify-content: center; color: #8A8F98; font-size: 18px;">✕</span>
+      </div>
+
+      <div style="background: #131518; border: 1px solid #24272D; border-radius: 18px; overflow: hidden;">
+        <div style="display: flex; align-items: center; padding: 10px 16px; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #6b7079; border-bottom: 1px solid #24272D;"><span style="flex: 1;">JOUEUR</span><span style="width: 34px; text-align: center;">S1</span><span style="width: 34px; text-align: center;">S2</span><span style="width: 48px; text-align: center; color: #C8FF3D;">JEUX</span><span style="width: 46px; text-align: center; color: #4EA8FF;">PTS</span></div>
+        <div style="display: flex; align-items: center; padding: 16px;"><span style="flex: 1; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; color: #F2F3F0;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #C8FF3D;"></span>Benjamin</span><span style="width: 34px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 24px; color: #6b7079; font-feature-settings: 'tnum';">{{ s1A }}</span><span style="width: 34px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 24px; color: #6b7079; font-feature-settings: 'tnum';">{{ s2A }}</span><span style="width: 48px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 34px; color: #C8FF3D; font-feature-settings: 'tnum';">{{ gA }}</span><span style="width: 46px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 26px; color: #4EA8FF; font-feature-settings: 'tnum';">{{ pA }}</span></div>
+        <div style="height: 1px; background: #24272D; margin: 0 16px;"></div>
+        <div style="display: flex; align-items: center; padding: 16px;"><span style="flex: 1; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; color: #b6bbc2;"><span style="width: 7px; height: 7px; border-radius: 50%; background: transparent; border: 1px solid #3a3e45;"></span>Marceau</span><span style="width: 34px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 24px; color: #6b7079; font-feature-settings: 'tnum';">{{ s1B }}</span><span style="width: 34px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 24px; color: #6b7079; font-feature-settings: 'tnum';">{{ s2B }}</span><span style="width: 48px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 34px; color: #F2F3F0; font-feature-settings: 'tnum';">{{ gB }}</span><span style="width: 46px; text-align: center; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 26px; color: #4EA8FF; font-feature-settings: 'tnum';">{{ pB }}</span></div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <div style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 2px; color: #6b7079; margin-bottom: 10px;">DÉROULÉ · SET COURANT</div>
+        <div style="display: flex; gap: 6px; min-height: 28px;">
+          <sc-for list="{{ trail }}" as="pt" hint-placeholder-count="9">
+            <span style="flex: 1; height: 28px; border-radius: 6px; background: {{ pt.bg }}; color: {{ pt.fg }}; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center;">{{ pt.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex: 1;"></div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <button onClick="{{ undo }}" style="flex: 1; border: 1px solid #2f333a; background: #16181C; color: {{ correctColor }}; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; padding: 13px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;"><span style="font-size: 16px;">↩</span>Annuler</button>
+        <button onClick="{{ swap }}" style="flex: 1; border: 1px solid #2f333a; background: #16181C; color: {{ correctColor }}; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; padding: 13px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;"><span style="font-size: 16px;">⇄</span>Basculer</button>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button onClick="{{ pointA }}" style="flex: 1; border: none; background: #C8FF3D; color: #0C0D0F; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; padding: 20px 12px; border-radius: 16px; cursor: pointer; text-align: center; line-height: 1.2;"><span style="font-size: 22px;">+</span><br>Point Benjamin</button>
+        <button onClick="{{ pointB }}" style="flex: 1; border: 1px solid #2f333a; background: #1B1E23; color: #F2F3F0; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; padding: 20px 12px; border-radius: 16px; cursor: pointer; text-align: center; line-height: 1.2;"><span style="font-size: 22px; color: #8A8F98;">+</span><br>Point Marceau</button>
+      </div>
+
+    </div>
+  </x-import>
+
+  <p style="font-size: 14px; line-height: 1.5; color: #5c584c; margin: 20px 4px 0; max-width: 412px;">Le score suit les règles réelles : montée 0→15→30→40, gestion des avantages (AD/40 à égalité), jeu gagné à +2, set à 6 jeux (ou 7-5), tie-break à 6-6. Best-of-3. « Basculer » corrige un point donné du mauvais côté en un geste.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { pA: 0, pB: 0, gA: 0, gB: 0, sets: [], stack: [] };
+
+  isTB(gA, gB) { return gA === 6 && gB === 6; }
+
+  ptLabel(p, o, tb) {
+    if (tb) return '' + p;
+    if (p >= 3 && o >= 3) { if (p === o) return '40'; return p > o ? 'AD' : '40'; }
+    return ['0', '15', '30', '40'][p] || '0';
+  }
+
+  award(w) {
+    this.setState(prev => {
+      if (this.matchOver(prev)) return {};
+      const snap = { pA: prev.pA, pB: prev.pB, gA: prev.gA, gB: prev.gB, sets: prev.sets.map(x => x.slice()), winner: w };
+      let { pA, pB, gA, gB } = prev;
+      let sets = prev.sets.map(x => x.slice());
+      const tb = gA === 6 && gB === 6;
+      const need = tb ? 7 : 4;
+      if (w === 'A') pA++; else pB++;
+      if ((pA >= need || pB >= need) && Math.abs(pA - pB) >= 2) {
+        if (pA > pB) gA++; else gB++;
+        pA = 0; pB = 0;
+        const setWon = ((gA >= 6 || gB >= 6) && Math.abs(gA - gB) >= 2) || gA === 7 || gB === 7;
+        if (setWon) { sets.push([gA, gB]); gA = 0; gB = 0; }
+      }
+      return { pA, pB, gA, gB, sets, stack: prev.stack.concat([snap]) };
+    });
+  }
+
+  matchOver(s) {
+    const a = s.sets.filter(x => x[0] > x[1]).length;
+    const b = s.sets.filter(x => x[1] > x[0]).length;
+    return a >= 2 || b >= 2;
+  }
+
+  undo() {
+    this.setState(prev => {
+      if (!prev.stack.length) return {};
+      const last = prev.stack[prev.stack.length - 1];
+      return { pA: last.pA, pB: last.pB, gA: last.gA, gB: last.gB, sets: last.sets.map(x => x.slice()), stack: prev.stack.slice(0, -1) };
+    });
+  }
+
+  swap() {
+    const prev = this.state;
+    if (!prev.stack.length) return;
+    const last = prev.stack[prev.stack.length - 1];
+    const other = last.winner === 'A' ? 'B' : 'A';
+    this.setState({ pA: last.pA, pB: last.pB, gA: last.gA, gB: last.gB, sets: last.sets.map(x => x.slice()), stack: prev.stack.slice(0, -1) });
+    setTimeout(() => this.award(other), 0);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const tb = this.isTB(s.gA, s.gB);
+    const over = this.matchOver(s);
+    const winsA = s.sets.filter(x => x[0] > x[1]).length;
+    const winsB = s.sets.filter(x => x[1] > x[0]).length;
+    let statusText;
+    if (over) statusText = winsA > winsB ? 'Match terminé · Victoire' : 'Match terminé · Défaite';
+    else if (tb) statusText = 'Tie-break · Set ' + (s.sets.length + 1);
+    else statusText = 'Set ' + (s.sets.length + 1) + ' · en cours';
+
+    const trail = s.stack.slice(-9).map(e => {
+      const win = e.winner === 'A';
+      return { label: win ? 'V' : 'E', bg: win ? 'rgba(200,255,61,0.16)' : '#1B1E23', fg: win ? '#C8FF3D' : '#6b7079' };
+    });
+    while (trail.length < 9) trail.push({ label: '·', bg: 'transparent', fg: '#3a3e45' });
+
+    return {
+      s1A: s.sets[0] ? s.sets[0][0] : '–',
+      s1B: s.sets[0] ? s.sets[0][1] : '–',
+      s2A: s.sets[1] ? s.sets[1][0] : '–',
+      s2B: s.sets[1] ? s.sets[1][1] : '–',
+      gA: s.gA, gB: s.gB,
+      pA: this.ptLabel(s.pA, s.pB, tb),
+      pB: this.ptLabel(s.pB, s.pA, tb),
+      statusText,
+      trail,
+      correctColor: s.stack.length ? '#F2F3F0' : '#4b5058',
+      pointA: () => this.award('A'),
+      pointB: () => this.award('B'),
+      undo: () => this.undo(),
+      swap: () => this.swap(),
+    };
+  }
+}
+</script>
+</body>
+</html>

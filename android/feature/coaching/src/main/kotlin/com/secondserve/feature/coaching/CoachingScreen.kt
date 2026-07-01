@@ -1,8 +1,10 @@
 package com.secondserve.feature.coaching
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,133 +12,184 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.core.ui.components.CoachingCard
+import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.domain.model.CoachingAnalysis
 import org.orbitmvi.orbit.compose.collectAsState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val synthDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
+private val synthDateFormat = SimpleDateFormat("dd MMM", Locale.FRANCE)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoachingScreen(
-    onNavigateBack: () -> Unit,
     viewModel: CoachingViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
+    val colors = LocalBroadcastColors.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Coaching IA") },
-                navigationIcon = {
-                    TextButton(onClick = onNavigateBack) { Text("← Retour") }
-                }
+    if (state.isLoading) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = colors.lime)
+        }
+        return
+    }
+
+    LazyColumn(
+        Modifier
+            .fillMaxSize()
+            .padding(horizontal = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(top = 10.dp, bottom = 8.dp)
+            ) {
+                Text(
+                    text = "Coaching",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = colors.text
+                )
+                Icon(imageVector = Icons.Filled.AutoAwesome, contentDescription = null, tint = colors.lime)
+            }
+        }
+
+        item {
+            Text(
+                text = "SYNTHÈSE MULTI-MATCHS",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint,
+                modifier = Modifier.padding(bottom = 10.dp)
             )
         }
-    ) { padding ->
-        if (state.isLoading) {
-            Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    Text(
-                        "Synthèse multi-matchs",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                    )
-                }
-                item {
-                    state.synthesis?.let { synth ->
-                        Card(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(synth.content, style = MaterialTheme.typography.bodyMedium)
-                                Spacer(Modifier.height(4.dp))
-                                val dateStr = if (synth.generatedAt > 0L) synthDateFormat.format(Date(synth.generatedAt)) else "date inconnue"
-                                Text(
-                                    "${synth.sessionCount} matchs · $dateStr",
-                                    style = MaterialTheme.typography.labelSmall
+
+        item {
+            state.synthesis?.let { synth ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = colors.panelHigh
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(colors.lime.copy(alpha = 0.08f), colors.panelHigh),
+                                    start = Offset(0f, 0f),
+                                    end = Offset(300f, 400f)
                                 )
-                            }
+                            )
+                            .padding(20.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = synth.content,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = colors.text.copy(alpha = 0.92f)
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            val dateStr = if (synth.generatedAt > 0L) synthDateFormat.format(Date(synth.generatedAt)) else "date inconnue"
+                            Text(
+                                text = "${synth.sessionCount} matchs · généré le $dateStr",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colors.muted
+                            )
                         }
-                    } ?: Text(
-                        "Aucune synthèse disponible. Générez-en une ci-dessous.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                item {
-                    if (state.synthesisInProgress) {
-                        CircularProgressIndicator(Modifier.padding(vertical = 8.dp))
-                    } else {
-                        OutlinedButton(
-                            onClick = { viewModel.generateNow() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Générer maintenant") }
                     }
                 }
-                state.error?.let { err ->
-                    item {
-                        Text(
-                            err,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+            } ?: Text(
+                text = "Aucune synthèse disponible. Générez-en une ci-dessous.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.muted
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(4.dp))
+            if (state.synthesisInProgress) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = colors.lime, modifier = Modifier.padding(vertical = 8.dp))
                 }
-                if (state.analyses.isNotEmpty()) {
-                    item {
-                        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                        Text("Analyses post-match", style = MaterialTheme.typography.titleMedium)
-                    }
-                    items(state.analyses) { analysis ->
-                        AnalysisItem(analysis)
-                    }
+            } else {
+                OutlinedButton(
+                    onClick = { viewModel.generateNow() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.lime)
+                ) {
+                    Text("Regénérer la synthèse", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
+
+        state.error?.let { err ->
+            item {
+                Text(text = err, color = colors.hot, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        if (state.analyses.isNotEmpty()) {
+            item {
+                Text(
+                    text = "ANALYSES POST-MATCH",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
+                )
+            }
+            items(state.analyses) { analysis ->
+                AnalysisItem(analysis)
+            }
+        }
+
+        item { Spacer(Modifier.height(20.dp)) }
     }
 }
 
 @Composable
 private fun AnalysisItem(analysis: CoachingAnalysis) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp)) {
-            Text(analysis.content, style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(4.dp))
-            val dateStr = if (analysis.generatedAt > 0L) synthDateFormat.format(Date(analysis.generatedAt)) else "date inconnue"
+    val colors = LocalBroadcastColors.current
+    val dateStr = if (analysis.generatedAt > 0L) synthDateFormat.format(Date(analysis.generatedAt)) else "date inconnue"
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.panelHigh
+    ) {
+        Column(Modifier.padding(16.dp)) {
             Text(
-                dateStr,
-                style = MaterialTheme.typography.labelSmall
+                text = analysis.content,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.text.copy(alpha = 0.9f)
             )
+            Spacer(Modifier.height(8.dp))
+            Text(text = dateStr, style = MaterialTheme.typography.labelSmall, color = colors.faint)
         }
     }
 }

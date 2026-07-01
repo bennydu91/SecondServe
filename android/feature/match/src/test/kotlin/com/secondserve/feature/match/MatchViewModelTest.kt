@@ -7,8 +7,10 @@ import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.model.CoachingResult
 import com.secondserve.domain.model.CoachingSource
 import com.secondserve.domain.model.MatchScore
+import com.secondserve.domain.model.Player
 import com.secondserve.domain.model.SetResult
 import com.secondserve.domain.repository.ScoreRepository
+import com.secondserve.domain.repository.SessionRepository
 import com.secondserve.domain.sync.SyncScheduler
 import com.secondserve.domain.usecase.match.CloseMatchUseCase
 import io.mockk.coEvery
@@ -39,6 +41,7 @@ class MatchViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var scoreRepository: ScoreRepository
+    private lateinit var sessionRepository: SessionRepository
     private lateinit var closeMatchUseCase: CloseMatchUseCase
     private lateinit var syncScheduler: SyncScheduler
     private lateinit var analysisScheduler: AnalysisScheduler
@@ -53,6 +56,7 @@ class MatchViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         scoreRepository = mockk()
+        sessionRepository = mockk(relaxed = true)
         closeMatchUseCase = mockk()
         syncScheduler = mockk(relaxed = true)
         analysisScheduler = mockk(relaxed = true)
@@ -64,6 +68,7 @@ class MatchViewModelTest {
 
         viewModel = MatchViewModel(
             scoreRepository = scoreRepository,
+            sessionRepository = sessionRepository,
             closeMatchUseCase = closeMatchUseCase,
             syncScheduler = syncScheduler,
             analysisScheduler = analysisScheduler,
@@ -216,5 +221,35 @@ class MatchViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertNull(viewModel.container.stateFlow.value.coachingAdvice)
+    }
+
+    @Test
+    fun `winning a game appends to currentSetGameLog and updates momentum`() = runTest {
+        scoreFlow.value = MatchScore(currentSetGamesA = 0, currentSetGamesB = 0)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        scoreFlow.value = MatchScore(currentSetGamesA = 1, currentSetGamesB = 0)
+        val state = viewModel.container.stateFlow.first { it.currentSetGameLog.isNotEmpty() }
+
+        assertEquals(listOf(Player.A), state.currentSetGameLog)
+        assertEquals(100, state.momentumPercent)
+    }
+
+    @Test
+    fun `completing a set resets currentSetGameLog`() = runTest {
+        scoreFlow.value = MatchScore(currentSetGamesA = 5, currentSetGamesB = 3)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        scoreFlow.value = MatchScore(currentSetGamesA = 6, currentSetGamesB = 3)
+        viewModel.container.stateFlow.first { it.currentSetGameLog.isNotEmpty() }
+
+        scoreFlow.value = MatchScore(
+            completedSets = listOf(SetResult(6, 3)),
+            currentSetGamesA = 0,
+            currentSetGamesB = 0
+        )
+        val state = viewModel.container.stateFlow.first { it.currentSetGameLog.isEmpty() }
+
+        assertTrue(state.currentSetGameLog.isEmpty())
     }
 }

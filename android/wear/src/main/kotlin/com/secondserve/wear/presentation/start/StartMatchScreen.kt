@@ -26,6 +26,7 @@ import androidx.wear.compose.material3.Text
 import com.secondserve.domain.model.MatchFormat
 import com.secondserve.domain.model.SurfaceConstants
 import com.secondserve.domain.model.ThirdSetRule
+import com.secondserve.wear.presentation.theme.BarlowSemiCondensed
 import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
@@ -56,7 +57,9 @@ fun StartMatchScreen(
     ) {
         Text(
             text = "Nouveau match",
+            fontFamily = BarlowSemiCondensed,
             fontSize = 13.sp,
+            letterSpacing = 1.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
@@ -127,6 +130,9 @@ fun StartMatchScreen(
 private fun SectionLabel(text: String) {
     Text(
         text = text,
+        fontFamily = BarlowSemiCondensed,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp,
         fontSize = 10.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center

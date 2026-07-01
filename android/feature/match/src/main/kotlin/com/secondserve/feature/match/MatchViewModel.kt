@@ -8,7 +8,9 @@ import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.model.CoachingResult
 import com.secondserve.domain.model.MatchScore
+import com.secondserve.domain.model.Player
 import com.secondserve.domain.repository.ScoreRepository
+import com.secondserve.domain.repository.SessionRepository
 import com.secondserve.domain.sync.SyncScheduler
 import com.secondserve.domain.usecase.match.CloseMatchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MatchViewModel @Inject constructor(
     private val scoreRepository: ScoreRepository,
+    private val sessionRepository: SessionRepository,
     private val closeMatchUseCase: CloseMatchUseCase,
     private val syncScheduler: SyncScheduler,
     private val analysisScheduler: AnalysisScheduler,
@@ -40,6 +43,17 @@ class MatchViewModel @Inject constructor(
         coachingCachePrefetcher.initMatch(sessionId)
 
         viewModelScope.launch {
+            val session = sessionRepository.getSessionById(sessionId)
+            if (session != null) {
+                intent {
+                    reduce {
+                        state.copy(opponentName = session.opponent, sessionStartedAt = session.createdAt)
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
             dataLayerEventBus.closeSessionRequests.collect {
                 onCloseRequested()
             }
@@ -54,6 +68,39 @@ class MatchViewModel @Inject constructor(
                     // à l'UI de ré-animer la carte → chaque conseil est visiblement annoncé.
                     intent { reduce { state.copy(coachingAdvice = advice, coachingAdviceSeq = state.coachingAdviceSeq + 1) } }
                     coachingCachePrefetcher.refreshPostChangeover(sessionId, score)
+                }
+            }
+        }
+
+        // Déroulé jeu-par-jeu du set en cours + momentum : dérivés côté client à partir du flux
+        // de score déjà observé (pas de changement du protocole watch↔téléphone ni de
+        // TennisScoreEngine). Limite connue : si l'écran est rouvert en cours de set, le
+        // déroulé/momentum repartent de zéro (pas d'historique persistant).
+        viewModelScope.launch {
+            var previous: MatchScore? = null
+            scoreRepository.latestScore.collect { score ->
+                val prev = previous
+                previous = score
+                if (score == null) return@collect
+
+                if (prev == null) return@collect
+
+                val currentLog = container.stateFlow.value.currentSetGameLog
+                val newLog = when {
+                    score.completedSets.size > prev.completedSets.size -> emptyList()
+                    score.currentSetGamesA > prev.currentSetGamesA -> currentLog + Player.A
+                    score.currentSetGamesB > prev.currentSetGamesB -> currentLog + Player.B
+                    else -> currentLog
+                }
+                if (newLog != currentLog) {
+                    val momentum = if (newLog.isEmpty()) {
+                        50
+                    } else {
+                        newLog.count { it == Player.A } * 100 / newLog.size
+                    }
+                    intent {
+                        reduce { state.copy(currentSetGameLog = newLog, momentumPercent = momentum) }
+                    }
                 }
             }
         }
@@ -110,7 +157,11 @@ data class MatchUiState(
     val feelingComment: String = "",
     val isClosing: Boolean = false,
     val coachingAdvice: CoachingResult? = null,
-    val coachingAdviceSeq: Int = 0
+    val coachingAdviceSeq: Int = 0,
+    val opponentName: String? = null,
+    val sessionStartedAt: Long = 0L,
+    val currentSetGameLog: List<Player> = emptyList(),
+    val momentumPercent: Int = 50
 )
 
 sealed class MatchSideEffect {
