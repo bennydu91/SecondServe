@@ -21,21 +21,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -54,7 +48,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.core.ui.components.BroadcastPrimaryButton
+import com.secondserve.core.ui.components.BroadcastSectionCard
+import com.secondserve.core.ui.components.BroadcastTextField
+import com.secondserve.core.ui.components.SurfaceChip
+import com.secondserve.core.ui.theme.BroadcastRadius
+import com.secondserve.core.ui.theme.BroadcastSpacing
 import com.secondserve.core.ui.theme.LocalBroadcastColors
+import com.secondserve.core.ui.theme.forSurfaceKey
 import com.secondserve.domain.constants.FftConstants
 import com.secondserve.domain.model.PlayStyleConstants
 import com.secondserve.domain.model.RankingEntry
@@ -93,7 +94,7 @@ fun ProfileScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 18.dp),
+                    .padding(horizontal = BroadcastSpacing.lg),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 10.dp, bottom = 24.dp)
             ) {
@@ -103,7 +104,7 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
                         fontWeight = FontWeight.Bold,
                         color = colors.text,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                        modifier = Modifier.padding(bottom = BroadcastSpacing.xs)
                     )
                 }
 
@@ -182,14 +183,14 @@ private fun ProfileHeaderCard(displayName: String?, club: String?, currentSeries
     val colors = LocalBroadcastColors.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(BroadcastRadius.card),
         color = colors.panelHigh
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.lg),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -241,48 +242,27 @@ private fun IdentitySection(
     LaunchedEffect(currentDisplayName) { nameText = currentDisplayName ?: "" }
     LaunchedEffect(currentClub) { clubText = currentClub ?: "" }
 
-    SectionCard(title = "Identité") {
-        BroadcastOutlinedTextField(
+    BroadcastSectionCard(title = "Identité") {
+        BroadcastTextField(
             value = nameText,
             onValueChange = { nameText = it },
             label = "Nom affiché",
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        BroadcastOutlinedTextField(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
+        BroadcastTextField(
             value = clubText,
             onValueChange = { clubText = it },
             label = "Club",
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.md))
+        BroadcastPrimaryButton(
+            text = "Enregistrer",
             onClick = { onSave(nameText.ifBlank { null }, clubText.ifBlank { null }) },
             enabled = !isSaving,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = colors.lime, contentColor = colors.void)
-        ) {
-            if (isSaving) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = colors.void) else Text("Enregistrer")
-        }
-    }
-}
-
-@Composable
-private fun SectionCard(title: String, content: @Composable () -> Unit) {
-    val colors = LocalBroadcastColors.current
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = colors.panelHigh
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(text = title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = colors.text)
-            Spacer(modifier = Modifier.height(12.dp))
-            content()
-        }
+            isLoading = isSaving
+        )
     }
 }
 
@@ -294,9 +274,9 @@ private fun RankingInputSection(isSaving: Boolean, onSave: (String, Int) -> Unit
     var pointsText by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
-    SectionCard(title = "Saisir un classement") {
+    BroadcastSectionCard(title = "Saisir un classement") {
         ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-            BroadcastOutlinedTextField(
+            BroadcastTextField(
                 value = selectedSeries,
                 onValueChange = {},
                 readOnly = true,
@@ -315,26 +295,21 @@ private fun RankingInputSection(isSaving: Boolean, onSave: (String, Int) -> Unit
                 }
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        BroadcastOutlinedTextField(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
+        BroadcastTextField(
             value = pointsText,
             onValueChange = { pointsText = it.filter { c -> c.isDigit() } },
             label = "Points",
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.md))
+        BroadcastPrimaryButton(
+            text = "Enregistrer",
             onClick = { onSave(selectedSeries, pointsText.toIntOrNull() ?: 0) },
             enabled = !isSaving && pointsText.toIntOrNull() != null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = colors.lime, contentColor = colors.void)
-        ) {
-            if (isSaving) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = colors.void) else Text("Enregistrer")
-        }
+            isLoading = isSaving
+        )
     }
 }
 
@@ -344,7 +319,7 @@ private fun RankingHistoryItem(entry: RankingEntry, dateFormat: java.text.Simple
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = BroadcastSpacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = entry.series, style = MaterialTheme.typography.bodyMedium, color = colors.text)
@@ -383,18 +358,18 @@ private fun PlayStyleSection(
     LaunchedEffect(coachInstruction2) { instruction2 = coachInstruction2 ?: "" }
     LaunchedEffect(coachInstruction3) { instruction3 = coachInstruction3 ?: "" }
 
-    SectionCard(title = "Style de jeu") {
+    BroadcastSectionCard(title = "Style de jeu") {
         if (matchSessionCount < 10 && selectedStyle == null) {
             Text(
                 text = "Données insuffisantes (minimum 10 matchs)",
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.muted
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
         }
 
         ExposedDropdownMenuBox(expanded = expandedStyle, onExpandedChange = { expandedStyle = !expandedStyle }) {
-            BroadcastOutlinedTextField(
+            BroadcastTextField(
                 value = selectedStyle?.let { PlayStyleConstants.DISPLAY_NAMES[it] } ?: "Sélectionner un style",
                 onValueChange = {},
                 readOnly = true,
@@ -414,61 +389,51 @@ private fun PlayStyleSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(BroadcastSpacing.lg))
         Text(text = "SURFACES DE PRÉDILECTION", style = MaterialTheme.typography.labelSmall, color = colors.faint)
-        Spacer(modifier = Modifier.height(8.dp))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.sm)) {
             SurfaceConstants.ALL.forEach { surface ->
                 val selected = surface in selectedSurfaces
-                FilterChip(
+                SurfaceChip(
+                    label = SurfaceConstants.DISPLAY_NAMES[surface] ?: surface,
+                    color = colors.forSurfaceKey(surface),
                     selected = selected,
                     onClick = {
                         selectedSurfaces = if (selected) selectedSurfaces - surface else selectedSurfaces + surface
-                    },
-                    label = { Text(SurfaceConstants.DISPLAY_NAMES[surface] ?: surface) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = colors.panel,
-                        labelColor = colors.text.copy(alpha = 0.8f),
-                        selectedContainerColor = colors.lime.copy(alpha = 0.1f),
-                        selectedLabelColor = colors.lime
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = selected,
-                        borderColor = colors.line,
-                        selectedBorderColor = colors.lime
-                    )
+                    }
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(BroadcastSpacing.lg))
         Text(text = "CONSIGNES DU COACH", style = MaterialTheme.typography.labelSmall, color = colors.faint)
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
 
-        BroadcastOutlinedTextField(
+        BroadcastTextField(
             value = instruction1,
             onValueChange = { if (it.length <= 500) instruction1 = it },
             label = "Axe principal du coach",
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        BroadcastOutlinedTextField(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
+        BroadcastTextField(
             value = instruction2,
             onValueChange = { if (it.length <= 500) instruction2 = it },
             label = "Axe secondaire du coach",
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        BroadcastOutlinedTextField(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
+        BroadcastTextField(
             value = instruction3,
             onValueChange = { if (it.length <= 500) instruction3 = it },
             label = "Mauvaises habitudes à corriger",
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.md))
+        BroadcastPrimaryButton(
+            text = "Enregistrer le profil",
             onClick = {
                 onSaveDetails(
                     selectedStyle,
@@ -479,14 +444,8 @@ private fun PlayStyleSection(
                 )
             },
             enabled = !isSaving,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = colors.lime, contentColor = colors.void)
-        ) {
-            Text("Enregistrer le profil")
-        }
+            isLoading = isSaving
+        )
     }
 }
 
@@ -496,8 +455,8 @@ private fun FftLicenseSection(currentLicense: String?, onSaveLicense: (String) -
     var licenseText by remember { mutableStateOf(currentLicense ?: "") }
     LaunchedEffect(currentLicense) { licenseText = currentLicense ?: "" }
 
-    SectionCard(title = "Licence FFT") {
-        BroadcastOutlinedTextField(
+    BroadcastSectionCard(title = "Licence FFT") {
+        BroadcastTextField(
             value = licenseText,
             onValueChange = { licenseText = it.filter { c -> c.isDigit() } },
             label = "Numéro de licence",
@@ -505,18 +464,12 @@ private fun FftLicenseSection(currentLicense: String?, onSaveLicense: (String) -
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
+        Spacer(modifier = Modifier.height(BroadcastSpacing.md))
+        BroadcastPrimaryButton(
+            text = "Enregistrer la licence",
             onClick = { if (licenseText.isNotBlank()) onSaveLicense(licenseText) },
-            enabled = licenseText.isNotBlank(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = colors.lime, contentColor = colors.void)
-        ) {
-            Text("Enregistrer la licence")
-        }
+            enabled = licenseText.isNotBlank()
+        )
     }
 }
 
@@ -525,7 +478,7 @@ private fun SettingsList(onNavigateToWorkAxes: () -> Unit, onNavigateToSettings:
     val colors = LocalBroadcastColors.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(BroadcastRadius.card),
         color = colors.panelHigh
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp)) {
@@ -543,47 +496,11 @@ private fun SettingsRow(label: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 16.dp),
+            .padding(vertical = BroadcastSpacing.lg),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyLarge, color = colors.text.copy(alpha = 0.9f))
         Text(text = "›", style = MaterialTheme.typography.titleLarge, color = colors.faint)
     }
-}
-
-@Composable
-private fun BroadcastOutlinedTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier,
-    readOnly: Boolean = false,
-    supportingText: String? = null,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    trailingIcon: (@Composable () -> Unit)? = null
-) {
-    val colors = LocalBroadcastColors.current
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        readOnly = readOnly,
-        label = { Text(label) },
-        supportingText = supportingText?.let { { Text(it) } },
-        trailingIcon = trailingIcon,
-        keyboardOptions = keyboardOptions,
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = colors.panel,
-            unfocusedContainerColor = colors.panel,
-            focusedBorderColor = colors.lime,
-            unfocusedBorderColor = colors.line,
-            focusedTextColor = colors.text,
-            unfocusedTextColor = colors.text,
-            focusedLabelColor = colors.lime,
-            unfocusedLabelColor = colors.muted,
-            cursorColor = colors.lime
-        )
-    )
 }

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -48,11 +47,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.secondserve.core.ui.components.CircleIconButton
 import com.secondserve.core.ui.components.CoachingCard
 import com.secondserve.core.ui.components.GamecastPlayerRow
 import com.secondserve.core.ui.components.GamecastTable
 import com.secondserve.core.ui.components.LiveChip
 import com.secondserve.core.ui.components.StatBar
+import com.secondserve.core.ui.theme.BroadcastSpacing
 import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.domain.model.GamePoint
 import com.secondserve.domain.model.MatchScore
@@ -94,7 +95,7 @@ fun MatchScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = BroadcastSpacing.lg)
                 .padding(top = 6.dp, bottom = 22.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
@@ -119,20 +120,12 @@ fun MatchScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.muted
                 )
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .background(colors.panel, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    IconButton(onClick = viewModel::onCloseRequested, enabled = !state.isClosing) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Terminer la session",
-                            tint = colors.muted
-                        )
-                    }
-                }
+                CircleIconButton(
+                    onClick = viewModel::onCloseRequested,
+                    icon = Icons.Filled.Close,
+                    contentDescription = "Terminer la session",
+                    enabled = !state.isClosing
+                )
             }
 
             score?.let { liveScore ->
@@ -158,7 +151,7 @@ fun MatchScreen(
                     )
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.md)) {
                     Text(
                         text = "DÉROULÉ · SET $setNumber",
                         style = MaterialTheme.typography.labelSmall,
@@ -286,7 +279,7 @@ private fun CloseSessionDialog(
         onDismissRequest = onDismiss,
         title = { Text("Clôturer la session ?") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.md)) {
                 Text(
                     "Cette action est définitive. Le score final sera enregistré.",
                     style = MaterialTheme.typography.bodyMedium

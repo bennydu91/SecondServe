@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.secondserve.core.ui.components.CoachingCard
+import com.secondserve.core.ui.theme.BroadcastRadius
+import com.secondserve.core.ui.theme.BroadcastSpacing
 import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.domain.model.CoachingAnalysis
 import org.orbitmvi.orbit.compose.collectAsState
@@ -59,8 +61,8 @@ fun CoachingScreen(
     LazyColumn(
         Modifier
             .fillMaxSize()
-            .padding(horizontal = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = BroadcastSpacing.lg),
+        verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.md)
     ) {
         item {
             Row(
@@ -91,7 +93,7 @@ fun CoachingScreen(
             state.synthesis?.let { synth ->
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(BroadcastRadius.card),
                     color = colors.panelHigh
                 ) {
                     Box(
@@ -141,7 +143,7 @@ fun CoachingScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(BroadcastRadius.input),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.lime)
                 ) {
                     Text("Regénérer la synthèse", fontWeight = FontWeight.SemiBold)
@@ -179,16 +181,16 @@ private fun AnalysisItem(analysis: CoachingAnalysis) {
     val dateStr = if (analysis.generatedAt > 0L) synthDateFormat.format(Date(analysis.generatedAt)) else "date inconnue"
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(BroadcastRadius.input),
         color = colors.panelHigh
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(BroadcastSpacing.lg)) {
             Text(
                 text = analysis.content,
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.text.copy(alpha = 0.9f)
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(BroadcastSpacing.sm))
             Text(text = dateStr, style = MaterialTheme.typography.labelSmall, color = colors.faint)
         }
     }

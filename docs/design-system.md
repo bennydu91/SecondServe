@@ -79,7 +79,25 @@ Base : **4dp**. Toutes les valeurs sont des multiples de 4.
 | `spacing.lg` | 16dp | Padding de page standard |
 | `spacing.xl` | 24dp | Espacement entre sections |
 | `spacing.xxl` | 32dp | Grandes zones de respiration |
-| `spacing.xxxl` | 48dp | Espacement header |
+| `spacing.minTouchTarget` | 48dp | Cible tactile minimale (pas un espacement — nommage à part) |
+
+**Écart connu** : le padding horizontal de page (18dp, ex. `HomeScreen`, `MatchScreen`,
+`NewMatchScreen`) et le padding interne des cards de section (20dp, `BroadcastSectionCard`) ne
+correspondent à aucun token de l'échelle 4dp. Ce sont des valeurs héritées du handoff HTML
+(`SecondServe Design System.dc.html`, padding 18-26px) volontairement laissées telles quelles
+plutôt que forcées dans un token voisin (16 ou 24) qui changerait la densité visuelle des écrans.
+Si vous introduisez un nouvel écran, réutilisez ces deux valeurs constantes (18dp page, 20dp card)
+par cohérence — n'inventez pas une troisième valeur proche.
+
+### Rayons (`BroadcastRadius.kt`)
+
+| Token | Valeur | Usage |
+|-------|--------|-------|
+| `radius.small` | 8dp | Petits éléments (badge, icône ronde) |
+| `radius.input` | 12dp | Champs de texte, boutons, chips carrées |
+| `radius.card` | 16dp | Cards standard (`BroadcastSectionCard`, `ProfileHeaderCard`) |
+| `radius.table` | 18dp | Tableaux/cards larges (`GamecastTable`, bandeau score) |
+| `radius.pill` | 100dp | Chips et badges arrondis (`SurfaceChip`, `LiveChip`, `ResultBadge`) |
 
 ---
 
@@ -107,6 +125,38 @@ Base : **4dp**. Toutes les valeurs sont des multiples de 4.
 
 ### SurfaceChip
 - Pill de sélection : plein `color` si sélectionné, contour `line` sinon.
+- Pas réservé aux surfaces de court : réutilisé pour tout choix de filtre à un seul niveau
+  (ex. filtres Historique, avec `color = colors.lime`).
+
+### BroadcastTextField
+- `OutlinedTextField` stylé (`panel` en fond, bordure `lime` au focus, label `muted`→`lime`).
+- Support `label` ou `placeholder`, `readOnly`, `supportingText`, `trailingIcon`, `keyboardOptions`.
+- **Toujours utiliser ce composant pour un champ texte** — ne pas réappliquer
+  `OutlinedTextFieldDefaults.colors(...)` à la main (c'était dupliqué 3 fois avant l'extraction).
+
+### BroadcastSectionCard
+- Card `panelHigh`, radius `card`, padding interne 20dp, titre + contenu.
+- Deux styles de titre via `titleStyle` :
+  - `SectionCardTitleStyle.FORM` (défaut) — titre `titleSmall` SemiBold, pour les cards de
+    formulaire (Profil, Paramètres).
+  - `SectionCardTitleStyle.STAT` — label `labelSmall` discret + icône optionnelle, pour les
+    cards de statistiques (win rate, séquence, volume).
+
+### CircleIconButton
+- Bouton icône rond sur fond `panel` (retour, fermeture, ajout). Taille par défaut 38dp, `tint`
+  personnalisable (ex. `lime` pour l'avatar profil de l'Accueil).
+- Remplace tout `Box.size(...).clip(CircleShape).clickable().background(colors.panel)` fait main.
+
+### BroadcastPrimaryButton
+- Bouton primaire lime unique par écran (hauteur 54dp, radius `input`, `isLoading` intégré).
+- **Règle stricte** : un seul par écran (cf. règles non négociables). Exception connue et
+  assumée : `ProfileScreen` a un bouton "Enregistrer" par section (identité, classement, style de
+  jeu, licence) — ce sont des actions de sauvegarde indépendantes, pas des CTA concurrents pour
+  la même intention utilisateur. Ne pas dupliquer ce pattern hors de ce cas précis sans y réfléchir.
+
+### ResultBadge (dans `MatchListItem.kt`)
+- Pill de badge générique (label + couleurs fond/texte). Utilisé pour V/D dans `MatchListItem`
+  et pour VICTOIRE/DÉFAITE dans le bandeau de `SessionDetailScreen`.
 
 ### NavigationBar (Bottom Nav)
 3 destinations (conforme au handoff, remplace les 4 onglets historiques Accueil/Historique/Coaching/Profil) :
@@ -115,6 +165,28 @@ Base : **4dp**. Toutes les valeurs sont des multiples de 4.
 3. **Profil** — profil joueur + paramètres + axes de travail
 
 Historique et Coaching restent des routes du `NavHost`, jointes depuis des cartes sur l'Accueil.
+
+**Implémentation** : `NavigationBar`/`NavigationBarItem` Material 3 standard (`AppNavGraph.kt`),
+sans composant Broadcast dédié. L'onglet actif hérite du lime car `SecondServeTheme` mappe
+`colorScheme.primary = lime` — l'apparence est correcte mais par héritage du thème M3, pas par un
+style Broadcast explicite (pas de pill d'indicateur personnalisée). Acceptable en l'état ; à
+revisiter si un jour l'indicateur par défaut de M3 ne suffit plus visuellement.
+
+---
+
+## Avant d'ajouter un nouvel écran ou composant
+
+1. **Cherchez dans `core/ui/components/` avant d'écrire un `Surface`/`OutlinedTextField`/`Button`
+   fait main.** La plupart des patterns visuels (card titrée, champ texte, bouton rond, bouton
+   primaire, badge, chip) existent déjà — voir la liste ci-dessus.
+2. Si aucun composant ne correspond et que le pattern sera réutilisé ailleurs, ajoutez-le dans
+   `core/ui/components/` plutôt que de le dupliquer localement en `private fun`.
+3. Utilisez `BroadcastSpacing`/`BroadcastRadius` pour toute valeur qui correspond exactement à
+   l'échelle (4/8/12/16/24/32dp ; 8/12/16/18/100dp). Les deux exceptions documentées ci-dessus
+   (18dp page, 20dp card) sont les seules valeurs "magiques" tolérées.
+4. Le module `:wear` ne peut pas dépendre de `:core:ui` (minSdk 35 vs 33) : ses tokens couleur
+   sont dupliqués manuellement dans `wear/.../presentation/theme/BroadcastColors.kt`. Si vous
+   changez une valeur hex côté `:core:ui`, répercutez-la manuellement côté `:wear`.
 
 ---
 

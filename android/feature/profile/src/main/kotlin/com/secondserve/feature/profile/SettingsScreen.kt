@@ -1,6 +1,11 @@
 package com.secondserve.feature.profile
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,29 +13,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.secondserve.core.ui.components.BroadcastPrimaryButton
+import com.secondserve.core.ui.components.BroadcastSectionCard
+import com.secondserve.core.ui.components.CircleIconButton
+import com.secondserve.core.ui.theme.BroadcastSpacing
+import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.domain.notification.NotificationFrequency
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -44,7 +49,6 @@ private val FREQUENCY_OPTIONS = listOf(
     NotificationFrequency.DISABLED to "Désactivé"
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
@@ -52,101 +56,116 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val colors = LocalBroadcastColors.current
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Paramètres") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
-                    }
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = BroadcastSpacing.lg)
+            .padding(top = 10.dp, bottom = BroadcastSpacing.xl)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.lg)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            CircleIconButton(
+                onClick = onNavigateBack,
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Retour"
+            )
+            Text(
+                text = "Paramètres",
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                fontWeight = FontWeight.Bold,
+                color = colors.text
             )
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Fréquence des notifications",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            FREQUENCY_OPTIONS.forEach { (key, label) ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                ) {
-                    RadioButton(
+
+        BroadcastSectionCard(title = "Fréquence des notifications") {
+            Column(verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.xs)) {
+                FREQUENCY_OPTIONS.forEach { (key, label) ->
+                    FrequencyOption(
+                        label = label,
                         selected = uiState.frequency == key,
                         onClick = { viewModel.onFrequencyChanged(key) }
                     )
-                    Text(
-                        text = label,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Mode silencieux",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
+        BroadcastSectionCard(title = "Mode silencieux") {
             if (uiState.silentModeUntil > 0L) {
                 Text(
                     text = "Actif jusqu'au ${dateFormat.format(Date(uiState.silentModeUntil))}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = colors.lime
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(onClick = { viewModel.onSilentModeCleared() }) {
-                    Text("Désactiver")
-                }
+                Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
+                BroadcastPrimaryButton(
+                    text = "Désactiver",
+                    onClick = { viewModel.onSilentModeCleared() }
+                )
             } else {
                 Text(
                     text = "Inactif",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = colors.muted
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = {
-                    val cal = Calendar.getInstance()
-                    DatePickerDialog(
-                        context,
-                        { _, year, month, day ->
-                            val picked = Calendar.getInstance().apply {
-                                set(year, month, day, 23, 59, 59)
-                                set(Calendar.MILLISECOND, 999)
-                            }
-                            if (picked.timeInMillis > System.currentTimeMillis()) {
-                                viewModel.onSilentModeUntilChanged(picked.timeInMillis)
-                            }
-                        },
-                        cal.get(Calendar.YEAR),
-                        cal.get(Calendar.MONTH),
-                        cal.get(Calendar.DAY_OF_MONTH)
-                    ).show()
-                }) {
-                    Text("Choisir une date")
-                }
+                Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
+                BroadcastPrimaryButton(
+                    text = "Choisir une date",
+                    onClick = {
+                        val cal = Calendar.getInstance()
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, day ->
+                                val picked = Calendar.getInstance().apply {
+                                    set(year, month, day, 23, 59, 59)
+                                    set(Calendar.MILLISECOND, 999)
+                                }
+                                if (picked.timeInMillis > System.currentTimeMillis()) {
+                                    viewModel.onSilentModeUntilChanged(picked.timeInMillis)
+                                }
+                            },
+                            cal.get(Calendar.YEAR),
+                            cal.get(Calendar.MONTH),
+                            cal.get(Calendar.DAY_OF_MONTH)
+                        ).show()
+                    }
+                )
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+}
+
+@Composable
+private fun FrequencyOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = LocalBroadcastColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = BroadcastSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.md)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(colors.void, CircleShape)
+                .border(
+                    width = if (selected) 6.dp else 2.dp,
+                    color = if (selected) colors.lime else colors.line,
+                    shape = CircleShape
+                )
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (selected) colors.text else colors.muted
+        )
     }
 }

@@ -23,13 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -50,7 +44,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.core.ui.components.BroadcastPrimaryButton
+import com.secondserve.core.ui.components.BroadcastTextField
+import com.secondserve.core.ui.components.CircleIconButton
 import com.secondserve.core.ui.components.SurfaceChip
+import com.secondserve.core.ui.theme.BroadcastRadius
+import com.secondserve.core.ui.theme.BroadcastSpacing
 import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.core.ui.theme.forSurfaceKey
 import com.secondserve.domain.model.MatchFormat
@@ -92,7 +91,7 @@ fun NewMatchScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = BroadcastSpacing.lg)
                 .padding(top = 10.dp, bottom = 22.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(22.dp)
@@ -101,20 +100,11 @@ fun NewMatchScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(50))
-                        .clickable(onClick = onNavigateBack)
-                        .background(colors.panel, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Retour",
-                        tint = colors.muted
-                    )
-                }
+                CircleIconButton(
+                    onClick = onNavigateBack,
+                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Retour"
+                )
                 Text(
                     text = "Nouveau match",
                     style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
@@ -124,7 +114,7 @@ fun NewMatchScreen(
             }
 
             FieldSection(label = "SURFACE") {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.sm)) {
                     SurfaceConstants.ALL.forEach { surface ->
                         SurfaceChip(
                             label = SurfaceConstants.DISPLAY_NAMES[surface] ?: surface,
@@ -137,7 +127,7 @@ fun NewMatchScreen(
             }
 
             FieldSection(label = "FORMAT") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.sm)) {
                     FormatOption(
                         label = "1 set",
                         selected = state.selectedMatchFormat == MatchFormat.BEST_OF_1,
@@ -155,7 +145,7 @@ fun NewMatchScreen(
 
             if (state.selectedMatchFormat == MatchFormat.BEST_OF_3) {
                 FieldSection(label = "RÈGLE 3E SET") {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.sm)) {
                         listOf(
                             ThirdSetRule.FULL_ADVANTAGE to "Avantage complet",
                             ThirdSetRule.SUPER_TIE_BREAK_10 to "Super tie-break à 10",
@@ -172,7 +162,7 @@ fun NewMatchScreen(
             }
 
             FieldSection(label = "ADVERSAIRE") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.sm)) {
                     BroadcastTextField(
                         value = state.opponent,
                         onValueChange = viewModel::onOpponentChanged,
@@ -264,33 +254,12 @@ fun NewMatchScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            if (state.isLoading) {
-                CircularProgressIndicator(
-                    color = colors.lime,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            } else {
-                Button(
-                    onClick = viewModel::startMatch,
-                    enabled = state.canStartMatch,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colors.lime,
-                        contentColor = colors.void,
-                        disabledContainerColor = colors.panelHigh,
-                        disabledContentColor = colors.faint
-                    )
-                ) {
-                    Text(
-                        text = if (state.isScheduled) "Planifier le match" else "Démarrer le match",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+            BroadcastPrimaryButton(
+                text = if (state.isScheduled) "Planifier le match" else "Démarrer le match",
+                onClick = viewModel::startMatch,
+                enabled = state.canStartMatch,
+                isLoading = state.isLoading
+            )
         }
     }
 }
@@ -314,16 +283,16 @@ private fun FormatOption(
     val colors = LocalBroadcastColors.current
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(BroadcastRadius.input))
             .background(
                 if (selected) colors.lime.copy(alpha = 0.1f) else colors.panel,
-                RoundedCornerShape(12.dp)
+                RoundedCornerShape(BroadcastRadius.input)
             )
             .then(
                 if (selected) {
-                    Modifier.border(1.dp, colors.lime, RoundedCornerShape(12.dp))
+                    Modifier.border(1.dp, colors.lime, RoundedCornerShape(BroadcastRadius.input))
                 } else {
-                    Modifier.border(1.dp, colors.line, RoundedCornerShape(12.dp))
+                    Modifier.border(1.dp, colors.line, RoundedCornerShape(BroadcastRadius.input))
                 }
             )
             .clickable(onClick = onClick)
@@ -345,12 +314,12 @@ private fun RuleOption(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(BroadcastRadius.input))
             .background(if (selected) colors.panelHigh else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.md)
     ) {
         Box(
             modifier = Modifier
@@ -369,29 +338,4 @@ private fun RuleOption(label: String, selected: Boolean, onClick: () -> Unit) {
             color = if (selected) colors.text else colors.muted
         )
     }
-}
-
-@Composable
-private fun BroadcastTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String
-) {
-    val colors = LocalBroadcastColors.current
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        placeholder = { Text(placeholder, color = colors.faint) },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = colors.panel,
-            unfocusedContainerColor = colors.panel,
-            focusedBorderColor = colors.lime,
-            unfocusedBorderColor = colors.line,
-            focusedTextColor = colors.text,
-            unfocusedTextColor = colors.text,
-            cursorColor = colors.lime
-        )
-    )
 }

@@ -6,13 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,8 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,14 +26,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.secondserve.core.ui.components.BroadcastPrimaryButton
+import com.secondserve.core.ui.components.CircleIconButton
 import com.secondserve.core.ui.components.MatchListItem
 import com.secondserve.core.ui.components.MatchResultBadge
+import com.secondserve.core.ui.theme.BroadcastRadius
+import com.secondserve.core.ui.theme.BroadcastSpacing
 import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.core.ui.theme.forSurfaceKey
 import com.secondserve.domain.model.Session
@@ -66,8 +64,8 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = 10.dp, bottom = 24.dp),
+            .padding(horizontal = BroadcastSpacing.lg)
+            .padding(top = 10.dp, bottom = BroadcastSpacing.xl),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         // Header : logo + wordmark + avatar
@@ -99,21 +97,13 @@ fun HomeScreen(
                     color = colors.text
                 )
             }
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onNavigateToProfile)
-                    .background(colors.panel, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Person,
-                    contentDescription = "Profil",
-                    tint = colors.lime,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
+            CircleIconButton(
+                onClick = onNavigateToProfile,
+                icon = Icons.Filled.Person,
+                contentDescription = "Profil",
+                size = 36.dp,
+                tint = colors.lime
+            )
         }
 
         Text(
@@ -123,28 +113,15 @@ fun HomeScreen(
             color = colors.text
         )
 
-        Button(
-            onClick = onNavigateToNewMatch,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.lime,
-                contentColor = colors.void
-            )
-        ) {
-            Text(
-                text = "+  Nouveau match",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        BroadcastPrimaryButton(
+            text = "+  Nouveau match",
+            onClick = onNavigateToNewMatch
+        )
 
         if (uiState.winRatePercent != null || uiState.activeStreakCount != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.md)
             ) {
                 uiState.winRatePercent?.let { rate ->
                     StatTile(value = "$rate%", label = "Win rate", modifier = Modifier.weight(1f))
@@ -203,13 +180,13 @@ fun HomeScreen(
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(BroadcastRadius.input),
             color = colors.panelHigh,
             onClick = onNavigateToCoaching
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.md),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -245,7 +222,7 @@ private fun StatTile(value: String, label: String, modifier: Modifier = Modifier
         shape = RoundedCornerShape(14.dp),
         color = colors.panelHigh
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(BroadcastSpacing.lg)) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.displaySmall.copy(fontSize = 34.sp, fontFeatureSettings = "tnum"),

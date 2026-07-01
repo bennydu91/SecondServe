@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.secondserve.core.ui.theme.LocalBroadcastColors
@@ -101,12 +102,20 @@ fun MatchListItem(
     }
 }
 
+/** Pill de badge (résultat V/D, statut...) — cf. README "Composants récurrents". */
 @Composable
-private fun ResultBadge(label: String, background: Color, foreground: Color) {
-    Surface(shape = RoundedCornerShape(8.dp), color = background) {
+fun ResultBadge(
+    label: String,
+    background: Color,
+    foreground: Color,
+    modifier: Modifier = Modifier,
+    shape: RoundedCornerShape = RoundedCornerShape(8.dp),
+    contentPadding: Dp = 10.dp
+) {
+    Surface(modifier = modifier, shape = shape, color = background) {
         Text(
             text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = contentPadding, vertical = 5.dp),
             style = MaterialTheme.typography.labelMedium,
             color = foreground
         )

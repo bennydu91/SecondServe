@@ -1,6 +1,5 @@
 package com.secondserve.feature.history
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,10 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,11 +21,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -42,15 +36,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.core.ui.components.BroadcastTextField
+import com.secondserve.core.ui.components.CircleIconButton
 import com.secondserve.core.ui.components.CoachingCard
 import com.secondserve.core.ui.components.DualStatBar
+import com.secondserve.core.ui.components.ResultBadge
+import com.secondserve.core.ui.theme.BroadcastRadius
+import com.secondserve.core.ui.theme.BroadcastSpacing
 import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.domain.model.CoachingAnalysis
 import com.secondserve.domain.model.CoachingCacheEntry
@@ -117,24 +114,15 @@ fun SessionDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp)
-                .padding(top = 10.dp, bottom = 4.dp),
+                .padding(top = 10.dp, bottom = BroadcastSpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onNavigateBack)
-                    .background(colors.panel, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Retour",
-                    tint = colors.muted
-                )
-            }
+            CircleIconButton(
+                onClick = onNavigateBack,
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Retour"
+            )
             val title = (state as? SessionDetailUiState.Content)?.session?.opponent?.let { "vs $it" }
                 ?: "Détail de la session"
             Text(
@@ -202,7 +190,7 @@ private fun SessionDetailContent(
         item {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(BroadcastRadius.table),
                 color = colors.panelHigh
             ) {
                 Column(
@@ -212,8 +200,20 @@ private fun SessionDetailContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when {
-                        isVictory -> ResultPill(text = "VICTOIRE", color = colors.lime, background = colors.victoryBg)
-                        isDefeat -> ResultPill(text = "DÉFAITE", color = colors.hot, background = colors.defeatBg)
+                        isVictory -> ResultBadge(
+                            label = "VICTOIRE",
+                            background = colors.victoryBg,
+                            foreground = colors.lime,
+                            shape = RoundedCornerShape(BroadcastRadius.pill),
+                            contentPadding = 12.dp
+                        )
+                        isDefeat -> ResultBadge(
+                            label = "DÉFAITE",
+                            background = colors.defeatBg,
+                            foreground = colors.hot,
+                            shape = RoundedCornerShape(BroadcastRadius.pill),
+                            contentPadding = 12.dp
+                        )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
@@ -221,7 +221,7 @@ private fun SessionDetailContent(
                         style = MaterialTheme.typography.displaySmall.copy(fontSize = 48.sp, fontFeatureSettings = "tnum"),
                         color = colors.lime
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(BroadcastSpacing.sm))
                     Text(
                         text = buildString {
                             append(SurfaceConstants.DISPLAY_NAMES[session.surface] ?: session.surface)
@@ -258,7 +258,7 @@ private fun SessionDetailContent(
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(BroadcastRadius.card),
                     color = colors.panelHigh
                 ) {
                     Row(
@@ -283,7 +283,7 @@ private fun SessionDetailContent(
                                 text = "« $it »",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = colors.muted,
-                                modifier = Modifier.padding(start = 12.dp)
+                                modifier = Modifier.padding(start = BroadcastSpacing.md)
                             )
                         }
                     }
@@ -313,18 +313,6 @@ private fun SessionDetailContent(
 }
 
 @Composable
-private fun ResultPill(text: String, color: Color, background: Color) {
-    Surface(shape = RoundedCornerShape(100.dp), color = background) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = color
-        )
-    }
-}
-
-@Composable
 private fun MatchStatsSection(session: Session, onEditClick: () -> Unit) {
     val colors = LocalBroadcastColors.current
     val hasStats = session.firstServePercentSelf != null || session.firstServePercentOpponent != null ||
@@ -347,7 +335,7 @@ private fun MatchStatsSection(session: Session, onEditClick: () -> Unit) {
                 }
             }
             if (hasStats) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(BroadcastSpacing.md))
                 if (session.firstServePercentSelf != null || session.firstServePercentOpponent != null) {
                     StatRow(
                         label = "1re balle",
@@ -355,7 +343,7 @@ private fun MatchStatsSection(session: Session, onEditClick: () -> Unit) {
                         valueB = session.firstServePercentOpponent,
                         suffix = "%"
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(BroadcastSpacing.md))
                 }
                 if (session.winnersSelf != null || session.winnersOpponent != null) {
                     StatRow(
@@ -407,25 +395,29 @@ private fun MatchStatsEditorDialog(
         title = { Text("Statistiques du match") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatsNumberField(
-                    label = "1re balle % (vous)",
+                BroadcastTextField(
                     value = firstServeSelf,
-                    onValueChange = { firstServeSelf = it }
+                    onValueChange = { firstServeSelf = it.filter { c -> c.isDigit() } },
+                    label = "1re balle % (vous)",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-                StatsNumberField(
-                    label = "1re balle % (adversaire)",
+                BroadcastTextField(
                     value = firstServeOpponent,
-                    onValueChange = { firstServeOpponent = it }
+                    onValueChange = { firstServeOpponent = it.filter { c -> c.isDigit() } },
+                    label = "1re balle % (adversaire)",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-                StatsNumberField(
-                    label = "Coups gagnants (vous)",
+                BroadcastTextField(
                     value = winnersSelf,
-                    onValueChange = { winnersSelf = it }
+                    onValueChange = { winnersSelf = it.filter { c -> c.isDigit() } },
+                    label = "Coups gagnants (vous)",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-                StatsNumberField(
-                    label = "Coups gagnants (adversaire)",
+                BroadcastTextField(
                     value = winnersOpponent,
-                    onValueChange = { winnersOpponent = it }
+                    onValueChange = { winnersOpponent = it.filter { c -> c.isDigit() } },
+                    label = "Coups gagnants (adversaire)",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
         },
@@ -447,29 +439,5 @@ private fun MatchStatsEditorDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Annuler") }
         }
-    )
-}
-
-@Composable
-private fun StatsNumberField(label: String, value: String, onValueChange: (String) -> Unit) {
-    val colors = LocalBroadcastColors.current
-    OutlinedTextField(
-        value = value,
-        onValueChange = { onValueChange(it.filter { c -> c.isDigit() }) },
-        label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = colors.panel,
-            unfocusedContainerColor = colors.panel,
-            focusedBorderColor = colors.lime,
-            unfocusedBorderColor = colors.line,
-            focusedTextColor = colors.text,
-            unfocusedTextColor = colors.text,
-            focusedLabelColor = colors.lime,
-            unfocusedLabelColor = colors.muted,
-            cursorColor = colors.lime
-        )
     )
 }

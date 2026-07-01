@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,7 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.secondserve.core.ui.components.BroadcastSectionCard
+import com.secondserve.core.ui.components.SectionCardTitleStyle
 import com.secondserve.core.ui.components.StatBar
+import com.secondserve.core.ui.theme.BroadcastSpacing
 import com.secondserve.core.ui.theme.LocalBroadcastColors
 import com.secondserve.core.ui.theme.forSurfaceKey
 import com.secondserve.domain.model.SurfaceConstants
@@ -63,9 +64,9 @@ private fun StatsContent(stats: AggregatedStats) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp)
+            .padding(horizontal = BroadcastSpacing.lg),
+        verticalArrangement = Arrangement.spacedBy(BroadcastSpacing.md),
+        contentPadding = PaddingValues(vertical = BroadcastSpacing.lg)
     ) {
         item {
             Text(
@@ -73,7 +74,7 @@ private fun StatsContent(stats: AggregatedStats) {
                 style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
                 fontWeight = FontWeight.Bold,
                 color = colors.text,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = BroadcastSpacing.sm)
             )
         }
 
@@ -86,7 +87,7 @@ private fun StatsContent(stats: AggregatedStats) {
 @Composable
 private fun WinRateCard(stats: AggregatedStats) {
     val colors = LocalBroadcastColors.current
-    StatsCard(title = "WIN RATE GLOBAL", icon = "🏆") {
+    BroadcastSectionCard(title = "WIN RATE GLOBAL", icon = "🏆", titleStyle = SectionCardTitleStyle.STAT) {
         if (stats.winRateGlobal != null) {
             val percent = (stats.winRateGlobal * 100).roundToInt()
             Row(
@@ -105,7 +106,7 @@ private fun WinRateCard(stats: AggregatedStats) {
                     color = colors.muted
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(BroadcastSpacing.md))
             StatBar(progress = stats.winRateGlobal, color = colors.lime, height = 10.dp)
         } else {
             Text(
@@ -120,7 +121,7 @@ private fun WinRateCard(stats: AggregatedStats) {
 @Composable
 private fun SurfaceStatsCard(stats: AggregatedStats) {
     val colors = LocalBroadcastColors.current
-    StatsCard(title = "PAR SURFACE") {
+    BroadcastSectionCard(title = "PAR SURFACE", titleStyle = SectionCardTitleStyle.STAT) {
         if (stats.winRateBySurface.isEmpty()) {
             Text(
                 text = "Aucune donnée de surface disponible.",
@@ -169,9 +170,9 @@ private fun BottomTilesRow(stats: AggregatedStats) {
     val colors = LocalBroadcastColors.current
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(BroadcastSpacing.md)
     ) {
-        StatsCard(title = "🔥 Séquence", modifier = Modifier.weight(1f)) {
+        BroadcastSectionCard(title = "🔥 Séquence", titleStyle = SectionCardTitleStyle.STAT, modifier = Modifier.weight(1f)) {
             when (val streak = stats.activeStreak) {
                 is ActiveStreak.Victories -> Column {
                     Text(
@@ -196,7 +197,7 @@ private fun BottomTilesRow(stats: AggregatedStats) {
                 )
             }
         }
-        StatsCard(title = "Volume", modifier = Modifier.weight(1f)) {
+        BroadcastSectionCard(title = "Volume", titleStyle = SectionCardTitleStyle.STAT, modifier = Modifier.weight(1f)) {
             Column {
                 Text(
                     text = "${stats.totalMatchSessions + stats.totalTrainingSessions}",
@@ -213,33 +214,3 @@ private fun BottomTilesRow(stats: AggregatedStats) {
     }
 }
 
-@Composable
-private fun StatsCard(
-    title: String,
-    icon: String? = null,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    val colors = LocalBroadcastColors.current
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = colors.panelHigh
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                icon?.let { Text(text = it, style = MaterialTheme.typography.bodyMedium) }
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.muted
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            content()
-        }
-    }
-}
