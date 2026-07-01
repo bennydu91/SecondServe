@@ -106,7 +106,7 @@ Expected: les trois commandes s'exécutent sans erreur.
 
 - [ ] **Step 3: Écrire les schémas Pydantic**
 
-`current_set_game_log` correspond au « déroulé du set » du mockup public (une entrée par **jeu** remporté dans le set en cours, pas par point) — c'est exactement la donnée déjà calculée côté Android dans `MatchViewModel.state.currentSetGameLog` pour la barre de momentum (voir plan Android, Task 2).
+`current_set_point_log` correspond au « déroulé du set » du mockup public : une entrée par **point** remporté dans le set en cours (pas par jeu), reset à chaque set terminé. Cette donnée est produite par `TennisScoreEngine`/`MatchScore.currentSetPointLog` côté Android (voir plan Android, Task 1) — à ne pas confondre avec `MatchViewModel.state.currentSetGameLog`, qui est un log par **jeu** utilisé uniquement pour la barre de momentum affichée sur le téléphone et n'est pas transmis au backend.
 
 `backend/app/features/live_sharing/schemas.py` :
 
@@ -133,7 +133,7 @@ class LiveScoreUpdateRequest(BaseModel):
     completed_sets: list[SetResultSchema] = []
     current_set_games_a: int
     current_set_games_b: int
-    current_set_game_log: list[Literal["A", "B"]] = []
+    current_set_point_log: list[Literal["A", "B"]] = []
     current_game_points_a: str
     current_game_points_b: str
     tie_break_points_a: int
@@ -155,7 +155,7 @@ class LiveSnapshotResponse(BaseModel):
     completed_sets: list[SetResultSchema] = []
     current_set_games_a: int = 0
     current_set_games_b: int = 0
-    current_set_game_log: list[Literal["A", "B"]] = []
+    current_set_point_log: list[Literal["A", "B"]] = []
     current_game_points_a: str = "ZERO"
     current_game_points_b: str = "ZERO"
     tie_break_points_a: int = 0
@@ -363,7 +363,7 @@ def make_score_update(is_match_over: bool = False) -> LiveScoreUpdateRequest:
         completed_sets=[],
         current_set_games_a=1,
         current_set_games_b=0,
-        current_set_game_log=["A"],
+        current_set_point_log=["A"],
         current_game_points_a="THIRTY",
         current_game_points_b="FIFTEEN",
         tie_break_points_a=0,
@@ -613,7 +613,7 @@ def score_payload(is_match_over: bool = False) -> dict:
         "completed_sets": [],
         "current_set_games_a": 2,
         "current_set_games_b": 1,
-        "current_set_game_log": ["A", "B", "A"],
+        "current_set_point_log": ["A", "B", "A"],
         "current_game_points_a": "FORTY",
         "current_game_points_b": "THIRTY",
         "tie_break_points_a": 0,
@@ -698,7 +698,7 @@ async def test_full_flow_create_push_read(client):
     live_data = live.json()
     assert live_data["status"] == "LIVE"
     assert live_data["current_set_games_a"] == 2
-    assert live_data["current_set_game_log"] == ["A", "B", "A"]
+    assert live_data["current_set_point_log"] == ["A", "B", "A"]
     assert live_data["player_a_name"] == "Benjamin"
 
     end_resp = await client.post(

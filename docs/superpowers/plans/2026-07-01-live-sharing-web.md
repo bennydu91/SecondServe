@@ -182,7 +182,7 @@ export type LiveSnapshot = {
   completedSets: SetResult[];
   currentSetGamesA: number;
   currentSetGamesB: number;
-  currentSetGameLog: ("A" | "B")[];
+  currentSetPointLog: ("A" | "B")[];
   currentGamePointsA: string;
   currentGamePointsB: string;
   tieBreakPointsA: number;
@@ -212,7 +212,7 @@ const rawSnapshot = {
   completed_sets: [{ games_a: 6, games_b: 4 }],
   current_set_games_a: 2,
   current_set_games_b: 1,
-  current_set_game_log: ["A", "B", "A"],
+  current_set_point_log: ["A", "B", "A"],
   current_game_points_a: "FORTY",
   current_game_points_b: "THIRTY",
   tie_break_points_a: 0,
@@ -242,7 +242,7 @@ describe("getLiveSnapshot", () => {
     expect(snapshot.currentSetGamesA).toBe(2);
     expect(snapshot.playerAName).toBe("Benjamin");
     expect(snapshot.completedSets).toEqual([{ gamesA: 6, gamesB: 4 }]);
-    expect(snapshot.currentSetGameLog).toEqual(["A", "B", "A"]);
+    expect(snapshot.currentSetPointLog).toEqual(["A", "B", "A"]);
   });
 
   it("lève ShareNotFoundError sur 404", async () => {
@@ -303,7 +303,7 @@ type RawSnapshot = {
   completed_sets: { games_a: number; games_b: number }[];
   current_set_games_a: number;
   current_set_games_b: number;
-  current_set_game_log: ("A" | "B")[];
+  current_set_point_log: ("A" | "B")[];
   current_game_points_a: string;
   current_game_points_b: string;
   tie_break_points_a: number;
@@ -329,7 +329,7 @@ export function mapSnapshot(raw: RawSnapshot): LiveSnapshot {
     completedSets,
     currentSetGamesA: raw.current_set_games_a,
     currentSetGamesB: raw.current_set_games_b,
-    currentSetGameLog: raw.current_set_game_log,
+    currentSetPointLog: raw.current_set_point_log,
     currentGamePointsA: raw.current_game_points_a,
     currentGamePointsB: raw.current_game_points_b,
     tieBreakPointsA: raw.tie_break_points_a,
@@ -693,7 +693,7 @@ const initialSnapshot: LiveSnapshot = {
   completedSets: [],
   currentSetGamesA: 0,
   currentSetGamesB: 0,
-  currentSetGameLog: [],
+  currentSetPointLog: [],
   currentGamePointsA: "ZERO",
   currentGamePointsB: "ZERO",
   tieBreakPointsA: 0,
@@ -729,7 +729,7 @@ describe("useLiveSnapshot", () => {
         completed_sets: [],
         current_set_games_a: 1,
         current_set_games_b: 0,
-        current_set_game_log: ["A"],
+        current_set_point_log: ["A"],
         current_game_points_a: "ZERO",
         current_game_points_b: "ZERO",
         tie_break_points_a: 0,
@@ -747,7 +747,7 @@ describe("useLiveSnapshot", () => {
     });
 
     expect(result.current.snapshot.currentSetGamesA).toBe(1);
-    expect(result.current.snapshot.currentSetGameLog).toEqual(["A"]);
+    expect(result.current.snapshot.currentSetPointLog).toEqual(["A"]);
     expect(result.current.connectionState).toBe("live");
   });
 });
@@ -971,7 +971,7 @@ export function LiveScoreBoard({ token, initialSnapshot }: Props) {
         <div className={styles.setTrailLabel}>
           DÉROULÉ · SET {snapshot.completedSets.length + 1}
         </div>
-        <SetTrail log={snapshot.currentSetGameLog} playerAInitial={playerAInitial} playerBInitial={playerBInitial} />
+        <SetTrail log={snapshot.currentSetPointLog} playerAInitial={playerAInitial} playerBInitial={playerBInitial} />
       </div>
 
       {connectionState === "reconnecting" && (
