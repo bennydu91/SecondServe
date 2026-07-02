@@ -11,6 +11,9 @@ import com.secondserve.data.remote.api.GoogleAuthRequest
 import com.secondserve.data.remote.api.HealthResponse
 import com.secondserve.data.remote.api.TokenResponse
 import com.secondserve.data.remote.api.VpsApiService
+import com.secondserve.data.remote.api.dto.CreateShareRequest
+import com.secondserve.data.remote.api.dto.CreateShareResponse
+import com.secondserve.data.remote.api.dto.LiveScoreUpdateRequest
 import com.secondserve.data.remote.api.dto.PendingNotificationResponse
 import com.secondserve.data.remote.api.dto.ProfileDetailsRequest
 import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
@@ -110,4 +113,6 @@ private object NoOpVpsApiService : VpsApiService {
     override suspend fun getPendingNotification(sessionId: Long): PendingNotificationResponse = error("N/A on Wear OS")
     override suspend fun sendMonitoringEvent(event: MonitoringEventDto): MonitoringStatusDto = error("N/A on Wear OS")
     override suspend fun sendMonitoringEventBatch(events: List<MonitoringEventDto>): MonitoringStatusDto = error("N/A on Wear OS")
+    override suspend fun createLiveShare(request: CreateShareRequest): CreateShareResponse = error("N/A on Wear OS")
+    override suspend fun pushLiveScore(sessionId: Long, request: LiveScoreUpdateRequest) = error("N/A on Wear OS")
 }
