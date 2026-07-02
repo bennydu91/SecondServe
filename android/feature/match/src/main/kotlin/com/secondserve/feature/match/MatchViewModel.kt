@@ -179,6 +179,21 @@ class MatchViewModel @Inject constructor(
             is AppResult.Success -> {
                 reduce { state.copy(shareInfo = result.data) }
                 postSideEffect(MatchSideEffect.ShareMatch(result.data.url))
+                val currentState = state
+                viewModelScope.launch {
+                    liveShareRepository.pushScore(
+                        sessionId = sessionId,
+                        score = scoreRepository.latestScore.value ?: MatchScore(),
+                        context = LiveShareContext(
+                            playerAName = currentState.playerDisplayName,
+                            playerBName = currentState.opponentName ?: "Adversaire",
+                            surface = currentState.surface ?: "HARD",
+                            tournament = currentState.tournament,
+                            competitionType = currentState.competitionType,
+                            startedAt = currentState.sessionStartedAt
+                        )
+                    )
+                }
             }
             is AppResult.Error -> {
                 Timber.e(result.exception, "MatchViewModel: création du lien de partage échouée")

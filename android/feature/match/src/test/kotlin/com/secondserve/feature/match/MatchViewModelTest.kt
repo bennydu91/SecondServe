@@ -93,6 +93,7 @@ class MatchViewModelTest {
             )
         )
         coEvery { liveShareRepository.getCachedShare(any()) } returns null
+        coEvery { sessionRepository.getSessionById(any()) } returns null
 
         viewModel = MatchViewModel(
             scoreRepository = scoreRepository,
@@ -314,6 +315,33 @@ class MatchViewModelTest {
         sideEffectDeferred.await()
 
         assertNull(viewModel.container.stateFlow.value.shareInfo)
+    }
+
+    @Test
+    fun `onShareRequested immediately pushes current score to live share`() = runTest {
+        scoreFlow.value = MatchScore(currentSetGamesA = 5, currentSetGamesB = 4)
+        coEvery { shareMatchUseCase(10L) } returns AppResult.Success(
+            LiveShareInfo(token = "abc", url = "https://secondserve.app/live/abc")
+        )
+
+        viewModel.onShareRequested()
+        viewModel.container.stateFlow.first { it.shareInfo != null }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            liveShareRepository.pushScore(
+                sessionId = 10L,
+                score = MatchScore(currentSetGamesA = 5, currentSetGamesB = 4),
+                context = LiveShareContext(
+                    playerAName = "Benjamin",
+                    playerBName = "Adversaire",
+                    surface = "HARD",
+                    tournament = null,
+                    competitionType = null,
+                    startedAt = 0L
+                )
+            )
+        }
     }
 
     @Test
