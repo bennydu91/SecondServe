@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.api.v1.router import api_router
 from app.features.monitoring.router import monitor_router
@@ -42,6 +43,12 @@ app = FastAPI(
 )
 
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.web_cors_origin],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 
 
 @app.exception_handler(SecondServeException)

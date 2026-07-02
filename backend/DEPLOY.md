@@ -52,6 +52,8 @@ Variables à renseigner :
 | `DATABASE_URL` | `sqlite+aiosqlite:///./secondserve.db` (défaut SQLite) |
 | `PORT` | Port d'écoute uvicorn — choisir un port libre sur le VPS (ex. `8765`) |
 | `GOOGLE_CLIENT_ID` | Web Client ID OAuth2 Google (format `XXXXXX.apps.googleusercontent.com`) — voir section [Configuration Google Sign-In](#configuration-google-sign-in) |
+| `PUBLIC_WEB_BASE_URL` | URL publique de l'app Next.js (page de suivi live), ex. `https://secondserve.app` |
+| `WEB_CORS_ORIGIN` | Même valeur que `PUBLIC_WEB_BASE_URL` — origine autorisée en CORS pour les endpoints publics `/api/v1/live/*` |
 
 ### 4. Appliquer les migrations Alembic
 

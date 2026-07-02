@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     port: int = 8000
     google_client_id: str = ""
     public_web_base_url: str = "http://localhost:3000"
+    web_cors_origin: str = "http://localhost:3000"
     authorized_email: str = "ben.finot@gmail.com"
     monitor_db_url: str = "sqlite+aiosqlite:///./monitor.db"
     monitor_user: str = "admin"
