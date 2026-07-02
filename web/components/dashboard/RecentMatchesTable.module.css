@@ -1,0 +1,100 @@
+.card {
+  background: var(--ss-surface);
+  border: 1px solid var(--ss-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--ss-border);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ss-text);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ss-faint);
+  text-transform: uppercase;
+  background: var(--ss-surface-elevated);
+}
+
+/* ~8 lignes visibles (44px header + 8 * 52px) ; scroll interne au-delà */
+.scrollArea {
+  max-height: 416px;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid var(--ss-bg);
+  font-size: 14px;
+}
+
+.dateCol {
+  width: 90px;
+  color: var(--ss-muted);
+}
+
+.opponentCol {
+  flex: 1;
+  font-weight: 500;
+  color: var(--ss-text);
+}
+
+.surfaceCol {
+  width: 120px;
+}
+
+.surfaceChip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+.scoreCol {
+  width: 120px;
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--ss-text);
+}
+
+.resultCol {
+  width: 90px;
+  text-align: right;
+}
+
+.resultBadge {
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+
+.resultVictory {
+  background: rgba(31, 111, 229, 0.1);
+  color: var(--ss-data);
+}
+
+.resultDefeat {
+  background: rgba(230, 57, 88, 0.1);
+  color: var(--ss-hot);
+}
+
+.empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--ss-muted);
+  font-size: 14px;
+}

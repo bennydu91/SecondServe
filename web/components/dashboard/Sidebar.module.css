@@ -1,0 +1,66 @@
+.sidebar {
+  width: 224px;
+  flex-shrink: 0;
+  background: var(--ss-surface);
+  border-right: 1px solid var(--ss-border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  min-height: 100vh;
+}
+
+.logo {
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  margin-bottom: 32px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItemActive {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ss-text);
+  color: var(--ss-bg);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ss-lime);
+}
+
+.profile {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--ss-border);
+}
+
+.profileName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ss-text);
+}
+
+.logoutButton {
+  border: none;
+  background: none;
+  color: var(--ss-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}

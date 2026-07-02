@@ -1,0 +1,37 @@
+.card {
+  background: var(--ss-surface);
+  border: 1px solid var(--ss-border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.label {
+  font-size: 12px;
+  color: var(--ss-muted);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.value {
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 0.9;
+  color: var(--ss-text);
+  font-feature-settings: "tnum";
+}
+
+.valueUnit {
+  font-size: 22px;
+}
+
+.subtext {
+  font-size: 12px;
+  color: var(--ss-muted);
+  margin-top: 6px;
+}
+
+.subtextPositive {
+  color: var(--ss-surface-grass);
+  font-weight: 600;
+}
