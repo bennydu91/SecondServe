@@ -104,6 +104,7 @@ class MatchScoreDtoTest {
             completedSets = emptyList(),
             currentSetGamesA = 0,
             currentSetGamesB = 0,
+            currentSetPointLog = emptyList(),
             currentGamePointsA = "INVALID_POINT",
             currentGamePointsB = "ZERO",
             tieBreakPointsA = 0,
@@ -122,6 +123,7 @@ class MatchScoreDtoTest {
             completedSets = emptyList(),
             currentSetGamesA = 0,
             currentSetGamesB = 0,
+            currentSetPointLog = emptyList(),
             currentGamePointsA = "ZERO",
             currentGamePointsB = "ZERO",
             tieBreakPointsA = 0,
@@ -132,5 +134,16 @@ class MatchScoreDtoTest {
             matchWinner = "C"
         )
         assertThrows<IllegalArgumentException> { dto.toDomain() }
+    }
+
+    @Test
+    fun `currentSetPointLog round-trips through DTO`() {
+        val original = MatchScore(
+            currentSetGamesA = 1,
+            currentSetPointLog = listOf(Player.A, Player.A, Player.B)
+        )
+        val dto = original.toDto()
+        val restored = dto.toDomain()
+        assertEquals(listOf(Player.A, Player.A, Player.B), restored.currentSetPointLog)
     }
 }

@@ -10,6 +10,7 @@ data class MatchScore(
     val completedSets: List<SetResult> = emptyList(),
     val currentSetGamesA: Int = 0,
     val currentSetGamesB: Int = 0,
+    val currentSetPointLog: List<Player> = emptyList(),
     val currentGamePointsA: GamePoint = GamePoint.ZERO,
     val currentGamePointsB: GamePoint = GamePoint.ZERO,
     val tieBreakPointsA: Int = 0,

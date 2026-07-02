@@ -517,4 +517,33 @@ class TennisScoreEngineTest {
             assertEquals("Cannot record point: match is over", ex.message)
         }
     }
+
+    @Nested
+    inner class PointLogTracking {
+
+        @Test
+        fun `recordPoint appends scorer to currentSetPointLog`() {
+            val engine = TennisScoreEngine(bestOf1Format)
+            engine.recordPoint(Player.A)
+            engine.recordPoint(Player.B)
+            engine.recordPoint(Player.A)
+            assertEquals(listOf(Player.A, Player.B, Player.A), engine.currentScore.currentSetPointLog)
+        }
+
+        @Test
+        fun `currentSetPointLog resets when the set is won`() {
+            val engine = TennisScoreEngine(bestOf3Format)
+            engine.winSet6_0(Player.A)
+            assertTrue(engine.currentScore.currentSetPointLog.isEmpty())
+        }
+
+        @Test
+        fun `currentSetPointLog is restored by undo`() {
+            val engine = TennisScoreEngine(bestOf1Format)
+            engine.recordPoint(Player.A)
+            engine.recordPoint(Player.B)
+            engine.undo()
+            assertEquals(listOf(Player.A), engine.currentScore.currentSetPointLog)
+        }
+    }
 }

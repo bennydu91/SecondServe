@@ -41,6 +41,7 @@ class TennisScoreEngine(val format: SessionFormat) {
     fun recordPoint(scorer: Player): EngineEvent {
         check(!state.isMatchOver) { "Cannot record point: match is over" }
         history.addLast(state.copy())
+        state = state.copy(currentSetPointLog = state.currentSetPointLog + scorer)
         return when {
             state.isSuperTieBreak -> processSuperTieBreakPoint(scorer)
             state.isTieBreak -> processTieBreakPoint(scorer)
@@ -235,6 +236,7 @@ class TennisScoreEngine(val format: SessionFormat) {
             completedSets = newCompletedSets,
             currentSetGamesA = 0,
             currentSetGamesB = 0,
+            currentSetPointLog = emptyList(),
             currentGamePointsA = GamePoint.ZERO,
             currentGamePointsB = GamePoint.ZERO,
             tieBreakPointsA = 0,
