@@ -1,8 +1,12 @@
 import secrets
 import time
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.live_sharing.models import MatchShareModel
+
+# Filet de sécurité pour les partages abandonnés (session jamais clôturée :
+# app tuée, session laissée ouverte, etc.) dont expires_at reste NULL indéfiniment.
+ABANDONED_SHARE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 
 class MatchShareRepository:
@@ -43,8 +47,12 @@ class MatchShareRepository:
     async def delete_expired(self, now_ms: int) -> int:
         result = await self.db.execute(
             select(MatchShareModel).where(
-                MatchShareModel.expires_at.is_not(None),
-                MatchShareModel.expires_at < now_ms,
+                or_(
+                    (MatchShareModel.expires_at.is_not(None))
+                    & (MatchShareModel.expires_at < now_ms),
+                    (MatchShareModel.expires_at.is_(None))
+                    & (MatchShareModel.created_at < now_ms - ABANDONED_SHARE_TTL_MS),
+                )
             )
         )
         expired = list(result.scalars().all())

@@ -1,7 +1,8 @@
 import time
 import pytest
 from app.features.live_sharing.broadcast import broadcaster
-from app.features.live_sharing.repository import MatchShareRepository
+from app.features.live_sharing.models import MatchShareModel
+from app.features.live_sharing.repository import ABANDONED_SHARE_TTL_MS, MatchShareRepository
 from app.features.live_sharing.schemas import CreateShareRequest, LiveScoreUpdateRequest
 from app.features.live_sharing.service import LiveSharingService
 from app.shared.exceptions import SecondServeException
@@ -145,3 +146,37 @@ async def test_repository_delete_expired_removes_only_past_shares(db_session):
     assert await repo.get_by_session(100) is None
     assert await repo.get_by_session(101) is not None
     assert await repo.get_by_session(102) is not None
+
+
+@pytest.mark.asyncio
+async def test_repository_delete_expired_removes_abandoned_shares_past_ttl(db_session):
+    """Un partage jamais clôturé (expires_at=None) doit tout de même être purgé
+    une fois trop ancien, pour éviter une fuite de contexte d'adversaire à durée
+    de vie infinie (app tuée, session laissée ouverte, etc.)."""
+    repo = MatchShareRepository(db_session)
+    now = int(time.time() * 1000)
+
+    abandoned = MatchShareModel(
+        token="abandoned-token",
+        session_id=200,
+        created_at=now - ABANDONED_SHARE_TTL_MS - 1000,
+        expires_at=None,
+        score_snapshot=None,
+    )
+    db_session.add(abandoned)
+
+    still_in_progress = MatchShareModel(
+        token="recent-token",
+        session_id=201,
+        created_at=now - 1000,
+        expires_at=None,
+        score_snapshot=None,
+    )
+    db_session.add(still_in_progress)
+    await db_session.flush()
+
+    deleted_count = await repo.delete_expired(now)
+
+    assert deleted_count == 1
+    assert await repo.get_by_session(200) is None
+    assert await repo.get_by_session(201) is not None
