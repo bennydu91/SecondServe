@@ -41,7 +41,7 @@ export function ScoreTable({ snapshot }: Props) {
         <span style={{ width: 58, textAlign: "center" }}>POINTS</span>
       </div>
       {rows.map((row, index) => (
-        <div key={row.name}>
+        <div key={index}>
           {index > 0 && <div className={styles.divider} />}
           <div className={`${styles.playerRow} ${row.leading ? styles.playerRowLeading : ""}`}>
             <span className={styles.playerName}>
