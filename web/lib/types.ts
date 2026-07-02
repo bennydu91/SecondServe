@@ -20,3 +20,19 @@ export type LiveSnapshot = {
   competitionType: string | null;
   startedAt: number | null;
 };
+
+export type SessionDto = {
+  id: number;
+  surface: string;
+  matchFormat: string;
+  thirdSetRule: string;
+  opponent: string | null;
+  competitionType: string | null;
+  tournament: string | null;
+  status: string;
+  sessionType: "MATCH" | "TRAINING";
+  result: string | null;
+  scoreText: string | null;
+  createdAt: number;
+  updatedAt: number;
+};

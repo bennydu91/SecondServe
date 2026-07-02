@@ -1,7 +1,8 @@
-import type { LiveSnapshot, SetResult } from "./types";
+import type { LiveSnapshot, SessionDto, SetResult } from "./types";
 
 export class ShareNotFoundError extends Error {}
 export class ShareExpiredError extends Error {}
+export class UnauthorizedError extends Error {}
 
 type RawSnapshot = {
   status: "WAITING" | "LIVE" | "ENDED";
@@ -59,4 +60,49 @@ export async function getLiveSnapshot(token: string): Promise<LiveSnapshot> {
   if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
   const raw = (await response.json()) as RawSnapshot;
   return mapSnapshot(raw);
+}
+
+type RawSession = {
+  id: number;
+  surface: string;
+  match_format: string;
+  third_set_rule: string;
+  opponent: string | null;
+  competition_type: string | null;
+  tournament: string | null;
+  status: string;
+  session_type: string;
+  result: string | null;
+  score_text: string | null;
+  created_at: number;
+  updated_at: number;
+};
+
+function mapSession(raw: RawSession): SessionDto {
+  return {
+    id: raw.id,
+    surface: raw.surface,
+    matchFormat: raw.match_format,
+    thirdSetRule: raw.third_set_rule,
+    opponent: raw.opponent,
+    competitionType: raw.competition_type,
+    tournament: raw.tournament,
+    status: raw.status,
+    sessionType: raw.session_type === "TRAINING" ? "TRAINING" : "MATCH",
+    result: raw.result,
+    scoreText: raw.score_text,
+    createdAt: raw.created_at,
+    updatedAt: raw.updated_at,
+  };
+}
+
+export async function getSessions(token: string): Promise<SessionDto[]> {
+  const response = await fetch(`${process.env.API_BASE_URL}/api/v1/sessions`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (response.status === 401) throw new UnauthorizedError();
+  if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
+  const raw = (await response.json()) as { items: RawSession[]; total: number };
+  return raw.items.map(mapSession);
 }

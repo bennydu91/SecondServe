@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { getLiveSnapshot, ShareExpiredError, ShareNotFoundError } from "./api";
+import { getLiveSnapshot, ShareExpiredError, ShareNotFoundError, getSessions, UnauthorizedError } from "./api";
 
 const rawSnapshot = {
   status: "LIVE",
@@ -47,5 +47,65 @@ describe("getLiveSnapshot", () => {
   it("lève ShareExpiredError sur 410", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 410, json: async () => ({}) }));
     await expect(getLiveSnapshot("expired")).rejects.toThrow(ShareExpiredError);
+  });
+});
+
+const rawSession = {
+  id: 1,
+  surface: "CLAY",
+  match_format: "BEST_OF_3",
+  third_set_rule: "FULL_ADVANTAGE",
+  opponent: "Marceau",
+  competition_type: "CLUB",
+  tournament: "Tournoi du club",
+  status: "COMPLETED",
+  session_type: "MATCH",
+  result: "VICTORY",
+  score_text: "6-4 · 6-3",
+  created_at: 1000,
+  updated_at: 2000,
+};
+
+describe("getSessions", () => {
+  it("mappe la liste snake_case du backend vers des SessionDto camelCase", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ items: [rawSession], total: 1 }),
+      })
+    );
+    const sessions = await getSessions("jwt-token");
+    expect(sessions).toEqual([
+      {
+        id: 1,
+        surface: "CLAY",
+        matchFormat: "BEST_OF_3",
+        thirdSetRule: "FULL_ADVANTAGE",
+        opponent: "Marceau",
+        competitionType: "CLUB",
+        tournament: "Tournoi du club",
+        status: "COMPLETED",
+        sessionType: "MATCH",
+        result: "VICTORY",
+        scoreText: "6-4 · 6-3",
+        createdAt: 1000,
+        updatedAt: 2000,
+      },
+    ]);
+  });
+
+  it("envoie le JWT en Authorization Bearer", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [], total: 0 }) });
+    vi.stubGlobal("fetch", fetchMock);
+    await getSessions("jwt-token");
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers.Authorization).toBe("Bearer jwt-token");
+  });
+
+  it("lève UnauthorizedError sur 401", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) }));
+    await expect(getSessions("expired-token")).rejects.toThrow(UnauthorizedError);
   });
 });
