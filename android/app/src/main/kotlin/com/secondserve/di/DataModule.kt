@@ -9,6 +9,7 @@ import com.secondserve.data.local.dao.AxisSuggestionDao
 import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
 import com.secondserve.data.local.dao.CoachingSynthesisDao
+import com.secondserve.data.local.dao.LiveShareDao
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
@@ -69,7 +70,8 @@ object DataModule {
             SecondServeDatabase.MIGRATION_8_9,
             SecondServeDatabase.MIGRATION_9_10,
             SecondServeDatabase.MIGRATION_10_11,
-            SecondServeDatabase.MIGRATION_11_12
+            SecondServeDatabase.MIGRATION_11_12,
+            SecondServeDatabase.MIGRATION_12_13
         )
         .build()
 
@@ -112,6 +114,11 @@ object DataModule {
     @Singleton
     fun provideAxisSuggestionDao(db: SecondServeDatabase): AxisSuggestionDao =
         db.axisSuggestionDao()
+
+    @Provides
+    @Singleton
+    fun provideLiveShareDao(db: SecondServeDatabase): LiveShareDao =
+        db.liveShareDao()
 
     @Provides
     @Singleton

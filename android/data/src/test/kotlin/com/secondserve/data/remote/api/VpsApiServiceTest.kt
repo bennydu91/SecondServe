@@ -42,4 +42,20 @@ class VpsApiServiceTest {
             .find { it.name == "health" }
         assertTrue(method != null, "health method should exist in VpsApiService interface")
     }
+
+    @Test
+    fun testVpsApiServiceHasCreateLiveShareEndpoint() {
+        // Smoke test to verify the createLiveShare endpoint is correctly defined
+        val method = vpsApiService::class.java.getDeclaredMethods()
+            .find { it.name == "createLiveShare" }
+        assertTrue(method != null, "createLiveShare method should exist in VpsApiService interface")
+    }
+
+    @Test
+    fun testVpsApiServiceHasPushLiveScoreEndpoint() {
+        // Smoke test to verify the pushLiveScore endpoint is correctly defined
+        val method = vpsApiService::class.java.getDeclaredMethods()
+            .find { it.name == "pushLiveScore" }
+        assertTrue(method != null, "pushLiveScore method should exist in VpsApiService interface")
+    }
 }

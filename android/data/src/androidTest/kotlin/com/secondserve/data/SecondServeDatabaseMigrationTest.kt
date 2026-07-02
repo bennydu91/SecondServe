@@ -100,17 +100,28 @@ class SecondServeDatabaseMigrationTest {
 
     @Test
     @Throws(IOException::class)
+    fun migrate12To13() {
+        helper.createDatabase(TEST_DB, 12).apply { close() }
+        helper.runMigrationsAndValidate(
+            TEST_DB, 13, true,
+            SecondServeDatabase.MIGRATION_12_13
+        )
+    }
+
+    @Test
+    @Throws(IOException::class)
     fun migrateAll() {
         helper.createDatabase(TEST_DB, 5).apply { close() }
         helper.runMigrationsAndValidate(
-            TEST_DB, 12, true,
+            TEST_DB, 13, true,
             SecondServeDatabase.MIGRATION_5_6,
             SecondServeDatabase.MIGRATION_6_7,
             SecondServeDatabase.MIGRATION_7_8,
             SecondServeDatabase.MIGRATION_8_9,
             SecondServeDatabase.MIGRATION_9_10,
             SecondServeDatabase.MIGRATION_10_11,
-            SecondServeDatabase.MIGRATION_11_12
+            SecondServeDatabase.MIGRATION_11_12,
+            SecondServeDatabase.MIGRATION_12_13
         )
     }
 
@@ -175,5 +186,35 @@ class SecondServeDatabaseMigrationTest {
             assertTrue(it.isNull(it.getColumnIndexOrThrow("display_name")))
             assertTrue(it.isNull(it.getColumnIndexOrThrow("club")))
         }
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun migrate12To13CreatesLiveSharesTableWithUniqueSessionIndex() {
+        helper.createDatabase(TEST_DB, 12).apply { close() }
+        val db = helper.runMigrationsAndValidate(TEST_DB, 13, true, SecondServeDatabase.MIGRATION_12_13)
+
+        db.execSQL(
+            "INSERT INTO live_shares (session_id, token, url, created_at) VALUES (42, 'tok-1', 'https://example.com/live/tok-1', 1000)"
+        )
+        (db.query("SELECT session_id, token, url, created_at FROM live_shares WHERE session_id = 42", emptyArray<Any?>()) as Cursor).use {
+            assertTrue(it.moveToFirst())
+            assertEquals(42L, it.getLong(it.getColumnIndexOrThrow("session_id")))
+            assertEquals("tok-1", it.getString(it.getColumnIndexOrThrow("token")))
+            assertEquals("https://example.com/live/tok-1", it.getString(it.getColumnIndexOrThrow("url")))
+            assertEquals(1000L, it.getLong(it.getColumnIndexOrThrow("created_at")))
+        }
+
+        // La colonne session_id est indexée en UNIQUE : une deuxième ligne avec le même
+        // session_id doit être rejetée par SQLite (contrainte de la migration 12->13).
+        var uniqueViolation = false
+        try {
+            db.execSQL(
+                "INSERT INTO live_shares (session_id, token, url, created_at) VALUES (42, 'tok-2', 'https://example.com/live/tok-2', 2000)"
+            )
+        } catch (e: android.database.sqlite.SQLiteConstraintException) {
+            uniqueViolation = true
+        }
+        assertTrue("session_id should be UNIQUE on live_shares", uniqueViolation)
     }
 }

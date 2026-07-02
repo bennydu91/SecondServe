@@ -2,6 +2,9 @@ package com.secondserve.data.remote.api
 
 import com.secondserve.data.monitoring.dto.MonitoringEventDto
 import com.secondserve.data.monitoring.dto.MonitoringStatusDto
+import com.secondserve.data.remote.api.dto.CreateShareRequest
+import com.secondserve.data.remote.api.dto.CreateShareResponse
+import com.secondserve.data.remote.api.dto.LiveScoreUpdateRequest
 import com.secondserve.data.remote.api.dto.ProfileDetailsRequest
 import com.secondserve.data.remote.api.dto.ProfileDetailsResponse
 import com.secondserve.data.remote.api.dto.ProfileSummaryDto
@@ -60,4 +63,13 @@ interface VpsApiService {
 
     @POST("monitor/api/events/batch")
     suspend fun sendMonitoringEventBatch(@Body events: List<MonitoringEventDto>): MonitoringStatusDto
+
+    @POST("api/v1/live/shares")
+    suspend fun createLiveShare(@Body request: CreateShareRequest): CreateShareResponse
+
+    @POST("api/v1/live/sessions/{sessionId}/score")
+    suspend fun pushLiveScore(
+        @Path("sessionId") sessionId: Long,
+        @Body request: LiveScoreUpdateRequest
+    )
 }

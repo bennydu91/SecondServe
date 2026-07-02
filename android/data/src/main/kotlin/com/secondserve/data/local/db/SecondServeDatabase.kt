@@ -8,6 +8,7 @@ import com.secondserve.data.local.dao.AxisSuggestionDao
 import com.secondserve.data.local.dao.CoachingAnalysisDao
 import com.secondserve.data.local.dao.CoachingCacheDao
 import com.secondserve.data.local.dao.CoachingSynthesisDao
+import com.secondserve.data.local.dao.LiveShareDao
 import com.secondserve.data.local.dao.PlayerProfileDao
 import com.secondserve.data.local.dao.SessionDao
 import com.secondserve.data.local.dao.SyncQueueDao
@@ -16,6 +17,7 @@ import com.secondserve.data.local.db.entity.AxisSuggestionEntity
 import com.secondserve.data.local.db.entity.CoachingAnalysisEntity
 import com.secondserve.data.local.db.entity.CoachingCacheEntity
 import com.secondserve.data.local.db.entity.CoachingSynthesisEntity
+import com.secondserve.data.local.db.entity.LiveShareEntity
 import com.secondserve.data.local.db.entity.PlayerProfileEntity
 import com.secondserve.data.local.db.entity.PointEntity
 import com.secondserve.data.local.db.entity.RankingHistoryEntity
@@ -34,9 +36,10 @@ import com.secondserve.data.local.db.entity.WorkAxisEntity
         CoachingCacheEntity::class,
         CoachingAnalysisEntity::class,
         CoachingSynthesisEntity::class,
-        AxisSuggestionEntity::class
+        AxisSuggestionEntity::class,
+        LiveShareEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 abstract class SecondServeDatabase : RoomDatabase() {
@@ -48,6 +51,7 @@ abstract class SecondServeDatabase : RoomDatabase() {
     abstract fun coachingAnalysisDao(): CoachingAnalysisDao
     abstract fun coachingSynthesisDao(): CoachingSynthesisDao
     abstract fun axisSuggestionDao(): AxisSuggestionDao
+    abstract fun liveShareDao(): LiveShareDao
 
     companion object {
         const val DB_NAME = "secondserve_db"
@@ -218,6 +222,23 @@ abstract class SecondServeDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE sessions ADD COLUMN first_serve_percent_opponent INTEGER")
                 database.execSQL("ALTER TABLE sessions ADD COLUMN winners_self INTEGER")
                 database.execSQL("ALTER TABLE sessions ADD COLUMN winners_opponent INTEGER")
+            }
+        }
+
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS live_shares (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        session_id INTEGER NOT NULL,
+                        token TEXT NOT NULL,
+                        url TEXT NOT NULL,
+                        created_at INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                database.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_live_shares_session_id ON live_shares (session_id)"
+                )
             }
         }
     }
