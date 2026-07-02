@@ -124,3 +124,24 @@ async def test_push_score_broadcasts_ended_status_when_match_over(db_session):
         assert "is_match_over" not in published
     finally:
         broadcaster.unsubscribe(share.token, queue)
+
+
+@pytest.mark.asyncio
+async def test_repository_delete_expired_removes_only_past_shares(db_session):
+    repo = MatchShareRepository(db_session)
+    now = int(time.time() * 1000)
+
+    expired = await repo.create(100)
+    await repo.update_snapshot(expired, "{}", expires_at=now - 1000)
+
+    active = await repo.create(101)
+    await repo.update_snapshot(active, "{}", expires_at=now + 1_000_000)
+
+    still_live = await repo.create(102)  # expires_at=None : match en cours
+
+    deleted_count = await repo.delete_expired(now)
+
+    assert deleted_count == 1
+    assert await repo.get_by_session(100) is None
+    assert await repo.get_by_session(101) is not None
+    assert await repo.get_by_session(102) is not None
