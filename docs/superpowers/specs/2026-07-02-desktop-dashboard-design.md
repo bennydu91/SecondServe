@@ -40,7 +40,7 @@ La maquette de référence est `design/SecondServe Web.dc.html` (première fenê
   - **Victoires · Défaites** + nombre de matchs terminés : idem.
   - **Séquence active** : résultat du dernier match en remontant tant que le résultat est identique (V ou D), sur les matchs `COMPLETED` triés par date.
   - **Temps de jeu** : somme de `updated_at - created_at` sur **toutes** les sessions `status=COMPLETED` (matchs + entraînements), converti en heures ; nombre de sessions = total de ces sessions `COMPLETED`.
-  - **Win rate par mois** (6 derniers mois) et **par surface** : agrégation simple sur `result`/`surface`/`created_at`.
+  - **Win rate par mois** (5 derniers mois, fidèle au décompte du mockup) et **par surface** : agrégation simple sur `result`/`surface`/`created_at`.
 - Composants (`web/components/dashboard/`) : `KpiCard`, `MonthlyWinRateChart`, `SurfaceBreakdown`, `RecentMatchesTable` (avec conteneur à hauteur fixe + scroll interne), `ThemeToggle`, `Sidebar`.
 
 **Thème clair/sombre** :
