@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from app.features.sessions.schemas import SessionCreateRequest, SessionResponse
+from app.features.sessions.schemas import SessionCreateRequest, SessionResponse, SessionsResponse
 from app.features.sessions.service import SessionService
 
 
@@ -25,6 +25,7 @@ def session_model(
     status="ACTIVE",
     session_type="MATCH",
     result=None,
+    score_text=None,
     created_at=1_000_000,
     updated_at=1_000_000
 ):
@@ -39,6 +40,7 @@ def session_model(
     m.status = status
     m.session_type = session_type
     m.result = result
+    m.score_text = score_text
     m.created_at = created_at
     m.updated_at = updated_at
     return m
@@ -111,3 +113,31 @@ async def test_create_session_repository_called_once():
     await service.create_session(request)
 
     repo.create.assert_called_once_with(request)
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_returns_all_from_repository():
+    model_a = session_model(id=1, created_at=2_000_000, score_text="6-4 · 6-3")
+    model_b = session_model(id=2, created_at=1_000_000)
+    repo = MagicMock()
+    repo.get_all = AsyncMock(return_value=[model_a, model_b])
+    service = SessionService(repo)
+
+    result = await service.list_sessions()
+
+    assert isinstance(result, SessionsResponse)
+    assert result.total == 2
+    assert [item.id for item in result.items] == [1, 2]
+    assert result.items[0].score_text == "6-4 · 6-3"
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_empty():
+    repo = MagicMock()
+    repo.get_all = AsyncMock(return_value=[])
+    service = SessionService(repo)
+
+    result = await service.list_sessions()
+
+    assert result.total == 0
+    assert result.items == []

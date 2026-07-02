@@ -23,6 +23,7 @@ class SessionResponse(BaseModel):
     status: str
     session_type: str
     result: Optional[str] = None
+    score_text: Optional[str] = None
     created_at: int
     updated_at: int
 

@@ -111,3 +111,51 @@ async def test_create_session_sets_updated_at(client):
     data = response.json()
     assert "updated_at" in data
     assert data["updated_at"] == 1_000_000
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_requires_jwt(client):
+    response = await client.get("/api/v1/sessions")
+    assert response.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_empty(client):
+    token = make_token()
+    response = await client.get("/api/v1/sessions", headers=auth(token))
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "total": 0}
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_sorted_by_created_at_desc(client):
+    token = make_token()
+    await client.post(
+        "/api/v1/sessions",
+        json={"surface": "CLAY", "match_format": "BEST_OF_3", "third_set_rule": "FULL_ADVANTAGE", "created_at": 1_000_000},
+        headers=auth(token)
+    )
+    await client.post(
+        "/api/v1/sessions",
+        json={"surface": "HARD", "match_format": "BEST_OF_1", "third_set_rule": "FULL_ADVANTAGE", "created_at": 2_000_000},
+        headers=auth(token)
+    )
+    response = await client.get("/api/v1/sessions", headers=auth(token))
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 2
+    assert data["items"][0]["surface"] == "HARD"
+    assert data["items"][1]["surface"] == "CLAY"
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_includes_score_text_field(client):
+    token = make_token()
+    await client.post(
+        "/api/v1/sessions",
+        json={"surface": "CLAY", "match_format": "BEST_OF_3", "third_set_rule": "FULL_ADVANTAGE", "created_at": 1_000_000},
+        headers=auth(token)
+    )
+    response = await client.get("/api/v1/sessions", headers=auth(token))
+    assert "score_text" in response.json()["items"][0]
+    assert response.json()["items"][0]["score_text"] is None
