@@ -11,6 +11,42 @@ body {
   font-family: var(--font-space-grotesk), sans-serif;
 }
 
+:root {
+  --ss-bg: #f4f4f1;
+  --ss-surface: #ffffff;
+  --ss-surface-elevated: #fbfbf9;
+  --ss-border: #e4e5e2;
+  --ss-text: #14161a;
+  --ss-muted: #6a6f78;
+  --ss-faint: #9aa0a8;
+  --ss-lime: #c8ff3d;
+  --ss-lime-text: #14161a;
+  --ss-hot: #e63958;
+  --ss-data: #1f6fe5;
+  --ss-surface-clay: #c85a2c;
+  --ss-surface-hard: #2c6fd8;
+  --ss-surface-grass: #3e9e66;
+  --ss-surface-indoor: #8a5fd6;
+}
+
+[data-theme="dark"] {
+  --ss-bg: #0c0d0f;
+  --ss-surface: #16181c;
+  --ss-surface-elevated: #1b1e23;
+  --ss-border: #24272d;
+  --ss-text: #f2f3f0;
+  --ss-muted: #8a8f98;
+  --ss-faint: #6b7079;
+  --ss-lime: #c8ff3d;
+  --ss-lime-text: #0c0d0f;
+  --ss-hot: #ff5c7a;
+  --ss-data: #4ea8ff;
+  --ss-surface-clay: #e0703f;
+  --ss-surface-hard: #3e8ef0;
+  --ss-surface-grass: #4fb477;
+  --ss-surface-indoor: #a97cf0;
+}
+
 @keyframes ssPulse {
   0%,
   100% {
