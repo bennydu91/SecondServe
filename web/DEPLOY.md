@@ -26,9 +26,19 @@ rsync -avz public/ user@<vps-ip>:/opt/secondserve-web/public/
 PORT=3000
 API_BASE_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_API_BASE_URL=https://api.<ton-domaine>
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<Web Client ID Google — le même que GOOGLE_CLIENT_ID côté backend>
 ```
 
-> `API_BASE_URL` (sans `NEXT_PUBLIC_`) est utilisé uniquement côté serveur (composant serveur de la page) — appel direct en local sur le VPS, pas via Cloudflare, pour éviter un aller-retour réseau inutile. `NEXT_PUBLIC_API_BASE_URL` est exposé au navigateur pour la connexion SSE et doit donc pointer vers l'URL publique du backend.
+> `API_BASE_URL` (sans `NEXT_PUBLIC_`) est utilisé côté serveur (page publique, callback d'auth `/api/auth/callback`, tableau de bord `/dashboard`) — appel direct en local sur le VPS, pas via Cloudflare. `NEXT_PUBLIC_API_BASE_URL` est exposé au navigateur pour la connexion SSE de la page publique. `NEXT_PUBLIC_GOOGLE_CLIENT_ID` est exposé au navigateur pour afficher le bouton Google Identity Services sur `/login`.
+
+### 2bis. Étape manuelle : autoriser le domaine desktop dans Google Cloud Console
+
+Le Web Client ID Google existant (créé pour l'auth Android, cf. `docs/superpowers/plans/2026-06-25-google-signin-auth.md`) doit aussi autoriser le domaine du tableau de bord comme origine JavaScript :
+
+1. https://console.cloud.google.com → APIs & Services → Credentials
+2. Ouvrir le **Web Client ID** existant (celui utilisé pour `GOOGLE_CLIENT_ID` côté backend)
+3. Dans **Authorized JavaScript origins**, ajouter `https://<ton-domaine>`
+4. Enregistrer (peut prendre quelques minutes pour se propager)
 
 ### 3. Mettre à jour le backend pour autoriser cette origine en CORS
 
