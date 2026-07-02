@@ -38,7 +38,7 @@ class LiveSharingService:
             else None
         )
         await self.repository.update_snapshot(share, json.dumps(snapshot), expires_at)
-        broadcaster.publish(share.token, snapshot)
+        broadcaster.publish(share.token, self._build_snapshot_response(snapshot).model_dump())
 
     async def get_snapshot(self, token: str) -> LiveSnapshotResponse:
         share = await self.repository.get_by_token(token)
@@ -56,6 +56,13 @@ class LiveSharingService:
         if share.score_snapshot is None:
             return LiveSnapshotResponse(status="WAITING")
         data = json.loads(share.score_snapshot)
+        return self._build_snapshot_response(data)
+
+    @staticmethod
+    def _build_snapshot_response(data: dict) -> LiveSnapshotResponse:
+        """Dérive le statut à partir de is_match_over pour produire une forme
+        de snapshot unique, utilisée à la fois par get_snapshot et push_score."""
+        data = dict(data)
         is_match_over = data.pop("is_match_over", False)
         status = "ENDED" if is_match_over else "LIVE"
         return LiveSnapshotResponse(status=status, **data)

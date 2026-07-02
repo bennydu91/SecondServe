@@ -1,5 +1,6 @@
 import time
 import pytest
+from app.features.live_sharing.broadcast import broadcaster
 from app.features.live_sharing.repository import MatchShareRepository
 from app.features.live_sharing.schemas import CreateShareRequest, LiveScoreUpdateRequest
 from app.features.live_sharing.service import LiveSharingService
@@ -95,3 +96,31 @@ async def test_get_snapshot_expired_raises_410(db_session):
     with pytest.raises(SecondServeException) as exc_info:
         await service.get_snapshot(share.token)
     assert exc_info.value.status_code == 410
+
+
+@pytest.mark.asyncio
+async def test_push_score_broadcasts_live_status_not_raw_flag(db_session):
+    service = LiveSharingService(MatchShareRepository(db_session))
+    share = await service.create_share(CreateShareRequest(session_id=6))
+    queue = broadcaster.subscribe(share.token)
+    try:
+        await service.push_score(6, make_score_update(is_match_over=False))
+        published = queue.get_nowait()
+        assert published["status"] == "LIVE"
+        assert "is_match_over" not in published
+    finally:
+        broadcaster.unsubscribe(share.token, queue)
+
+
+@pytest.mark.asyncio
+async def test_push_score_broadcasts_ended_status_when_match_over(db_session):
+    service = LiveSharingService(MatchShareRepository(db_session))
+    share = await service.create_share(CreateShareRequest(session_id=7))
+    queue = broadcaster.subscribe(share.token)
+    try:
+        await service.push_score(7, make_score_update(is_match_over=True))
+        published = queue.get_nowait()
+        assert published["status"] == "ENDED"
+        assert "is_match_over" not in published
+    finally:
+        broadcaster.unsubscribe(share.token, queue)
