@@ -1,0 +1,102 @@
+.card {
+  width: 100%;
+  max-width: 600px;
+  background: #ffffff;
+  border: 1px solid #e4e5e2;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px -30px rgba(20, 22, 26, 0.3);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  padding: 14px 26px;
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: #9aa0a8;
+  border-bottom: 1px solid #ededea;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  padding: 20px 26px;
+}
+
+.playerRowLeading {
+  background: rgba(200, 255, 61, 0.14);
+}
+
+.playerName {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.avatarLeading {
+  background: #14161a;
+  color: #c8ff3d;
+}
+
+.avatarTrailing {
+  background: #f4f4f1;
+  border: 1px solid #e4e5e2;
+  color: #6a6f78;
+}
+
+.sets {
+  width: 44px;
+  text-align: center;
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  font-feature-settings: "tnum";
+}
+
+.setsMuted {
+  color: #9aa0a8;
+}
+
+.games {
+  width: 62px;
+  text-align: center;
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 46px;
+  color: #14161a;
+  line-height: 0.9;
+  font-feature-settings: "tnum";
+}
+
+.points {
+  width: 58px;
+  text-align: center;
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 32px;
+  color: #1f6fe5;
+  font-feature-settings: "tnum";
+}
+
+.divider {
+  height: 1px;
+  background: #ededea;
+}
