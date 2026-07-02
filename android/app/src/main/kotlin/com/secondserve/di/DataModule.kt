@@ -16,6 +16,7 @@ import com.secondserve.data.local.dao.SyncQueueDao
 import com.secondserve.data.local.dao.WorkAxisDao
 import com.secondserve.data.local.db.SecondServeDatabase
 import com.secondserve.data.remote.api.VpsApiService
+import com.secondserve.data.repository.LiveShareRepositoryImpl
 import com.secondserve.data.repository.PlayerProfileRepositoryImpl
 import com.secondserve.data.repository.WorkAxisRepositoryImpl
 import com.secondserve.data.repository.NotificationRepositoryImpl
@@ -27,6 +28,7 @@ import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.synthesis.SynthesisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
+import com.secondserve.domain.repository.LiveShareRepository
 import com.secondserve.domain.repository.NotificationRepository
 import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.WorkAxisRepository
@@ -164,6 +166,14 @@ object DataModule {
         workAxisRepository: WorkAxisRepository
     ): PlayerProfileRepository =
         PlayerProfileRepositoryImpl(dao, vpsApiService, workAxisRepository)
+
+    @Provides
+    @Singleton
+    fun provideLiveShareRepository(
+        dao: LiveShareDao,
+        vpsApiService: VpsApiService
+    ): LiveShareRepository =
+        LiveShareRepositoryImpl(dao, vpsApiService)
 
     @Provides
     @Singleton
