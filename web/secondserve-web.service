@@ -1,0 +1,15 @@
+[Unit]
+Description=SecondServe Web (Next.js — page publique de suivi live)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/secondserve-web
+EnvironmentFile=/opt/secondserve-web/.env.production.local
+ExecStart=/usr/bin/node /opt/secondserve-web/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
