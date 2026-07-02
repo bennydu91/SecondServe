@@ -30,9 +30,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -73,15 +76,20 @@ fun MatchScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val colors = LocalBroadcastColors.current
+    val context = LocalContext.current
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is MatchSideEffect.SessionClosed -> onSessionClosed()
             is MatchSideEffect.ShowError ->
                 scope.launch { snackbarHostState.showSnackbar(effect.message) }
-            // Le bouton "Partager" et la gestion de cet effet (partage système / copie du lien)
-            // sont ajoutés par la tâche suivante (Android Task 5).
-            is MatchSideEffect.ShareMatch -> {}
+            is MatchSideEffect.ShareMatch -> {
+                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, "Suis mon match en direct : ${effect.url}")
+                }
+                context.startActivity(Intent.createChooser(sendIntent, "Partager le match"))
+            }
         }
     }
 
@@ -123,12 +131,19 @@ fun MatchScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.muted
                 )
-                CircleIconButton(
-                    onClick = viewModel::onCloseRequested,
-                    icon = Icons.Filled.Close,
-                    contentDescription = "Terminer la session",
-                    enabled = !state.isClosing
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CircleIconButton(
+                        onClick = viewModel::onShareRequested,
+                        icon = Icons.Filled.Share,
+                        contentDescription = "Partager le match"
+                    )
+                    CircleIconButton(
+                        onClick = viewModel::onCloseRequested,
+                        icon = Icons.Filled.Close,
+                        contentDescription = "Terminer la session",
+                        enabled = !state.isClosing
+                    )
+                }
             }
 
             score?.let { liveScore ->
