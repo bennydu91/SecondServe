@@ -79,6 +79,9 @@ fun MatchScreen(
             is MatchSideEffect.SessionClosed -> onSessionClosed()
             is MatchSideEffect.ShowError ->
                 scope.launch { snackbarHostState.showSnackbar(effect.message) }
+            // Le bouton "Partager" et la gestion de cet effet (partage système / copie du lien)
+            // sont ajoutés par la tâche suivante (Android Task 5).
+            is MatchSideEffect.ShareMatch -> {}
         }
     }
 

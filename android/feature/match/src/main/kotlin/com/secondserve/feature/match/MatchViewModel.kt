@@ -7,12 +7,17 @@ import com.secondserve.domain.AppResult
 import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.model.CoachingResult
+import com.secondserve.domain.model.LiveShareContext
+import com.secondserve.domain.model.LiveShareInfo
 import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.model.Player
+import com.secondserve.domain.repository.LiveShareRepository
+import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.ScoreRepository
 import com.secondserve.domain.repository.SessionRepository
 import com.secondserve.domain.sync.SyncScheduler
 import com.secondserve.domain.usecase.match.CloseMatchUseCase
+import com.secondserve.domain.usecase.match.ShareMatchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.ContainerHost
@@ -30,6 +35,9 @@ class MatchViewModel @Inject constructor(
     private val dataLayerEventBus: DataLayerEventBus,
     private val coachingCachePrefetcher: CoachingCachePrefetcher,
     private val coachingResolver: CoachingResolver,
+    private val liveShareRepository: LiveShareRepository,
+    private val playerProfileRepository: PlayerProfileRepository,
+    private val shareMatchUseCase: ShareMatchUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel(), ContainerHost<MatchUiState, MatchSideEffect> {
 
@@ -47,9 +55,35 @@ class MatchViewModel @Inject constructor(
             if (session != null) {
                 intent {
                     reduce {
-                        state.copy(opponentName = session.opponent, sessionStartedAt = session.createdAt)
+                        state.copy(
+                            opponentName = session.opponent,
+                            sessionStartedAt = session.createdAt,
+                            surface = session.surface,
+                            tournament = session.tournament,
+                            competitionType = session.competitionType
+                        )
                     }
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            when (val result = playerProfileRepository.getProfile()) {
+                is AppResult.Success -> {
+                    val displayName = result.data?.displayName
+                    if (!displayName.isNullOrBlank()) {
+                        intent { reduce { state.copy(playerDisplayName = displayName) } }
+                    }
+                }
+                is AppResult.Error -> Timber.w(result.exception, "MatchViewModel: lecture du profil échouée")
+                AppResult.Loading -> {}
+            }
+        }
+
+        viewModelScope.launch {
+            val cached = liveShareRepository.getCachedShare(sessionId)
+            if (cached != null) {
+                intent { reduce { state.copy(shareInfo = cached) } }
             }
         }
 
@@ -102,6 +136,24 @@ class MatchViewModel @Inject constructor(
                         reduce { state.copy(currentSetGameLog = newLog, momentumPercent = momentum) }
                     }
                 }
+
+                val currentState = container.stateFlow.value
+                currentState.shareInfo?.let {
+                    viewModelScope.launch {
+                        liveShareRepository.pushScore(
+                            sessionId = sessionId,
+                            score = score,
+                            context = LiveShareContext(
+                                playerAName = currentState.playerDisplayName,
+                                playerBName = currentState.opponentName ?: "Adversaire",
+                                surface = currentState.surface ?: "HARD",
+                                tournament = currentState.tournament,
+                                competitionType = currentState.competitionType,
+                                startedAt = currentState.sessionStartedAt
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -120,6 +172,20 @@ class MatchViewModel @Inject constructor(
 
     fun onFeelingCommentChanged(comment: String) = intent {
         reduce { state.copy(feelingComment = comment) }
+    }
+
+    fun onShareRequested() = intent {
+        when (val result = shareMatchUseCase(sessionId)) {
+            is AppResult.Success -> {
+                reduce { state.copy(shareInfo = result.data) }
+                postSideEffect(MatchSideEffect.ShareMatch(result.data.url))
+            }
+            is AppResult.Error -> {
+                Timber.e(result.exception, "MatchViewModel: création du lien de partage échouée")
+                postSideEffect(MatchSideEffect.ShowError("Impossible de créer le lien de partage"))
+            }
+            AppResult.Loading -> {}
+        }
     }
 
     fun confirmClose() = intent {
@@ -161,10 +227,16 @@ data class MatchUiState(
     val opponentName: String? = null,
     val sessionStartedAt: Long = 0L,
     val currentSetGameLog: List<Player> = emptyList(),
-    val momentumPercent: Int = 50
+    val momentumPercent: Int = 50,
+    val surface: String? = null,
+    val tournament: String? = null,
+    val competitionType: String? = null,
+    val playerDisplayName: String = "Joueur",
+    val shareInfo: LiveShareInfo? = null
 )
 
 sealed class MatchSideEffect {
     data object SessionClosed : MatchSideEffect()
     data class ShowError(val message: String) : MatchSideEffect()
+    data class ShareMatch(val url: String) : MatchSideEffect()
 }

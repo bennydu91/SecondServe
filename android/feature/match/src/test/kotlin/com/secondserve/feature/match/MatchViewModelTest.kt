@@ -6,13 +6,19 @@ import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
 import com.secondserve.domain.model.CoachingResult
 import com.secondserve.domain.model.CoachingSource
+import com.secondserve.domain.model.LiveShareContext
+import com.secondserve.domain.model.LiveShareInfo
 import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.model.Player
+import com.secondserve.domain.model.PlayerProfile
 import com.secondserve.domain.model.SetResult
+import com.secondserve.domain.repository.LiveShareRepository
+import com.secondserve.domain.repository.PlayerProfileRepository
 import com.secondserve.domain.repository.ScoreRepository
 import com.secondserve.domain.repository.SessionRepository
 import com.secondserve.domain.sync.SyncScheduler
 import com.secondserve.domain.usecase.match.CloseMatchUseCase
+import com.secondserve.domain.usecase.match.ShareMatchUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -48,6 +54,9 @@ class MatchViewModelTest {
     private lateinit var dataLayerEventBus: DataLayerEventBus
     private lateinit var coachingCachePrefetcher: CoachingCachePrefetcher
     private lateinit var coachingResolver: CoachingResolver
+    private lateinit var liveShareRepository: LiveShareRepository
+    private lateinit var playerProfileRepository: PlayerProfileRepository
+    private lateinit var shareMatchUseCase: ShareMatchUseCase
     private lateinit var viewModel: MatchViewModel
 
     private val scoreFlow = MutableStateFlow<MatchScore?>(null)
@@ -63,8 +72,27 @@ class MatchViewModelTest {
         dataLayerEventBus = DataLayerEventBus()
         coachingCachePrefetcher = mockk(relaxed = true)
         coachingResolver = mockk()
+        liveShareRepository = mockk(relaxed = true)
+        playerProfileRepository = mockk()
+        shareMatchUseCase = mockk()
 
         every { scoreRepository.latestScore } returns scoreFlow
+
+        coEvery { playerProfileRepository.getProfile() } returns AppResult.Success(
+            PlayerProfile(
+                displayName = "Benjamin",
+                club = null,
+                currentSeries = null,
+                currentPoints = null,
+                playStyle = null,
+                preferredSurfaces = emptyList(),
+                coachInstruction1 = null,
+                coachInstruction2 = null,
+                coachInstruction3 = null,
+                updatedAt = 0L
+            )
+        )
+        coEvery { liveShareRepository.getCachedShare(any()) } returns null
 
         viewModel = MatchViewModel(
             scoreRepository = scoreRepository,
@@ -75,6 +103,9 @@ class MatchViewModelTest {
             dataLayerEventBus = dataLayerEventBus,
             coachingCachePrefetcher = coachingCachePrefetcher,
             coachingResolver = coachingResolver,
+            liveShareRepository = liveShareRepository,
+            playerProfileRepository = playerProfileRepository,
+            shareMatchUseCase = shareMatchUseCase,
             savedStateHandle = SavedStateHandle(mapOf("sessionId" to 10L))
         )
     }
@@ -251,5 +282,67 @@ class MatchViewModelTest {
         val state = viewModel.container.stateFlow.first { it.currentSetGameLog.isEmpty() }
 
         assertTrue(state.currentSetGameLog.isEmpty())
+    }
+
+    @Test
+    fun `onShareRequested creates share and emits ShareMatch side effect`() = runTest {
+        coEvery { shareMatchUseCase(10L) } returns AppResult.Success(
+            LiveShareInfo(token = "abc", url = "https://secondserve.app/live/abc")
+        )
+
+        val sideEffectDeferred = async {
+            viewModel.container.sideEffectFlow.first { it is MatchSideEffect.ShareMatch }
+        }
+
+        viewModel.onShareRequested()
+        val effect = sideEffectDeferred.await() as MatchSideEffect.ShareMatch
+
+        assertEquals("https://secondserve.app/live/abc", effect.url)
+        val state = viewModel.container.stateFlow.first { it.shareInfo != null }
+        assertEquals("abc", state.shareInfo?.token)
+    }
+
+    @Test
+    fun `onShareRequested emits ShowError when creation fails`() = runTest {
+        coEvery { shareMatchUseCase(10L) } returns AppResult.Error(RuntimeException("network down"))
+
+        val sideEffectDeferred = async {
+            viewModel.container.sideEffectFlow.first { it is MatchSideEffect.ShowError }
+        }
+
+        viewModel.onShareRequested()
+        sideEffectDeferred.await()
+
+        assertNull(viewModel.container.stateFlow.value.shareInfo)
+    }
+
+    @Test
+    fun `score change pushes to live share when a share is active`() = runTest {
+        coEvery { shareMatchUseCase(10L) } returns AppResult.Success(
+            LiveShareInfo(token = "abc", url = "https://secondserve.app/live/abc")
+        )
+        viewModel.onShareRequested()
+        viewModel.container.stateFlow.first { it.shareInfo != null }
+
+        scoreFlow.value = MatchScore(currentSetGamesA = 0, currentSetGamesB = 0)
+        testDispatcher.scheduler.advanceUntilIdle()
+        scoreFlow.value = MatchScore(currentSetGamesA = 1, currentSetGamesB = 0)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(atLeast = 1) {
+            liveShareRepository.pushScore(eq(10L), any(), any())
+        }
+    }
+
+    @Test
+    fun `score change does not push to live share when no share is active`() = runTest {
+        scoreFlow.value = MatchScore(currentSetGamesA = 0, currentSetGamesB = 0)
+        testDispatcher.scheduler.advanceUntilIdle()
+        scoreFlow.value = MatchScore(currentSetGamesA = 1, currentSetGamesB = 0)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            liveShareRepository.pushScore(any(), any(), any())
+        }
     }
 }
