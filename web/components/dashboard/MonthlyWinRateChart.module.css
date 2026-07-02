@@ -37,6 +37,16 @@
   min-height: 4px;
 }
 
+/* Mois sans match : piste en pointillés plutôt qu'une barre pleine, pour ne
+   pas se confondre visuellement avec un vrai 0% de victoires. */
+.barEmpty {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  border: 1px dashed var(--ss-border);
+  background: transparent;
+}
+
 .barCurrent {
   background: var(--ss-lime);
 }
