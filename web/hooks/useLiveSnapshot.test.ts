@@ -78,4 +78,45 @@ describe("useLiveSnapshot", () => {
     expect(result.current.snapshot.currentSetPointLog).toEqual(["A"]);
     expect(result.current.connectionState).toBe("live");
   });
+
+  it("arrête le staleCheck quand le match se termine, sans repasser en reconnecting", () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useLiveSnapshot("token-1", initialSnapshot));
+
+      act(() => {
+        FakeEventSource.instances[0].emit({
+          status: "ENDED",
+          completed_sets: [],
+          current_set_games_a: 6,
+          current_set_games_b: 3,
+          current_set_point_log: [],
+          current_game_points_a: "ZERO",
+          current_game_points_b: "ZERO",
+          tie_break_points_a: 0,
+          tie_break_points_b: 0,
+          is_tie_break: false,
+          is_super_tie_break: false,
+          match_winner: "A",
+          player_a_name: "Benjamin",
+          player_b_name: "Marceau",
+          surface: "CLAY",
+          tournament: null,
+          competition_type: null,
+          started_at: 1000,
+        });
+      });
+
+      expect(result.current.snapshot.status).toBe("ENDED");
+      expect(result.current.connectionState).toBe("live");
+
+      act(() => {
+        vi.advanceTimersByTime(20_000);
+      });
+
+      expect(result.current.connectionState).toBe("live");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

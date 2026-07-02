@@ -17,18 +17,21 @@ export function useLiveSnapshot(token: string, initialSnapshot: LiveSnapshot) {
     lastMessageAt.current = Date.now();
     const source = new EventSource(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/live/${token}/stream`);
 
+    const staleCheck = setInterval(() => {
+      if (Date.now() - lastMessageAt.current > 15_000) setConnectionState("reconnecting");
+    }, 5_000);
+
     source.onmessage = (event) => {
       lastMessageAt.current = Date.now();
       setConnectionState("live");
       const raw = JSON.parse(event.data);
       const next = mapSnapshot(raw);
       setSnapshot(next);
-      if (next.status === "ENDED") source.close();
+      if (next.status === "ENDED") {
+        source.close();
+        clearInterval(staleCheck);
+      }
     };
-
-    const staleCheck = setInterval(() => {
-      if (Date.now() - lastMessageAt.current > 15_000) setConnectionState("reconnecting");
-    }, 5_000);
 
     return () => {
       source.close();
