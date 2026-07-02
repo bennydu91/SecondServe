@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { POST } from "./route";
-import { SESSION_COOKIE } from "@/lib/auth";
+import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from "@/lib/auth";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -38,6 +38,10 @@ describe("POST /api/auth/callback", () => {
     const cookie = response.cookies.get(SESSION_COOKIE);
     expect(cookie?.value).toBe("jwt-abc");
     expect(cookie?.httpOnly).toBe(true);
+    expect(cookie?.secure).toBe(true);
+    expect(cookie?.sameSite).toBe("lax");
+    expect(cookie?.maxAge).toBe(SESSION_MAX_AGE_SECONDS);
+    expect(cookie?.path).toBe("/");
   });
 
   it("transmet le credential au backend sous google_id_token", async () => {
