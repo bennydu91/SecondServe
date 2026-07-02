@@ -11,6 +11,7 @@ import com.secondserve.domain.model.LiveShareContext
 import com.secondserve.domain.model.LiveShareInfo
 import com.secondserve.domain.model.MatchScore
 import com.secondserve.domain.repository.LiveShareRepository
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,6 +38,7 @@ class LiveShareRepositoryImpl @Inject constructor(
             )
             AppResult.Success(LiveShareInfo(token = response.token, url = response.url))
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Timber.e(e, "LiveShareRepository: création du lien échouée")
             AppResult.Error(e)
         }
@@ -71,6 +73,7 @@ class LiveShareRepositoryImpl @Inject constructor(
                 )
             )
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Timber.w(e, "LiveShareRepository: poussée du score échouée — ignorée (auto-réparant au prochain point)")
         }
     }

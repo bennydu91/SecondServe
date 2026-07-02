@@ -11,8 +11,10 @@ import com.secondserve.domain.model.Player
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -105,6 +107,31 @@ class LiveShareRepositoryImplTest {
                 eq(14L),
                 match { it.currentSetPointLog == listOf("A", "B", "A") && it.playerAName == "Benjamin" }
             )
+        }
+    }
+
+    @Test
+    fun `getOrCreateShare propagates CancellationException from API`() = runTest {
+        coEvery { dao.getBySessionId(15L) } returns null
+        coEvery { vpsApiService.createLiveShare(any()) } throws CancellationException()
+
+        try {
+            repository.getOrCreateShare(15L)
+            fail("Expected CancellationException to be thrown")
+        } catch (e: CancellationException) {
+            // Expected — CancellationException must propagate
+        }
+    }
+
+    @Test
+    fun `pushScore propagates CancellationException from API`() = runTest {
+        coEvery { vpsApiService.pushLiveScore(any(), any()) } throws CancellationException()
+
+        try {
+            repository.pushScore(16L, MatchScore(), context = context)
+            fail("Expected CancellationException to be thrown")
+        } catch (e: CancellationException) {
+            // Expected — CancellationException must propagate
         }
     }
 }
