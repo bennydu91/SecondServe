@@ -32,6 +32,19 @@
   padding: 10px 14px;
   font-size: 14px;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ss-muted);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .dot {
