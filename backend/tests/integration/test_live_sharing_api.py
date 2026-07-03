@@ -155,3 +155,28 @@ async def test_stream_first_event_is_current_snapshot(client, db_session):
     payload = json_module.loads(first_chunk[len("data: "):].strip())
     assert payload["status"] == "LIVE"
     assert payload["current_set_games_a"] == 2
+
+
+@pytest.mark.asyncio
+async def test_get_share_by_session_requires_jwt(client):
+    response = await client.get("/api/v1/live/shares/by-session/1")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_share_by_session_returns_existing_share(client):
+    token = make_token()
+    create_resp = await client.post(
+        "/api/v1/live/shares", json={"session_id": 20}, headers=auth(token)
+    )
+    response = await client.get("/api/v1/live/shares/by-session/20", headers=auth(token))
+    assert response.status_code == 200
+    assert response.json()["token"] == create_resp.json()["token"]
+
+
+@pytest.mark.asyncio
+async def test_get_share_by_session_404_when_no_share(client):
+    token = make_token()
+    response = await client.get("/api/v1/live/shares/by-session/999", headers=auth(token))
+    assert response.status_code == 404
+    assert response.json()["error_code"] == "SHARE_NOT_FOUND"

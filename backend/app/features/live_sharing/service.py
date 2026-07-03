@@ -27,6 +27,19 @@ class LiveSharingService:
             url=f"{settings.public_web_base_url}/live/{share.token}",
         )
 
+    async def get_share_by_session(self, session_id: int) -> CreateShareResponse:
+        share = await self.repository.get_by_session(session_id)
+        if share is None:
+            raise SecondServeException(
+                error_code="SHARE_NOT_FOUND",
+                message="Aucun lien de partage pour cette session",
+                status_code=404,
+            )
+        return CreateShareResponse(
+            token=share.token,
+            url=f"{settings.public_web_base_url}/live/{share.token}",
+        )
+
     async def push_score(self, session_id: int, request: LiveScoreUpdateRequest) -> None:
         share = await self.repository.get_by_session(session_id)
         if share is None:

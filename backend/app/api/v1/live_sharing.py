@@ -37,6 +37,18 @@ async def create_share(
     return await service.create_share(request)
 
 
+@router.get(
+    "/shares/by-session/{session_id}",
+    response_model=CreateShareResponse,
+    dependencies=[Depends(verify_jwt)],
+)
+async def get_share_by_session(
+    session_id: int,
+    service: LiveSharingService = Depends(get_live_sharing_service),
+):
+    return await service.get_share_by_session(session_id)
+
+
 @router.post(
     "/sessions/{session_id}/score",
     status_code=204,
