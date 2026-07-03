@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionToken } from "@/lib/auth";
-import { finalizeSession } from "@/lib/api";
+import { finalizeSession, UnauthorizedError } from "@/lib/api";
 import type { SessionDto } from "@/lib/types";
 
 type RouteParams = { params: Promise<{ sessionId: string }> };
@@ -18,6 +18,11 @@ export async function POST(request: Request, { params }: RouteParams) {
 
   await params; // sessionId déjà présent dans body.session.id — conservé pour cohérence de route
   const body = (await request.json()) as FinalizeBody;
-  await finalizeSession(token, body);
-  return new NextResponse(null, { status: 204 });
+  try {
+    await finalizeSession(token, body);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    if (error instanceof UnauthorizedError) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    throw error;
+  }
 }

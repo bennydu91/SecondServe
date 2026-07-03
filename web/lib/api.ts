@@ -285,6 +285,7 @@ export async function pushLiveScore(token: string, sessionId: number, payload: L
     }),
     cache: "no-store",
   });
+  if (response.status === 401) throw new UnauthorizedError();
   if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
 }
 
@@ -329,5 +330,6 @@ export async function finalizeSession(token: string, input: FinalizeSessionInput
     }),
     cache: "no-store",
   });
+  if (response.status === 401) throw new UnauthorizedError();
   if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
 }
