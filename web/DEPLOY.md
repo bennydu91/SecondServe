@@ -1,5 +1,7 @@
 # Déploiement SecondServe Web (page publique live) sur VPS
 
+> **Le dépôt de développement vit sur ce même VPS** (`/root/SecondServe`) — c'est aussi lui qui héberge les services en production. Le build s'exécute directement sur le VPS et le transfert vers `/opt/secondserve-web` est une simple copie locale, pas un envoi réseau vers une autre machine.
+
 ## Prérequis
 
 - Node.js 20+ installé sur le VPS
@@ -8,14 +10,14 @@
 
 ## Étapes
 
-### 1. Build en local puis transfert du build standalone
+### 1. Build sur le VPS puis copie locale du build standalone
 
 ```bash
-cd web
+cd /root/SecondServe/web
 yarn build
-rsync -avz .next/standalone/ user@<vps-ip>:/opt/secondserve-web/
-rsync -avz .next/static/ user@<vps-ip>:/opt/secondserve-web/.next/static/
-rsync -avz public/ user@<vps-ip>:/opt/secondserve-web/public/
+rsync -avz .next/standalone/ /opt/secondserve-web/
+rsync -avz .next/static/ /opt/secondserve-web/.next/static/
+rsync -avz public/ /opt/secondserve-web/public/
 ```
 
 ### 2. Configurer les variables d'environnement sur le VPS
@@ -69,9 +71,11 @@ curl -s https://<ton-domaine>/live/does-not-exist | grep -i "Lien invalide"
 
 ## Mise à jour
 
+Toujours en local sur le VPS, depuis le dépôt de dev :
+
 ```bash
-cd web && yarn build
-rsync -avz .next/standalone/ user@<vps-ip>:/opt/secondserve-web/
-rsync -avz .next/static/ user@<vps-ip>:/opt/secondserve-web/.next/static/
-ssh user@<vps-ip> "sudo systemctl restart secondserve-web"
+cd /root/SecondServe/web && yarn build
+rsync -avz .next/standalone/ /opt/secondserve-web/
+rsync -avz .next/static/ /opt/secondserve-web/.next/static/
+sudo systemctl restart secondserve-web
 ```

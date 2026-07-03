@@ -1,8 +1,9 @@
 # Déploiement SecondServe Backend sur VPS
 
+> **Le dépôt de développement vit sur ce même VPS** (`/root/SecondServe`) — c'est aussi lui qui héberge les services en production. Il n'y a donc ni SSH ni transfert réseau entre "dev" et "prod" : le répertoire de déploiement `/opt/secondserve-backend` est un simple répertoire local, séparé du dépôt git pour isoler les permissions (`www-data` vs `root`). Toutes les commandes ci-dessous s'exécutent directement sur le VPS, en local.
+
 ## Prérequis
 
-- VPS Ubuntu 22.04+ (4 vCPU / 16 Go RAM recommandés)
 - `uv` installé (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Tunnel Cloudflare configuré (remplace nginx + Certbot — le HTTPS est géré par Cloudflare)
 - Domaine géré par Cloudflare
@@ -12,10 +13,12 @@
 
 ## Étapes de déploiement
 
-### 1. Copier les fichiers du backend sur le VPS
+### 1. Copier les fichiers du backend vers le répertoire de déploiement
+
+Copie locale (même machine) depuis le dépôt de dev vers `/opt/secondserve-backend`, à l'écart du `.venv` de dev :
 
 ```bash
-rsync -avz --exclude='.venv' backend/ user@<vps-ip>:/opt/secondserve-backend/
+rsync -avz --exclude='.venv' /root/SecondServe/backend/ /opt/secondserve-backend/
 ```
 
 ### 2. Installer les dépendances
@@ -145,9 +148,11 @@ L'authentification repose sur Google OAuth2 — aucune dépendance Firebase. Le 
 
 ## Mise à jour du backend
 
+Toujours en local sur le VPS, depuis le dépôt de dev :
+
 ```bash
-rsync -avz --exclude='.venv' backend/ user@<vps-ip>:/opt/secondserve-backend/
-ssh user@<vps-ip> "cd /opt/secondserve-backend && UV_PYTHON_INSTALL_DIR=/opt/uv-python UV_PYTHON=3.12 uv sync --no-dev && uv run alembic upgrade head && sudo systemctl restart secondserve-backend"
+rsync -avz --exclude='.venv' /root/SecondServe/backend/ /opt/secondserve-backend/
+cd /opt/secondserve-backend && UV_PYTHON_INSTALL_DIR=/opt/uv-python UV_PYTHON=3.12 uv sync --no-dev && uv run alembic upgrade head && sudo systemctl restart secondserve-backend
 ```
 
 > **`--exclude='.venv'`** est indispensable : sans lui, le `.venv` local (dont les shebangs pointent vers le chemin de développement) écrase celui construit sur le VPS et le service refuse de démarrer avec `Permission denied`.

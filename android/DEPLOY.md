@@ -1,9 +1,12 @@
 # Déploiement SecondServe — Android
 
+> **Le dépôt de développement et le build Gradle vivent sur le VPS** (`/root/SecondServe`, même machine que le backend). Les appareils physiques (Pixel 9 Pro en USB, Pixel Watch en débogage Wi-Fi) sont branchés en `adb` sur le **poste local** de Benny, pas sur le VPS. Il faut donc systématiquement rapatrier l'APK du VPS vers le poste local via `scp` avant de pouvoir l'installer — ne jamais lancer `./gradlew :app:installDebug` ou `:wear:installDebug` depuis le VPS, ça échoue avec `No connected devices!`.
+
 ## Prérequis
 
-- JDK 17+ installé (`java -version`)
-- ADB installé (`adb version`) — inclus dans le SDK Android (`/root/android-sdk/platform-tools/`)
+- JDK 17+ installé sur le VPS (`java -version`)
+- ADB installé **sur le poste local** (`adb version`) — inclus dans le SDK Android
+- Un accès SSH/`scp` du poste local vers le VPS pour rapatrier les APK
 - Backend VPS opérationnel (voir `backend/DEPLOY.md`)
 - Pixel 9 Pro et Pixel Watch sous tension, avec le mode développeur activé sur les deux
 - Web Client ID Google Cloud configuré (voir section Google Sign-In dans `backend/DEPLOY.md`)
@@ -92,8 +95,10 @@ grep "VPS_BASE_URL" app/build.gradle.kts
 
 ## Étape 4a — Build staging (premier test)
 
+Sur le VPS :
+
 ```bash
-cd android/
+cd /root/SecondServe/android/
 ./gradlew :app:assembleStaging
 ```
 
@@ -142,6 +147,8 @@ android {
 
 ### Builder
 
+Sur le VPS :
+
 ```bash
 KEYSTORE_PASSWORD=<mot-de-passe> KEY_PASSWORD=<mot-de-passe> \
   ./gradlew :app:assembleRelease
@@ -164,7 +171,19 @@ Puis `Paramètres → Système → Options pour développeurs` :
 - **Débogage USB** : activé
 - (Optionnel) **Débogage sans fil** : activé pour ADB WiFi
 
+### Rapatrier l'APK depuis le VPS
+
+Depuis le **poste local** :
+
+```bash
+scp user@<vps-ip>:/root/SecondServe/android/app/build/outputs/apk/staging/app-staging.apk .
+# ou
+scp user@<vps-ip>:/root/SecondServe/android/app/build/outputs/apk/release/app-release.apk .
+```
+
 ### Installer l'APK
+
+Toujours depuis le **poste local** (les appareils ne sont pas branchés au VPS) :
 
 ```bash
 # Vérifier que le téléphone est détecté
@@ -172,9 +191,9 @@ adb devices
 # → Liste incluant le numéro de série du Pixel 9 Pro
 
 # Installer (adapter le chemin selon le variant choisi)
-adb install app/build/outputs/apk/staging/app-staging.apk
+adb install app-staging.apk
 # ou
-adb install app/build/outputs/apk/release/app-release.apk
+adb install app-release.apk
 ```
 
 ### Accorder la permission notifications
@@ -199,9 +218,19 @@ Puis `Paramètres → Options pour les développeurs → Débogage ADB` : activ�
 
 `Paramètres → Connectivité → WiFi → (réseau connecté) → Adresse IP`
 
-### Connecter et installer
+### Builder le module wear (sur le VPS)
 
 ```bash
+cd /root/SecondServe/android/
+./gradlew :wear:assembleDebug
+```
+
+### Rapatrier l'APK et installer (depuis le poste local)
+
+```bash
+# Rapatrier l'APK du VPS
+scp user@<vps-ip>:/root/SecondServe/android/wear/build/outputs/apk/debug/wear-debug.apk .
+
 # Connecter la montre en ADB WiFi (port par défaut 5555)
 adb connect <ip-montre>:5555
 
@@ -209,11 +238,8 @@ adb connect <ip-montre>:5555
 adb devices
 # → Liste incluant <ip-montre>:5555
 
-# Builder le module wear
-./gradlew :wear:assembleDebug
-
 # Installer sur la montre (cibler par IP pour éviter l'ambiguïté)
-adb -s <ip-montre>:5555 install wear/build/outputs/apk/debug/wear-debug.apk
+adb -s <ip-montre>:5555 install wear-debug.apk
 ```
 
 ---
@@ -256,8 +282,22 @@ adb -s <ip-montre>:5555 logcat -s SecondServe:D TennisScoreEngine:D
 
 ## Mise à jour de l'app
 
+Rebuild sur le VPS, puis rapatriement + réinstallation sans désinstaller (conserve les données Room) depuis le poste local. Penser à réinstaller **les deux APK** (téléphone + montre) si le fix touche `:wear` et `:app`/`:data`.
+
+Sur le VPS :
+
 ```bash
-# Rebuild et réinstaller sans désinstaller (conserve les données Room)
-./gradlew :app:assembleStaging && adb install -r app/build/outputs/apk/staging/app-staging.apk
-./gradlew :wear:assembleDebug && adb -s <ip-montre>:5555 install -r wear/build/outputs/apk/debug/wear-debug.apk
+cd /root/SecondServe/android/
+./gradlew :app:assembleStaging
+./gradlew :wear:assembleDebug
+```
+
+Depuis le poste local :
+
+```bash
+scp user@<vps-ip>:/root/SecondServe/android/app/build/outputs/apk/staging/app-staging.apk .
+scp user@<vps-ip>:/root/SecondServe/android/wear/build/outputs/apk/debug/wear-debug.apk .
+
+adb install -r app-staging.apk
+adb -s <ip-montre>:5555 install -r wear-debug.apk
 ```
