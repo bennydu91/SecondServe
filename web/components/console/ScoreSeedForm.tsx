@@ -101,7 +101,7 @@ export function ScoreSeedForm({ sessionId, onCancel, onSeeded }: Props) {
         </label>
       </div>
 
-      <label className={styles.field}>
+      <label className={styles.checkboxRow}>
         <input type="checkbox" checked={isTieBreak} onChange={(e) => setIsTieBreak(e.target.checked)} />
         Le set en cours est un tie-break
       </label>

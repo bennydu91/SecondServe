@@ -44,6 +44,7 @@ export function ConsoleSelectionView({ activeSessions }: Props) {
         {resumingSessionId !== null && (
           <div className={styles.seedFormWrapper}>
             <ScoreSeedForm
+              key={resumingSessionId}
               sessionId={resumingSessionId}
               onCancel={() => setResumingSessionId(null)}
               onSeeded={() => router.push(`/dashboard/console/${resumingSessionId}`)}
