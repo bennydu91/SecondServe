@@ -13,6 +13,7 @@ import com.secondserve.domain.repository.SessionRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -71,6 +72,7 @@ class NewMatchViewModelTest {
             updatedAt = now
         )
         coEvery { sessionRepository.createSession(any()) } returns AppResult.Success(createdSession)
+        val sendStartSessionCalled = CompletableDeferred<Unit>()
         coEvery {
             dataLayerClient.sendStartSession(
                 sessionId = 42L,
@@ -78,7 +80,10 @@ class NewMatchViewModelTest {
                 thirdSetRule = ThirdSetRule.FULL_ADVANTAGE,
                 opponent = "Marceau"
             )
-        } returns AppResult.Success(Unit)
+        } coAnswers {
+            sendStartSessionCalled.complete(Unit)
+            AppResult.Success(Unit)
+        }
 
         viewModel.onSurfaceSelected("Clay")
         viewModel.onMatchFormatSelected(MatchFormat.BEST_OF_3)
@@ -92,7 +97,10 @@ class NewMatchViewModelTest {
         viewModel.startMatch()
         sideEffectDeferred.await()
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        // orbit-mvi traite les intents/side-effects sur ses propres dispatchers internes
+        // (Default/Unconfined, non paramétrables), donc advanceUntilIdle() seul ne garantit
+        // pas que ce launch{} fire-and-forget se soit exécuté — on l'attend explicitement.
+        sendStartSessionCalled.await()
 
         coVerify(exactly = 1) {
             dataLayerClient.sendStartSession(
@@ -117,6 +125,7 @@ class NewMatchViewModelTest {
             updatedAt = now
         )
         coEvery { sessionRepository.createSession(any()) } returns AppResult.Success(createdSession)
+        val sendStartSessionCalled = CompletableDeferred<Unit>()
         coEvery {
             dataLayerClient.sendStartSession(
                 sessionId = 43L,
@@ -124,7 +133,10 @@ class NewMatchViewModelTest {
                 thirdSetRule = ThirdSetRule.FULL_ADVANTAGE,
                 opponent = null
             )
-        } returns AppResult.Success(Unit)
+        } coAnswers {
+            sendStartSessionCalled.complete(Unit)
+            AppResult.Success(Unit)
+        }
 
         viewModel.onSurfaceSelected("Clay")
         viewModel.onMatchFormatSelected(MatchFormat.BEST_OF_3)
@@ -138,7 +150,10 @@ class NewMatchViewModelTest {
         viewModel.startMatch()
         sideEffectDeferred.await()
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        // orbit-mvi traite les intents/side-effects sur ses propres dispatchers internes
+        // (Default/Unconfined, non paramétrables), donc advanceUntilIdle() seul ne garantit
+        // pas que ce launch{} fire-and-forget se soit exécuté — on l'attend explicitement.
+        sendStartSessionCalled.await()
 
         coVerify(exactly = 1) {
             dataLayerClient.sendStartSession(
