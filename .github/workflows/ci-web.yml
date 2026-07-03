@@ -26,24 +26,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
+
+      - name: Activer Corepack (Yarn épinglé via packageManager)
+        run: corepack enable
 
       - name: Installer les dépendances
         working-directory: web
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
       - name: Lint (ESLint)
         working-directory: web
-        run: npm run lint
+        run: yarn lint
 
       - name: Vérification des types (tsc)
         working-directory: web
-        run: npm run typecheck
+        run: yarn typecheck
 
       - name: Tests unitaires + couverture (Vitest)
         working-directory: web
-        run: npm run test:coverage
+        run: yarn test:coverage
 
       - name: Upload rapport de couverture
         if: always()
@@ -59,4 +62,4 @@ jobs:
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: ci-placeholder
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
           API_BASE_URL: http://localhost:8000
-        run: npm run build
+        run: yarn build

@@ -12,7 +12,7 @@
 
 ```bash
 cd web
-npm run build
+yarn build
 rsync -avz .next/standalone/ user@<vps-ip>:/opt/secondserve-web/
 rsync -avz .next/static/ user@<vps-ip>:/opt/secondserve-web/.next/static/
 rsync -avz public/ user@<vps-ip>:/opt/secondserve-web/public/
@@ -70,7 +70,7 @@ curl -s https://<ton-domaine>/live/does-not-exist | grep -i "Lien invalide"
 ## Mise à jour
 
 ```bash
-cd web && npm run build
+cd web && yarn build
 rsync -avz .next/standalone/ user@<vps-ip>:/opt/secondserve-web/
 rsync -avz .next/static/ user@<vps-ip>:/opt/secondserve-web/.next/static/
 ssh user@<vps-ip> "sudo systemctl restart secondserve-web"
