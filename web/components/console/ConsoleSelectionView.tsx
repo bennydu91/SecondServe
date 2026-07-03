@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { SessionDto } from "@/lib/types";
 import { surfaceLabel } from "@/lib/surfaces";
 import { NewMatchForm } from "./NewMatchForm";
+import { ScoreSeedForm } from "./ScoreSeedForm";
 import styles from "./ConsoleSelectionView.module.css";
 
 type Props = { activeSessions: SessionDto[] };
@@ -12,6 +13,7 @@ type Props = { activeSessions: SessionDto[] };
 export function ConsoleSelectionView({ activeSessions }: Props) {
   const router = useRouter();
   const [showNewMatchForm, setShowNewMatchForm] = useState(false);
+  const [resumingSessionId, setResumingSessionId] = useState<number | null>(null);
 
   return (
     <div className={styles.container}>
@@ -31,13 +33,22 @@ export function ConsoleSelectionView({ activeSessions }: Props) {
                 <button
                   type="button"
                   className={styles.resumeButton}
-                  onClick={() => router.push(`/dashboard/console/${session.id}`)}
+                  onClick={() => setResumingSessionId(session.id)}
                 >
                   Reprendre
                 </button>
               </li>
             ))}
           </ul>
+        )}
+        {resumingSessionId !== null && (
+          <div className={styles.seedFormWrapper}>
+            <ScoreSeedForm
+              sessionId={resumingSessionId}
+              onCancel={() => setResumingSessionId(null)}
+              onSeeded={() => router.push(`/dashboard/console/${resumingSessionId}`)}
+            />
+          </div>
         )}
       </section>
 

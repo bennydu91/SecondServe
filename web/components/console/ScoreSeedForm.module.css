@@ -1,0 +1,81 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--ss-surface);
+  border: 1px solid var(--ss-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--ss-muted);
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ss-muted);
+  flex: 1;
+}
+
+.field input,
+.field select {
+  min-height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--ss-border);
+  background: var(--ss-bg);
+  color: var(--ss-text);
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.error {
+  color: var(--ss-hot);
+  font-size: 13px;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.cancelButton,
+.submitButton {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancelButton {
+  background: transparent;
+  border: 1px solid var(--ss-border);
+  color: var(--ss-muted);
+}
+
+.submitButton {
+  border: none;
+  background: var(--ss-lime);
+  color: var(--ss-lime-text);
+}
+
+@media (min-width: 900px) {
+  .row {
+    flex-direction: row;
+  }
+}
