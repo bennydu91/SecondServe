@@ -6,6 +6,8 @@ import type {
   PointContext,
   ScoreSeed,
 } from "./types";
+import type { MatchScore } from "./scoreEngine";
+import { emptyMatchScore } from "./scoreEngine";
 
 export class ShareNotFoundError extends Error {}
 export class ShareExpiredError extends Error {}
@@ -287,6 +289,35 @@ export async function pushLiveScore(token: string, sessionId: number, payload: L
   });
   if (response.status === 401) throw new UnauthorizedError();
   if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
+}
+
+type RawScoreSeed = {
+  completed_sets: { games_a: number; games_b: number }[];
+  current_set_games_a: number;
+  current_set_games_b: number;
+  current_game_points_a: string;
+  current_game_points_b: string;
+  tie_break_points_a: number;
+  tie_break_points_b: number;
+  is_tie_break: boolean;
+  is_super_tie_break: boolean;
+};
+
+export function parseScoreSeed(scoreSeedJson: string | null): MatchScore | null {
+  if (scoreSeedJson === null) return null;
+  const raw = JSON.parse(scoreSeedJson) as RawScoreSeed;
+  return {
+    ...emptyMatchScore(),
+    completedSets: raw.completed_sets.map((s) => ({ gamesA: s.games_a, gamesB: s.games_b })),
+    currentSetGamesA: raw.current_set_games_a,
+    currentSetGamesB: raw.current_set_games_b,
+    currentGamePointsA: raw.current_game_points_a as MatchScore["currentGamePointsA"],
+    currentGamePointsB: raw.current_game_points_b as MatchScore["currentGamePointsB"],
+    tieBreakPointsA: raw.tie_break_points_a,
+    tieBreakPointsB: raw.tie_break_points_b,
+    isTieBreak: raw.is_tie_break,
+    isSuperTieBreak: raw.is_super_tie_break,
+  };
 }
 
 export type FinalizeSessionInput = {

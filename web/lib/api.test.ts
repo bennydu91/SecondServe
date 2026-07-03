@@ -9,6 +9,7 @@ import {
   getShareForSession,
   pushLiveScore,
   finalizeSession,
+  parseScoreSeed,
 } from "./api";
 
 const rawSnapshot = {
@@ -314,6 +315,43 @@ describe("finalizeSession", () => {
       first_serve_percent_opponent: null,
       winners_self: null,
       winners_opponent: null,
+    });
+  });
+});
+
+describe("parseScoreSeed", () => {
+  it("retourne null quand scoreSeedJson est null", () => {
+    expect(parseScoreSeed(null)).toBeNull();
+  });
+
+  it("parse le JSON snake_case du backend vers un MatchScore camelCase", () => {
+    const json = JSON.stringify({
+      completed_sets: [{ games_a: 6, games_b: 4 }],
+      current_set_games_a: 2,
+      current_set_games_b: 1,
+      current_game_points_a: "FORTY",
+      current_game_points_b: "THIRTY",
+      tie_break_points_a: 0,
+      tie_break_points_b: 0,
+      is_tie_break: false,
+      is_super_tie_break: false,
+    });
+
+    const score = parseScoreSeed(json);
+
+    expect(score).toEqual({
+      completedSets: [{ gamesA: 6, gamesB: 4 }],
+      currentSetGamesA: 2,
+      currentSetGamesB: 1,
+      currentSetPointLog: [],
+      currentGamePointsA: "FORTY",
+      currentGamePointsB: "THIRTY",
+      tieBreakPointsA: 0,
+      tieBreakPointsB: 0,
+      isTieBreak: false,
+      isSuperTieBreak: false,
+      isMatchOver: false,
+      matchWinner: null,
     });
   });
 });

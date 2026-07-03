@@ -1,0 +1,62 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.centerColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.undoButton {
+  min-height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--ss-border);
+  background: var(--ss-surface);
+  color: var(--ss-text);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.undoButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: var(--ss-hot);
+  font-size: 13px;
+  margin: 0;
+}
+
+.trailTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ss-muted);
+  margin: 0 0 12px;
+}
+
+@media (min-width: 900px) {
+  .grid {
+    display: grid;
+    grid-template-columns: 340px 1fr 288px;
+    align-items: start;
+    gap: 24px;
+  }
+}

@@ -1,0 +1,38 @@
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--ss-surface);
+  border: 1px solid var(--ss-border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.tileValue {
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--ss-text);
+}
+
+.tileLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ss-muted);
+}
+
+@media (min-width: 900px) {
+  .tiles {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

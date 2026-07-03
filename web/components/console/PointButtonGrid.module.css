@@ -1,0 +1,54 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.groupTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ss-muted);
+  margin: 0 0 12px;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.selfButton,
+.opponentButton {
+  min-height: 48px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 16px;
+}
+
+.selfButton:disabled,
+.opponentButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selfButton {
+  border: none;
+  background: var(--ss-lime);
+  color: var(--ss-lime-text);
+}
+
+.opponentButton {
+  border: 1px solid var(--ss-border);
+  background: var(--ss-surface);
+  color: var(--ss-text);
+}
+
+@media (min-width: 900px) {
+  .buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+}
