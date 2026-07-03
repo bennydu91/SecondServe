@@ -1,5 +1,15 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { getLiveSnapshot, ShareExpiredError, ShareNotFoundError, getSessions, UnauthorizedError } from "./api";
+import {
+  createSession,
+  getPoints,
+  postPoint,
+  deleteLastPoint,
+  putScoreSeed,
+  getShareForSession,
+  pushLiveScore,
+  finalizeSession,
+} from "./api";
 
 const rawSnapshot = {
   status: "LIVE",
@@ -107,5 +117,203 @@ describe("getSessions", () => {
   it("lève UnauthorizedError sur 401", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) }));
     await expect(getSessions("expired-token")).rejects.toThrow(UnauthorizedError);
+  });
+});
+
+describe("createSession", () => {
+  it("envoie les champs surface/format/date en snake_case et mappe la réponse", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ ...rawSession, id: 42 }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await createSession("jwt-token", {
+      surface: "CLAY",
+      matchFormat: "BEST_OF_3",
+      thirdSetRule: "FULL_ADVANTAGE",
+      createdAt: 5_000_000,
+    });
+
+    expect(result.id).toBe(42);
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body).toEqual({
+      surface: "CLAY",
+      match_format: "BEST_OF_3",
+      third_set_rule: "FULL_ADVANTAGE",
+      opponent: null,
+      competition_type: null,
+      tournament: null,
+      created_at: 5_000_000,
+    });
+  });
+});
+
+describe("points client", () => {
+  it("getPoints mappe la liste snake_case en PointDto[]", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [
+            { id: 1, session_id: 7, scorer: "A", context: "ACE", sequence_num: 1, recorded_at: 1000 },
+          ],
+        }),
+      })
+    );
+    const points = await getPoints("jwt-token", 7);
+    expect(points).toEqual([
+      { id: 1, sessionId: 7, scorer: "A", context: "ACE", sequenceNum: 1, recordedAt: 1000 },
+    ]);
+  });
+
+  it("postPoint envoie { context } et mappe la réponse", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ id: 2, session_id: 7, scorer: "B", context: "DOUBLE_FAULT", sequence_num: 2, recorded_at: 2000 }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const point = await postPoint("jwt-token", 7, "DOUBLE_FAULT");
+    expect(point.scorer).toBe("B");
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(init.body as string)).toEqual({ context: "DOUBLE_FAULT" });
+  });
+
+  it("deleteLastPoint appelle DELETE sans lever d'erreur sur 204", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 204 }));
+    await expect(deleteLastPoint("jwt-token", 7)).resolves.toBeUndefined();
+  });
+});
+
+describe("putScoreSeed", () => {
+  it("envoie le seed en snake_case et mappe la SessionDto retournée", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ...rawSession, score_seed_json: '{"a":1}' }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await putScoreSeed("jwt-token", 7, {
+      completedSets: [{ gamesA: 6, gamesB: 4 }],
+      currentSetGamesA: 2,
+      currentSetGamesB: 1,
+      currentGamePointsA: "FORTY",
+      currentGamePointsB: "THIRTY",
+      tieBreakPointsA: 0,
+      tieBreakPointsB: 0,
+      isTieBreak: false,
+      isSuperTieBreak: false,
+    });
+
+    expect(result.scoreSeedJson).toBe('{"a":1}');
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body.completed_sets).toEqual([{ games_a: 6, games_b: 4 }]);
+    expect(body.current_set_games_a).toBe(2);
+  });
+});
+
+describe("live share client", () => {
+  it("getShareForSession retourne null sur 404", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+    expect(await getShareForSession("jwt-token", 7)).toBeNull();
+  });
+
+  it("getShareForSession retourne { token, url } quand le partage existe", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ token: "abc", url: "https://x/live/abc" }) })
+    );
+    expect(await getShareForSession("jwt-token", 7)).toEqual({ token: "abc", url: "https://x/live/abc" });
+  });
+
+  it("pushLiveScore convertit le payload camelCase en snake_case", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+    vi.stubGlobal("fetch", fetchMock);
+    await pushLiveScore("jwt-token", 7, {
+      completedSets: [],
+      currentSetGamesA: 1,
+      currentSetGamesB: 0,
+      currentSetPointLog: ["A"],
+      currentGamePointsA: "FIFTEEN",
+      currentGamePointsB: "ZERO",
+      tieBreakPointsA: 0,
+      tieBreakPointsB: 0,
+      isTieBreak: false,
+      isSuperTieBreak: false,
+      isMatchOver: false,
+      matchWinner: null,
+      playerAName: "Benjamin",
+      playerBName: "Marceau",
+      surface: "CLAY",
+      tournament: null,
+      competitionType: null,
+      startedAt: 1000,
+    });
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body.current_set_point_log).toEqual(["A"]);
+    expect(body.player_a_name).toBe("Benjamin");
+  });
+});
+
+describe("finalizeSession", () => {
+  it("enveloppe la session dans un SyncSessionDto avec les champs post-completion à null", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ synced_sessions: 1 }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await finalizeSession("jwt-token", {
+      session: {
+        id: 7,
+        surface: "CLAY",
+        matchFormat: "BEST_OF_3",
+        thirdSetRule: "FULL_ADVANTAGE",
+        opponent: "Marceau",
+        competitionType: null,
+        tournament: null,
+        status: "ACTIVE",
+        sessionType: "MATCH",
+        result: null,
+        scoreText: null,
+        scoreSeedJson: null,
+        createdAt: 1000,
+        updatedAt: 1000,
+      },
+      status: "COMPLETED",
+      result: "VICTORY",
+      scoreText: "6-4 · 6-3",
+      updatedAt: 9999,
+    });
+
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body.sessions[0]).toEqual({
+      client_id: 7,
+      surface: "CLAY",
+      match_format: "BEST_OF_3",
+      third_set_rule: "FULL_ADVANTAGE",
+      opponent: "Marceau",
+      competition_type: null,
+      tournament: null,
+      status: "COMPLETED",
+      session_type: "MATCH",
+      result: "VICTORY",
+      feeling_rating: null,
+      feeling_comment: null,
+      created_at: 1000,
+      updated_at: 9999,
+      scheduled_at: null,
+      score_text: "6-4 · 6-3",
+      first_serve_percent_self: null,
+      first_serve_percent_opponent: null,
+      winners_self: null,
+      winners_opponent: null,
+    });
   });
 });

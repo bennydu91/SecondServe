@@ -33,6 +33,38 @@ export type SessionDto = {
   sessionType: "MATCH" | "TRAINING";
   result: string | null;
   scoreText: string | null;
+  scoreSeedJson: string | null;
   createdAt: number;
   updatedAt: number;
+};
+
+export type PointContext =
+  | "ACE"
+  | "WINNER"
+  | "FORCED_ERROR"
+  | "UNFORCED_ERROR_OPPONENT"
+  | "ACE_OPPONENT"
+  | "WINNER_OPPONENT"
+  | "UNFORCED_ERROR_SELF"
+  | "DOUBLE_FAULT";
+
+export type PointDto = {
+  id: number;
+  sessionId: number;
+  scorer: "A" | "B";
+  context: PointContext | null;
+  sequenceNum: number;
+  recordedAt: number;
+};
+
+export type ScoreSeed = {
+  completedSets: SetResult[];
+  currentSetGamesA: number;
+  currentSetGamesB: number;
+  currentGamePointsA: string;
+  currentGamePointsB: string;
+  tieBreakPointsA: number;
+  tieBreakPointsB: number;
+  isTieBreak: boolean;
+  isSuperTieBreak: boolean;
 };
