@@ -118,4 +118,39 @@ describe("ConsoleScreen", () => {
     await waitFor(() => expect(screen.getByText(/match terminé/i)).toBeInTheDocument());
     expect(screen.getByRole("button", { name: "Ace" })).toBeDisabled();
   });
+
+  it("affiche un message distinct (pas 'échec de l'enregistrement') si la clôture automatique échoue après un point gagnant", async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/share")) return jsonResponse(null);
+      if (url.endsWith("/points") && init?.method === "POST") {
+        return jsonResponse({ id: 1, sessionId: 7, scorer: "A", context: "ACE", sequenceNum: 1, recordedAt: 1000 });
+      }
+      if (url.endsWith("/finalize") && init?.method === "POST") return jsonResponse(null, false);
+      return jsonResponse(null, true);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    // BEST_OF_1, déjà à 5-0 jeux et 40-0 : le prochain point gagne le match, donc déclenche finalize().
+    const seed = JSON.stringify({
+      completed_sets: [],
+      current_set_games_a: 5,
+      current_set_games_b: 0,
+      current_game_points_a: "FORTY",
+      current_game_points_b: "ZERO",
+      tie_break_points_a: 0,
+      tie_break_points_b: 0,
+      is_tie_break: false,
+      is_super_tie_break: false,
+    });
+    render(<ConsoleScreen session={session({ scoreSeedJson: seed })} initialPoints={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ace" }));
+
+    // Le point a bien été enregistré : le match apparaît terminé côté client...
+    await waitFor(() => expect(screen.getByText(/match terminé/i)).toBeInTheDocument());
+    // ...mais un message distinct signale l'échec de la clôture automatique...
+    expect(screen.getByText(/clôture automatique a échoué/i)).toBeInTheDocument();
+    // ...et surtout PAS le message générique d'échec d'enregistrement du point (qui serait trompeur :
+    // le point a bel et bien été enregistré).
+    expect(screen.queryByText(/échec de l'enregistrement/i)).not.toBeInTheDocument();
+  });
 });

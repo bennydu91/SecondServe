@@ -90,7 +90,7 @@ export function ConsoleScreen({ session, initialPoints }: Props) {
   }
 
   async function finalize(nextScore: MatchScore, status: "COMPLETED" | "ACTIVE") {
-    await fetch(`/api/console/sessions/${session.id}/finalize`, {
+    const response = await fetch(`/api/console/sessions/${session.id}/finalize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -101,6 +101,7 @@ export function ConsoleScreen({ session, initialPoints }: Props) {
         updatedAt: Date.now(),
       }),
     });
+    if (!response.ok) throw new Error("finalize_failed");
   }
 
   async function handlePointClick(context: PointContext) {
@@ -123,7 +124,13 @@ export function ConsoleScreen({ session, initialPoints }: Props) {
 
       await pushLiveScoreIfShared(nextScore);
       if (nextScore.isMatchOver) {
-        await finalize(nextScore, "COMPLETED");
+        try {
+          await finalize(nextScore, "COMPLETED");
+        } catch {
+          setError(
+            "Le point a bien été enregistré et le match est terminé, mais la clôture automatique a échoué — réessayez plus tard."
+          );
+        }
       }
     } catch {
       setError("Échec de l'enregistrement du point, réessayez.");
@@ -148,7 +155,13 @@ export function ConsoleScreen({ session, initialPoints }: Props) {
 
       await pushLiveScoreIfShared(nextScore);
       if (wasMatchOver && !nextScore.isMatchOver) {
-        await finalize(nextScore, "ACTIVE");
+        try {
+          await finalize(nextScore, "ACTIVE");
+        } catch {
+          setError(
+            "L'annulation a bien été effectuée, mais la réouverture automatique du match a échoué — réessayez plus tard."
+          );
+        }
       }
     } catch {
       setError("Échec de l'annulation, réessayez.");

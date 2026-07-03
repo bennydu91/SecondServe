@@ -17,7 +17,8 @@ function pointLabel(points: string, isTieBreak: boolean, isSuperTieBreak: boolea
 export function ScoreCard({ score, selfName, opponentName }: Props) {
   const setsWonA = score.completedSets.filter((s) => s.gamesA > s.gamesB).length;
   const setsWonB = score.completedSets.filter((s) => s.gamesB > s.gamesA).length;
-  const leadingIsA = score.currentSetGamesA > score.currentSetGamesB || setsWonA >= setsWonB;
+  const leadingIsA =
+    setsWonA !== setsWonB ? setsWonA > setsWonB : score.currentSetGamesA > score.currentSetGamesB;
 
   const rows = [
     {
