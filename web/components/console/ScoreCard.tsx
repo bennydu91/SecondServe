@@ -17,20 +17,24 @@ function pointLabel(points: string, isTieBreak: boolean, isSuperTieBreak: boolea
 export function ScoreCard({ score, selfName, opponentName }: Props) {
   const setsWonA = score.completedSets.filter((s) => s.gamesA > s.gamesB).length;
   const setsWonB = score.completedSets.filter((s) => s.gamesB > s.gamesA).length;
-  const leadingIsA =
-    setsWonA !== setsWonB ? setsWonA > setsWonB : score.currentSetGamesA > score.currentSetGamesB;
+  const aLeads =
+    setsWonA !== setsWonB
+      ? setsWonA > setsWonB
+      : score.currentSetGamesA !== score.currentSetGamesB
+        ? score.currentSetGamesA > score.currentSetGamesB
+        : null; // parité exacte : personne n'est en tête
 
   const rows = [
     {
       name: selfName,
-      leading: leadingIsA,
+      leading: aLeads === true,
       sets: score.completedSets.map((s) => s.gamesA),
       games: score.currentSetGamesA,
       points: pointLabel(score.currentGamePointsA, score.isTieBreak, score.isSuperTieBreak, score.tieBreakPointsA),
     },
     {
       name: opponentName,
-      leading: !leadingIsA,
+      leading: aLeads === false,
       sets: score.completedSets.map((s) => s.gamesB),
       games: score.currentSetGamesB,
       points: pointLabel(score.currentGamePointsB, score.isTieBreak, score.isSuperTieBreak, score.tieBreakPointsB),

@@ -58,4 +58,26 @@ describe("ScoreCard", () => {
     expect(benjaminRow?.className).toContain("playerRowLeading");
     expect(marceauRow?.className).not.toContain("playerRowLeading");
   });
+
+  it("ne met en évidence aucun joueur sur un match vierge (parité totale)", () => {
+    const score = emptyMatchScore();
+    render(<ScoreCard score={score} selfName="Benjamin" opponentName="Marceau" />);
+
+    const benjaminRow = screen.getByText("Benjamin").closest(".playerRow");
+    const marceauRow = screen.getByText("Marceau").closest(".playerRow");
+
+    expect(benjaminRow?.className).not.toContain("playerRowLeading");
+    expect(marceauRow?.className).not.toContain("playerRowLeading");
+  });
+
+  it("ne met en évidence aucun joueur quand les jeux sont à égalité dans le set en cours (sets aussi à égalité)", () => {
+    const score = { ...emptyMatchScore(), currentSetGamesA: 3, currentSetGamesB: 3 };
+    render(<ScoreCard score={score} selfName="Benjamin" opponentName="Marceau" />);
+
+    const benjaminRow = screen.getByText("Benjamin").closest(".playerRow");
+    const marceauRow = screen.getByText("Marceau").closest(".playerRow");
+
+    expect(benjaminRow?.className).not.toContain("playerRowLeading");
+    expect(marceauRow?.className).not.toContain("playerRowLeading");
+  });
 });
