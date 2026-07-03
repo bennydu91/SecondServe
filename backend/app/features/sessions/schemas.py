@@ -24,6 +24,7 @@ class SessionResponse(BaseModel):
     session_type: str
     result: Optional[str] = None
     score_text: Optional[str] = None
+    score_seed_json: Optional[str] = None
     created_at: int
     updated_at: int
 
@@ -33,3 +34,20 @@ class SessionResponse(BaseModel):
 class SessionsResponse(BaseModel):
     items: list[SessionResponse]
     total: int
+
+
+class SetResultSchema(BaseModel):
+    games_a: int
+    games_b: int
+
+
+class ScoreSeedRequest(BaseModel):
+    completed_sets: list[SetResultSchema] = []
+    current_set_games_a: int = 0
+    current_set_games_b: int = 0
+    current_game_points_a: Literal["ZERO", "FIFTEEN", "THIRTY", "FORTY", "ADVANTAGE"] = "ZERO"
+    current_game_points_b: Literal["ZERO", "FIFTEEN", "THIRTY", "FORTY", "ADVANTAGE"] = "ZERO"
+    tie_break_points_a: int = 0
+    tie_break_points_b: int = 0
+    is_tie_break: bool = False
+    is_super_tie_break: bool = False

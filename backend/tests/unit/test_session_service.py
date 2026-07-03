@@ -26,6 +26,7 @@ def session_model(
     session_type="MATCH",
     result=None,
     score_text=None,
+    score_seed_json=None,
     created_at=1_000_000,
     updated_at=1_000_000
 ):
@@ -41,6 +42,7 @@ def session_model(
     m.session_type = session_type
     m.result = result
     m.score_text = score_text
+    m.score_seed_json = score_seed_json
     m.created_at = created_at
     m.updated_at = updated_at
     return m
@@ -141,3 +143,36 @@ async def test_list_sessions_empty():
 
     assert result.total == 0
     assert result.items == []
+
+
+import json
+from app.features.sessions.schemas import ScoreSeedRequest
+from app.shared.exceptions import SecondServeException
+
+
+@pytest.mark.asyncio
+async def test_update_score_seed_returns_session_response():
+    model = session_model(id=5, score_seed_json='{"current_set_games_a": 3}')
+    repo = MagicMock()
+    repo.update_score_seed = AsyncMock(return_value=model)
+    service = SessionService(repo)
+
+    request = ScoreSeedRequest(current_set_games_a=3)
+    response = await service.update_score_seed(5, request)
+
+    assert response.id == 5
+    assert response.score_seed_json == '{"current_set_games_a": 3}'
+    repo.update_score_seed.assert_called_once_with(5, json.dumps(request.model_dump()))
+
+
+@pytest.mark.asyncio
+async def test_update_score_seed_raises_when_session_not_found():
+    repo = MagicMock()
+    repo.update_score_seed = AsyncMock(return_value=None)
+    service = SessionService(repo)
+
+    with pytest.raises(SecondServeException) as exc_info:
+        await service.update_score_seed(999, ScoreSeedRequest())
+
+    assert exc_info.value.error_code == "SESSION_NOT_FOUND"
+    assert exc_info.value.status_code == 404

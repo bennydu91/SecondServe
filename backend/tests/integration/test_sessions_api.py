@@ -159,3 +159,46 @@ async def test_list_sessions_includes_score_text_field(client):
     response = await client.get("/api/v1/sessions", headers=auth(token))
     assert "score_text" in response.json()["items"][0]
     assert response.json()["items"][0]["score_text"] is None
+
+
+@pytest.mark.asyncio
+async def test_update_score_seed(client):
+    token = make_token()
+    create_resp = await client.post(
+        "/api/v1/sessions",
+        json={"surface": "CLAY", "match_format": "BEST_OF_3", "third_set_rule": "FULL_ADVANTAGE", "created_at": 1_000_000},
+        headers=auth(token),
+    )
+    session_id = create_resp.json()["id"]
+
+    response = await client.put(
+        f"/api/v1/sessions/{session_id}/score-seed",
+        json={
+            "completed_sets": [{"games_a": 6, "games_b": 4}],
+            "current_set_games_a": 2,
+            "current_set_games_b": 1,
+            "current_game_points_a": "FORTY",
+            "current_game_points_b": "THIRTY",
+            "tie_break_points_a": 0,
+            "tie_break_points_b": 0,
+            "is_tie_break": False,
+            "is_super_tie_break": False,
+        },
+        headers=auth(token),
+    )
+    assert response.status_code == 200
+    assert response.json()["score_seed_json"] is not None
+
+
+@pytest.mark.asyncio
+async def test_update_score_seed_requires_jwt(client):
+    response = await client.put("/api/v1/sessions/1/score-seed", json={})
+    assert response.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_update_score_seed_404_when_session_missing(client):
+    token = make_token()
+    response = await client.put("/api/v1/sessions/999999/score-seed", json={}, headers=auth(token))
+    assert response.status_code == 404
+    assert response.json()["error_code"] == "SESSION_NOT_FOUND"

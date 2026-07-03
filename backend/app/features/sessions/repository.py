@@ -37,3 +37,11 @@ class SessionRepository:
             select(SessionModel).order_by(SessionModel.created_at.desc())
         )
         return list(result.scalars().all())
+
+    async def update_score_seed(self, session_id: int, score_seed_json: str) -> SessionModel | None:
+        session = await self.get_by_id(session_id)
+        if session is None:
+            return None
+        session.score_seed_json = score_seed_json
+        await self.db.flush()
+        return session

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Text
 from app.core.database import Base
 
 
@@ -16,6 +16,7 @@ class SessionModel(Base):
     session_type = Column(String, nullable=False, default="MATCH")
     result = Column(String, nullable=True)
     score_text = Column(String, nullable=True)
+    score_seed_json = Column(Text, nullable=True)
     feeling_rating = Column(Integer, nullable=True)
     feeling_comment = Column(String, nullable=True)
     created_at = Column(Integer, nullable=False)

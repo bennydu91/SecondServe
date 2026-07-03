@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.features.sessions.repository import SessionRepository
-from app.features.sessions.schemas import SessionCreateRequest, SessionResponse, SessionsResponse
+from app.features.sessions.schemas import (
+    SessionCreateRequest,
+    SessionResponse,
+    SessionsResponse,
+    ScoreSeedRequest,
+)
 from app.features.sessions.service import SessionService
 
 router = APIRouter()
@@ -24,3 +29,11 @@ async def create_session(
 ):
     return await service.create_session(request)
 
+
+@router.put("/{session_id}/score-seed", response_model=SessionResponse)
+async def update_score_seed(
+    session_id: int,
+    request: ScoreSeedRequest,
+    service: SessionService = Depends(get_session_service),
+):
+    return await service.update_score_seed(session_id, request)
