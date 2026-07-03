@@ -70,4 +70,20 @@ describe("PUT /api/console/sessions/[sessionId]/score-seed", () => {
     expect(data.id).toBe(7);
     expect(vi.mocked(putScoreSeed)).toHaveBeenCalledWith("jwt-abc", 7, seed);
   });
+
+  it("retourne 401 si putScoreSeed lève UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    const { UnauthorizedError } = await import("@/lib/api");
+    vi.mocked(putScoreSeed).mockRejectedValue(new UnauthorizedError());
+
+    const response = await PUT(jsonRequest({}), params("7"));
+    expect(response.status).toBe(401);
+  });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(putScoreSeed).mockRejectedValue(new Error("boom"));
+
+    await expect(PUT(jsonRequest({}), params("7"))).rejects.toThrow("boom");
+  });
 });

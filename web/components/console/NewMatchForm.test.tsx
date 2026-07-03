@@ -35,4 +35,28 @@ describe("NewMatchForm", () => {
     fireEvent.click(screen.getByRole("button", { name: /créer et commencer/i }));
     await waitFor(() => expect(screen.getByText(/échec de la création/i)).toBeInTheDocument());
   });
+
+  it("transmet les valeurs modifiées des champs à la création de session", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 1 }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NewMatchForm onCancel={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("Surface"), { target: { value: "HARD" } });
+    fireEvent.change(screen.getByLabelText("Format"), { target: { value: "BEST_OF_1" } });
+    fireEvent.change(screen.getByLabelText("Règle du 3e set"), { target: { value: "SUPER_TIE_BREAK_10" } });
+    fireEvent.change(screen.getByLabelText("Adversaire"), { target: { value: "Novak" } });
+    fireEvent.change(screen.getByLabelText("Date du match"), { target: { value: "2026-01-15" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /créer et commencer/i }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      surface: "HARD",
+      matchFormat: "BEST_OF_1",
+      thirdSetRule: "SUPER_TIE_BREAK_10",
+      opponent: "Novak",
+    });
+  });
 });

@@ -63,4 +63,20 @@ describe("POST /api/console/sessions", () => {
       createdAt: 1000,
     });
   });
+
+  it("retourne 401 si createSession lève UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    const { UnauthorizedError } = await import("@/lib/api");
+    vi.mocked(createSession).mockRejectedValue(new UnauthorizedError());
+
+    const response = await POST(jsonRequest({ surface: "CLAY" }));
+    expect(response.status).toBe(401);
+  });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(createSession).mockRejectedValue(new Error("boom"));
+
+    await expect(POST(jsonRequest({ surface: "CLAY" }))).rejects.toThrow("boom");
+  });
 });

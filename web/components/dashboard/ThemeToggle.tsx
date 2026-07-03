@@ -10,6 +10,9 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
+    // Lu après montage (et non via un initialiseur useState) pour éviter un mismatch
+    // d'hydratation : le serveur ne connaît pas l'attribut data-theme posé côté client.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current === "dark" ? "dark" : "light");
   }, []);
 

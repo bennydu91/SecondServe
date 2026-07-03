@@ -72,4 +72,11 @@ describe("POST /api/console/sessions/[sessionId]/live-score", () => {
     expect(response.status).toBe(204);
     expect(vi.mocked(pushLiveScore)).toHaveBeenCalledWith("jwt-abc", 7, payload);
   });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(pushLiveScore).mockRejectedValue(new Error("boom"));
+
+    await expect(POST(jsonRequest(payload), params("7"))).rejects.toThrow("boom");
+  });
 });

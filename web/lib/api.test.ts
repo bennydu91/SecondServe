@@ -238,7 +238,7 @@ describe("live share client", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 });
     vi.stubGlobal("fetch", fetchMock);
     await pushLiveScore("jwt-token", 7, {
-      completedSets: [],
+      completedSets: [{ gamesA: 6, gamesB: 4 }],
       currentSetGamesA: 1,
       currentSetGamesB: 0,
       currentSetPointLog: ["A"],
@@ -261,6 +261,7 @@ describe("live share client", () => {
     const body = JSON.parse(init.body as string);
     expect(body.current_set_point_log).toEqual(["A"]);
     expect(body.player_a_name).toBe("Benjamin");
+    expect(body.completed_sets).toEqual([{ games_a: 6, games_b: 4 }]);
   });
 });
 

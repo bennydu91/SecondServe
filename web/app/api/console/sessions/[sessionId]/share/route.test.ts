@@ -36,4 +36,20 @@ describe("GET /api/console/sessions/[sessionId]/share", () => {
     expect(data.token).toBe("share-token");
     expect(vi.mocked(getShareForSession)).toHaveBeenCalledWith("jwt-abc", 7);
   });
+
+  it("retourne 401 si getShareForSession lève UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    const { UnauthorizedError } = await import("@/lib/api");
+    vi.mocked(getShareForSession).mockRejectedValue(new UnauthorizedError());
+
+    const response = await GET(new Request("http://localhost/x"), params("7"));
+    expect(response.status).toBe(401);
+  });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(getShareForSession).mockRejectedValue(new Error("boom"));
+
+    await expect(GET(new Request("http://localhost/x"), params("7"))).rejects.toThrow("boom");
+  });
 });

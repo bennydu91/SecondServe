@@ -38,9 +38,48 @@ describe("GET /api/console/sessions/[sessionId]/points", () => {
     expect(data.items).toHaveLength(1);
     expect(vi.mocked(getPoints)).toHaveBeenCalledWith("jwt-abc", 7);
   });
+
+  it("retourne 401 si getPoints lève UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    const { UnauthorizedError } = await import("@/lib/api");
+    vi.mocked(getPoints).mockRejectedValue(new UnauthorizedError());
+
+    const response = await GET(new Request("http://localhost/x"), params("7"));
+    expect(response.status).toBe(401);
+  });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(getPoints).mockRejectedValue(new Error("boom"));
+
+    await expect(GET(new Request("http://localhost/x"), params("7"))).rejects.toThrow("boom");
+  });
 });
 
 describe("POST /api/console/sessions/[sessionId]/points", () => {
+  it("retourne 401 sans cookie", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => undefined } as never);
+    const request = new Request("http://localhost/x", {
+      method: "POST",
+      body: JSON.stringify({ context: "ACE" }),
+    });
+    const response = await POST(request, params("7"));
+    expect(response.status).toBe(401);
+  });
+
+  it("retourne 401 si postPoint lève UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    const { UnauthorizedError } = await import("@/lib/api");
+    vi.mocked(postPoint).mockRejectedValue(new UnauthorizedError());
+
+    const request = new Request("http://localhost/x", {
+      method: "POST",
+      body: JSON.stringify({ context: "ACE" }),
+    });
+    const response = await POST(request, params("7"));
+    expect(response.status).toBe(401);
+  });
+
   it("relaie le context vers postPoint", async () => {
     vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
     vi.mocked(postPoint).mockResolvedValue({
@@ -58,5 +97,16 @@ describe("POST /api/console/sessions/[sessionId]/points", () => {
     const response = await POST(request, params("7"));
     expect(response.status).toBe(200);
     expect(vi.mocked(postPoint)).toHaveBeenCalledWith("jwt-abc", 7, "DOUBLE_FAULT");
+  });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(postPoint).mockRejectedValue(new Error("boom"));
+
+    const request = new Request("http://localhost/x", {
+      method: "POST",
+      body: JSON.stringify({ context: "ACE" }),
+    });
+    await expect(POST(request, params("7"))).rejects.toThrow("boom");
   });
 });

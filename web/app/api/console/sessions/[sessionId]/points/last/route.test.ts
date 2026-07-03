@@ -34,4 +34,20 @@ describe("DELETE /api/console/sessions/[sessionId]/points/last", () => {
     expect(response.status).toBe(204);
     expect(vi.mocked(deleteLastPoint)).toHaveBeenCalledWith("jwt-abc", 7);
   });
+
+  it("retourne 401 si deleteLastPoint lève UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    const { UnauthorizedError } = await import("@/lib/api");
+    vi.mocked(deleteLastPoint).mockRejectedValue(new UnauthorizedError());
+
+    const response = await DELETE(new Request("http://localhost/x"), params("7"));
+    expect(response.status).toBe(401);
+  });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(deleteLastPoint).mockRejectedValue(new Error("boom"));
+
+    await expect(DELETE(new Request("http://localhost/x"), params("7"))).rejects.toThrow("boom");
+  });
 });

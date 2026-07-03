@@ -18,6 +18,8 @@ function fakeSession(overrides: Partial<SessionDto> & { id: number }): SessionDt
     status: "COMPLETED",
     sessionType: "MATCH",
     result: "VICTORY",
+    scoreText: null,
+    scoreSeedJson: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     ...overrides,
@@ -107,6 +109,13 @@ describe("computeStats", () => {
     const stats = computeStats(sessions);
     expect(stats.completedMatchSessions).toBe(0);
     expect(stats.winRateGlobal).toBeNull();
+  });
+
+  it("regroupe sous INCONNUE les sessions sans surface renseignée", () => {
+    const sessions = [fakeSession({ id: 1, result: "VICTORY", surface: "" })];
+    const stats = computeStats(sessions);
+    expect(stats.winRateBySurface).toHaveLength(1);
+    expect(stats.winRateBySurface[0].surface).toBe("INCONNUE");
   });
 
   it("les surfaces sont triées par nombre de matchs décroissant", () => {

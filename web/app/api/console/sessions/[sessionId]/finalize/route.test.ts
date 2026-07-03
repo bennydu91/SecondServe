@@ -74,4 +74,11 @@ describe("POST /api/console/sessions/[sessionId]/finalize", () => {
     expect(response.status).toBe(204);
     expect(vi.mocked(finalizeSession)).toHaveBeenCalledWith("jwt-abc", body);
   });
+
+  it("relance les erreurs qui ne sont pas des UnauthorizedError", async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: () => ({ value: "jwt-abc" }) } as never);
+    vi.mocked(finalizeSession).mockRejectedValue(new Error("boom"));
+
+    await expect(POST(jsonRequest(body), params("7"))).rejects.toThrow("boom");
+  });
 });

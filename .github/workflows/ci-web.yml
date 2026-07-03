@@ -1,0 +1,62 @@
+name: CI — Web
+
+on:
+  push:
+    branches: [master, main]
+    paths: ['web/**']
+  pull_request:
+    branches: [master, main]
+    paths: ['web/**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Job 1 : Lint + typecheck + tests + build ────────────────────────────────
+  test-and-build:
+    name: Lint, Tests & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Installer les dépendances
+        working-directory: web
+        run: npm ci
+
+      - name: Lint (ESLint)
+        working-directory: web
+        run: npm run lint
+
+      - name: Vérification des types (tsc)
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Tests unitaires + couverture (Vitest)
+        working-directory: web
+        run: npm run test:coverage
+
+      - name: Upload rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-coverage-report
+          path: 'web/coverage/'
+          retention-days: 7
+
+      - name: Build (Next.js)
+        working-directory: web
+        env:
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ci-placeholder
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+          API_BASE_URL: http://localhost:8000
+        run: npm run build
