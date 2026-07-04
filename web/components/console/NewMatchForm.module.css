@@ -60,3 +60,30 @@
   background: var(--ss-lime);
   color: var(--ss-lime-text);
 }
+
+.modeToggle {
+  display: flex;
+  gap: 8px;
+}
+
+.modeButton,
+.modeButtonActive {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modeButton {
+  background: transparent;
+  border: 1px solid var(--ss-border);
+  color: var(--ss-muted);
+}
+
+.modeButtonActive {
+  background: var(--ss-text);
+  border: 1px solid var(--ss-text);
+  color: var(--ss-bg);
+}
