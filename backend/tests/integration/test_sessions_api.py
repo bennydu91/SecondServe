@@ -267,3 +267,34 @@ async def test_update_session_404_when_missing(client):
     response = await client.patch("/api/v1/sessions/999999", json={"opponent": "Martin"}, headers=auth(token))
     assert response.status_code == 404
     assert response.json()["error_code"] == "SESSION_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_delete_session(client):
+    token = make_token()
+    create_resp = await client.post(
+        "/api/v1/sessions",
+        json={"surface": "CLAY", "match_format": "BEST_OF_3", "third_set_rule": "FULL_ADVANTAGE", "created_at": 1_000_000},
+        headers=auth(token),
+    )
+    session_id = create_resp.json()["id"]
+
+    response = await client.delete(f"/api/v1/sessions/{session_id}", headers=auth(token))
+    assert response.status_code == 204
+
+    list_response = await client.get("/api/v1/sessions", headers=auth(token))
+    assert list_response.json()["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_session_requires_jwt(client):
+    response = await client.delete("/api/v1/sessions/1")
+    assert response.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_delete_session_404_when_missing(client):
+    token = make_token()
+    response = await client.delete("/api/v1/sessions/999999", headers=auth(token))
+    assert response.status_code == 404
+    assert response.json()["error_code"] == "SESSION_NOT_FOUND"

@@ -42,3 +42,11 @@ class SessionService:
             )
         emit_event("match.updated", {"session_id": session.id})
         return SessionResponse.model_validate(session)
+
+    async def delete_session(self, session_id: int) -> None:
+        deleted = await self.repository.delete(session_id)
+        if not deleted:
+            raise SecondServeException(
+                error_code="SESSION_NOT_FOUND", message="Session introuvable", status_code=404
+            )
+        emit_event("match.ended", {"session_id": session_id})

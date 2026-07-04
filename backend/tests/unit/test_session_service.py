@@ -206,3 +206,27 @@ async def test_update_session_raises_when_session_not_found():
 
     assert exc_info.value.error_code == "SESSION_NOT_FOUND"
     assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_session_calls_repository():
+    repo = MagicMock()
+    repo.delete = AsyncMock(return_value=True)
+    service = SessionService(repo)
+
+    await service.delete_session(7)
+
+    repo.delete.assert_called_once_with(7)
+
+
+@pytest.mark.asyncio
+async def test_delete_session_raises_when_not_found():
+    repo = MagicMock()
+    repo.delete = AsyncMock(return_value=False)
+    service = SessionService(repo)
+
+    with pytest.raises(SecondServeException) as exc_info:
+        await service.delete_session(999)
+
+    assert exc_info.value.error_code == "SESSION_NOT_FOUND"
+    assert exc_info.value.status_code == 404

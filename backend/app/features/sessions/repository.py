@@ -54,3 +54,11 @@ class SessionRepository:
             setattr(session, field, value)
         await self.db.flush()
         return session
+
+    async def delete(self, session_id: int) -> bool:
+        session = await self.get_by_id(session_id)
+        if session is None:
+            return False
+        await self.db.delete(session)
+        await self.db.flush()
+        return True

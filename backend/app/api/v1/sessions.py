@@ -47,3 +47,11 @@ async def update_session(
     service: SessionService = Depends(get_session_service),
 ):
     return await service.update_session(session_id, request)
+
+
+@router.delete("/{session_id}", status_code=204)
+async def delete_session(
+    session_id: int,
+    service: SessionService = Depends(get_session_service),
+):
+    await service.delete_session(session_id)
