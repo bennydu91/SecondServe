@@ -27,7 +27,7 @@ cp secondserve-web.service /opt/secondserve-web/
 `/opt/secondserve-web/.env.production.local` :
 
 ```
-PORT=3000
+PORT=3001
 API_BASE_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_API_BASE_URL=https://api.<ton-domaine>
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=<Web Client ID Google — le même que GOOGLE_CLIENT_ID côté backend>
@@ -62,12 +62,12 @@ sudo systemctl status secondserve-web
 
 Dashboard Cloudflare → **Zero Trust → Networks → Tunnels** → **Public Hostname** :
 - **Domain** : `<ton-domaine>` (apex, cohérent avec `secondserve.app/live/{token}`)
-- **Service** : `http://localhost:3000`
+- **Service** : `http://localhost:3001`
 
 ### 6. Vérifier le déploiement
 
 ```bash
-curl -s http://localhost:3000/live/does-not-exist | grep -i "Lien invalide"
+curl -s http://localhost:3001/live/does-not-exist | grep -i "Lien invalide"
 curl -s https://<ton-domaine>/live/does-not-exist | grep -i "Lien invalide"
 ```
 
