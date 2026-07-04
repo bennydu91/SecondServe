@@ -60,3 +60,13 @@
     gap: 24px;
   }
 }
+
+@media (max-width: 899px) {
+  .leftColumn {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--ss-bg);
+    padding-bottom: 8px;
+  }
+}
