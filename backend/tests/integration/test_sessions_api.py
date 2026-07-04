@@ -202,3 +202,68 @@ async def test_update_score_seed_404_when_session_missing(client):
     response = await client.put("/api/v1/sessions/999999/score-seed", json={}, headers=auth(token))
     assert response.status_code == 404
     assert response.json()["error_code"] == "SESSION_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_update_session_partial_fields(client):
+    token = make_token()
+    create_resp = await client.post(
+        "/api/v1/sessions",
+        json={
+            "surface": "CLAY",
+            "match_format": "BEST_OF_3",
+            "third_set_rule": "FULL_ADVANTAGE",
+            "opponent": "Dupont",
+            "created_at": 1_000_000,
+        },
+        headers=auth(token),
+    )
+    session_id = create_resp.json()["id"]
+
+    response = await client.patch(
+        f"/api/v1/sessions/{session_id}",
+        json={"opponent": "Martin", "surface": "HARD"},
+        headers=auth(token),
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["opponent"] == "Martin"
+    assert data["surface"] == "HARD"
+    assert data["match_format"] == "BEST_OF_3"
+
+
+@pytest.mark.asyncio
+async def test_update_session_completes_match_with_score(client):
+    token = make_token()
+    create_resp = await client.post(
+        "/api/v1/sessions",
+        json={"surface": "CLAY", "match_format": "BEST_OF_3", "third_set_rule": "FULL_ADVANTAGE", "created_at": 1_000_000},
+        headers=auth(token),
+    )
+    session_id = create_resp.json()["id"]
+
+    response = await client.patch(
+        f"/api/v1/sessions/{session_id}",
+        json={"status": "COMPLETED", "result": "VICTORY", "score_text": "6-4 · 6-3", "updated_at": 1_000_000},
+        headers=auth(token),
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "COMPLETED"
+    assert data["result"] == "VICTORY"
+    assert data["score_text"] == "6-4 · 6-3"
+    assert data["updated_at"] == 1_000_000
+
+
+@pytest.mark.asyncio
+async def test_update_session_requires_jwt(client):
+    response = await client.patch("/api/v1/sessions/1", json={"opponent": "Martin"})
+    assert response.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_update_session_404_when_missing(client):
+    token = make_token()
+    response = await client.patch("/api/v1/sessions/999999", json={"opponent": "Martin"}, headers=auth(token))
+    assert response.status_code == 404
+    assert response.json()["error_code"] == "SESSION_NOT_FOUND"

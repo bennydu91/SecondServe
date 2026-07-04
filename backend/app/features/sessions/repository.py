@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.sessions.models import SessionModel
-from app.features.sessions.schemas import SessionCreateRequest
+from app.features.sessions.schemas import SessionCreateRequest, SessionUpdateRequest
 
 
 class SessionRepository:
@@ -43,5 +43,14 @@ class SessionRepository:
         if session is None:
             return None
         session.score_seed_json = score_seed_json
+        await self.db.flush()
+        return session
+
+    async def update(self, session_id: int, request: SessionUpdateRequest) -> SessionModel | None:
+        session = await self.get_by_id(session_id)
+        if session is None:
+            return None
+        for field, value in request.model_dump(exclude_unset=True).items():
+            setattr(session, field, value)
         await self.db.flush()
         return session

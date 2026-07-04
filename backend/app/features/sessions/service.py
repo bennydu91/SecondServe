@@ -5,6 +5,7 @@ from app.features.sessions.schemas import (
     SessionResponse,
     SessionsResponse,
     ScoreSeedRequest,
+    SessionUpdateRequest,
 )
 from app.features.monitoring.events import emit_event
 from app.shared.exceptions import SecondServeException
@@ -31,4 +32,13 @@ class SessionService:
             raise SecondServeException(
                 error_code="SESSION_NOT_FOUND", message="Session introuvable", status_code=404
             )
+        return SessionResponse.model_validate(session)
+
+    async def update_session(self, session_id: int, request: SessionUpdateRequest) -> SessionResponse:
+        session = await self.repository.update(session_id, request)
+        if session is None:
+            raise SecondServeException(
+                error_code="SESSION_NOT_FOUND", message="Session introuvable", status_code=404
+            )
+        emit_event("match.updated", {"session_id": session.id})
         return SessionResponse.model_validate(session)

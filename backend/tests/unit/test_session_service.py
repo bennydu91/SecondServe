@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from app.features.sessions.schemas import SessionCreateRequest, SessionResponse, SessionsResponse
+from app.features.sessions.schemas import SessionCreateRequest, SessionResponse, SessionsResponse, SessionUpdateRequest
 from app.features.sessions.service import SessionService
 
 
@@ -173,6 +173,36 @@ async def test_update_score_seed_raises_when_session_not_found():
 
     with pytest.raises(SecondServeException) as exc_info:
         await service.update_score_seed(999, ScoreSeedRequest())
+
+    assert exc_info.value.error_code == "SESSION_NOT_FOUND"
+    assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_session_returns_updated_session_response():
+    model = session_model(id=7, opponent="Nadal", surface="HARD")
+    repo = MagicMock()
+    repo.update = AsyncMock(return_value=model)
+    service = SessionService(repo)
+
+    request = SessionUpdateRequest(opponent="Nadal", surface="HARD")
+    response = await service.update_session(7, request)
+
+    assert isinstance(response, SessionResponse)
+    assert response.id == 7
+    assert response.opponent == "Nadal"
+    assert response.surface == "HARD"
+    repo.update.assert_called_once_with(7, request)
+
+
+@pytest.mark.asyncio
+async def test_update_session_raises_when_session_not_found():
+    repo = MagicMock()
+    repo.update = AsyncMock(return_value=None)
+    service = SessionService(repo)
+
+    with pytest.raises(SecondServeException) as exc_info:
+        await service.update_session(999, SessionUpdateRequest())
 
     assert exc_info.value.error_code == "SESSION_NOT_FOUND"
     assert exc_info.value.status_code == 404

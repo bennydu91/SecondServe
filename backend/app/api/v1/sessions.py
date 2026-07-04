@@ -7,6 +7,7 @@ from app.features.sessions.schemas import (
     SessionResponse,
     SessionsResponse,
     ScoreSeedRequest,
+    SessionUpdateRequest,
 )
 from app.features.sessions.service import SessionService
 
@@ -37,3 +38,12 @@ async def update_score_seed(
     service: SessionService = Depends(get_session_service),
 ):
     return await service.update_score_seed(session_id, request)
+
+
+@router.patch("/{session_id}", response_model=SessionResponse)
+async def update_session(
+    session_id: int,
+    request: SessionUpdateRequest,
+    service: SessionService = Depends(get_session_service),
+):
+    return await service.update_session(session_id, request)
