@@ -364,3 +364,63 @@ export async function finalizeSession(token: string, input: FinalizeSessionInput
   if (response.status === 401) throw new UnauthorizedError();
   if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
 }
+
+export type UpdateSessionInput = Partial<{
+  surface: string;
+  matchFormat: string;
+  thirdSetRule: string;
+  opponent: string | null;
+  competitionType: string | null;
+  tournament: string | null;
+  status: "ACTIVE" | "COMPLETED";
+  result: "VICTORY" | "DEFEAT" | null;
+  scoreText: string | null;
+  createdAt: number;
+  updatedAt: number;
+}>;
+
+const UPDATE_SESSION_FIELD_MAP: Record<keyof UpdateSessionInput, string> = {
+  surface: "surface",
+  matchFormat: "match_format",
+  thirdSetRule: "third_set_rule",
+  opponent: "opponent",
+  competitionType: "competition_type",
+  tournament: "tournament",
+  status: "status",
+  result: "result",
+  scoreText: "score_text",
+  createdAt: "created_at",
+  updatedAt: "updated_at",
+};
+
+function toUpdateSessionPatch(input: UpdateSessionInput): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  for (const key of Object.keys(input) as (keyof UpdateSessionInput)[]) {
+    const value = input[key];
+    if (value !== undefined) patch[UPDATE_SESSION_FIELD_MAP[key]] = value;
+  }
+  return patch;
+}
+
+export async function updateSession(token: string, sessionId: number, input: UpdateSessionInput): Promise<SessionDto> {
+  const response = await fetch(`${process.env.API_BASE_URL}/api/v1/sessions/${sessionId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(toUpdateSessionPatch(input)),
+    cache: "no-store",
+  });
+  if (response.status === 401) throw new UnauthorizedError();
+  if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
+  const raw = (await response.json()) as RawSession;
+  return mapSession(raw);
+}
+
+export async function deleteSession(token: string, sessionId: number): Promise<void> {
+  const response = await fetch(`${process.env.API_BASE_URL}/api/v1/sessions/${sessionId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (response.status === 401) throw new UnauthorizedError();
+  if (!response.ok) throw new Error(`Erreur inattendue (${response.status})`);
+}

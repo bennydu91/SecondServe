@@ -10,6 +10,8 @@ import {
   pushLiveScore,
   finalizeSession,
   parseScoreSeed,
+  updateSession,
+  deleteSession,
 } from "./api";
 
 const rawSnapshot = {
@@ -354,5 +356,63 @@ describe("parseScoreSeed", () => {
       isMatchOver: false,
       matchWinner: null,
     });
+  });
+});
+
+describe("updateSession", () => {
+  it("envoie uniquement les champs fournis en snake_case et mappe la SessionDto retournée", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: 7,
+        surface: "HARD",
+        match_format: "BEST_OF_3",
+        third_set_rule: "FULL_ADVANTAGE",
+        opponent: "Martin",
+        competition_type: null,
+        tournament: null,
+        status: "COMPLETED",
+        session_type: "MATCH",
+        result: "VICTORY",
+        score_text: "6-4 · 6-3",
+        score_seed_json: null,
+        created_at: 1000,
+        updated_at: 1000,
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await updateSession("jwt-token", 7, { opponent: "Martin", surface: "HARD" });
+
+    expect(result.opponent).toBe("Martin");
+    expect(result.surface).toBe("HARD");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain("/sessions/7");
+    expect(init.method).toBe("PATCH");
+    expect(JSON.parse(init.body as string)).toEqual({ opponent: "Martin", surface: "HARD" });
+  });
+
+  it("lève UnauthorizedError sur 401", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401 }));
+    await expect(updateSession("jwt-token", 7, { opponent: "Martin" })).rejects.toThrow(UnauthorizedError);
+  });
+});
+
+describe("deleteSession", () => {
+  it("appelle DELETE sans lever d'erreur sur 204", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await deleteSession("jwt-token", 7);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain("/sessions/7");
+    expect(init.method).toBe("DELETE");
+  });
+
+  it("lève UnauthorizedError sur 401", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401 }));
+    await expect(deleteSession("jwt-token", 7)).rejects.toThrow(UnauthorizedError);
   });
 });
