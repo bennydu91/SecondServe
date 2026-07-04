@@ -98,3 +98,46 @@
   color: var(--ss-muted);
   font-size: 14px;
 }
+
+@media (max-width: 899px) {
+  .columnHeader {
+    display: none;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "date result"
+      "opponent opponent"
+      "surface score";
+    row-gap: 6px;
+    padding: 12px 16px;
+  }
+
+  .dateCol {
+    grid-area: date;
+    width: auto;
+  }
+
+  .opponentCol {
+    grid-area: opponent;
+  }
+
+  .surfaceCol {
+    grid-area: surface;
+    width: auto;
+  }
+
+  .scoreCol {
+    grid-area: score;
+    width: auto;
+    text-align: right;
+  }
+
+  .resultCol {
+    grid-area: result;
+    width: auto;
+    text-align: right;
+  }
+}
