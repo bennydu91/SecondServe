@@ -100,3 +100,45 @@
   height: 1px;
   background: #ededea;
 }
+
+.playerNameText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 599px) {
+  .headerRow,
+  .playerRow {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .playerName {
+    font-size: 15px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .sets {
+    width: 32px;
+    font-size: 20px;
+  }
+
+  .games {
+    width: 46px;
+    font-size: 34px;
+  }
+
+  .points {
+    width: 40px;
+    font-size: 24px;
+  }
+}

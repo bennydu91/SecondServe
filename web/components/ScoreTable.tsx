@@ -48,7 +48,7 @@ export function ScoreTable({ snapshot }: Props) {
               <span className={`${styles.avatar} ${row.leading ? styles.avatarLeading : styles.avatarTrailing}`}>
                 {row.name.charAt(0).toUpperCase()}
               </span>
-              {row.name}
+              <span className={styles.playerNameText}>{row.name}</span>
             </span>
             {[0, 1].map((setIndex) => (
               <span key={setIndex} className={`${styles.sets} ${styles.setsMuted}`}>

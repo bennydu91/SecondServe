@@ -77,4 +77,11 @@ describe("ScoreTable", () => {
     expect(screen.getByText("6")).toBeInTheDocument();
     expect(screen.getByText("4")).toBeInTheDocument();
   });
+
+  it("rend le nom du joueur dans un span dédié pour permettre la troncature CSS", () => {
+    render(<ScoreTable snapshot={buildSnapshot({ playerAName: "Jean-Baptiste-Alexandre" })} />);
+    const nameNode = screen.getByText("Jean-Baptiste-Alexandre");
+    expect(nameNode.tagName).toBe("SPAN");
+    expect(nameNode.className).toContain("playerNameText");
+  });
 });
