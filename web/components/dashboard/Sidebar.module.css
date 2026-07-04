@@ -77,3 +77,9 @@
   cursor: pointer;
   padding: 0;
 }
+
+@media (max-width: 899px) {
+  .sidebar {
+    display: none;
+  }
+}

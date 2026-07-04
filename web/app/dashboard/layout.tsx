@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { MobileTabBar } from "@/components/dashboard/MobileTabBar";
 import styles from "./layout.module.css";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -6,6 +7,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className={styles.shell}>
       <Sidebar />
       <main className={styles.content}>{children}</main>
+      <MobileTabBar />
     </div>
   );
 }

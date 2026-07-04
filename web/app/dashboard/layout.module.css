@@ -8,3 +8,9 @@
   flex: 1;
   padding: 24px 32px;
 }
+
+@media (max-width: 899px) {
+  .content {
+    padding-bottom: 88px;
+  }
+}
