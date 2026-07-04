@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TennisScoreEngine, formatScoreText, deriveMatchResult } from "./scoreEngine";
+import { TennisScoreEngine, formatScoreText, deriveMatchResult, formatSetsText, computeSetsOutcome } from "./scoreEngine";
 import type { SessionFormat, Player, EngineEvent } from "./scoreEngine";
 
 const bestOf1Format: SessionFormat = { matchFormat: "BEST_OF_1", thirdSetRule: "FULL_ADVANTAGE" };
@@ -513,5 +513,46 @@ describe("deriveMatchResult", () => {
   it("returns null while match is ongoing", () => {
     const engine = new TennisScoreEngine(bestOf1Format);
     expect(deriveMatchResult(engine.currentScore)).toBeNull();
+  });
+});
+
+describe("formatSetsText", () => {
+  it("joins sets with ' · '", () => {
+    expect(formatSetsText([{ gamesA: 6, gamesB: 4 }, { gamesA: 6, gamesB: 3 }])).toBe("6-4 · 6-3");
+  });
+
+  it("returns empty string for empty array", () => {
+    expect(formatSetsText([])).toBe("");
+  });
+});
+
+describe("computeSetsOutcome", () => {
+  it("returns VICTORY when self wins more sets (2-0)", () => {
+    const outcome = computeSetsOutcome([{ gamesA: 6, gamesB: 4 }, { gamesA: 6, gamesB: 3 }]);
+    expect(outcome.result).toBe("VICTORY");
+    expect(outcome.scoreText).toBe("6-4 · 6-3");
+  });
+
+  it("returns VICTORY when self wins in 3 sets (2-1)", () => {
+    const outcome = computeSetsOutcome([
+      { gamesA: 6, gamesB: 4 },
+      { gamesA: 3, gamesB: 6 },
+      { gamesA: 10, gamesB: 7 },
+    ]);
+    expect(outcome.result).toBe("VICTORY");
+  });
+
+  it("returns DEFEAT when opponent wins more sets", () => {
+    const outcome = computeSetsOutcome([{ gamesA: 4, gamesB: 6 }, { gamesA: 3, gamesB: 6 }]);
+    expect(outcome.result).toBe("DEFEAT");
+  });
+
+  it("returns DEFEAT for a single lost set (BEST_OF_1)", () => {
+    const outcome = computeSetsOutcome([{ gamesA: 4, gamesB: 6 }]);
+    expect(outcome.result).toBe("DEFEAT");
+  });
+
+  it("returns null when sets are equal (aucun set)", () => {
+    expect(computeSetsOutcome([]).result).toBeNull();
   });
 });

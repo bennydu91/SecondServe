@@ -51,8 +51,19 @@ export function isDeuce(score: MatchScore): boolean {
   );
 }
 
+export function formatSetsText(sets: SetResult[]): string {
+  return sets.map((s) => `${s.gamesA}-${s.gamesB}`).join(" · ");
+}
+
 export function formatScoreText(score: MatchScore): string {
-  return score.completedSets.map((s) => `${s.gamesA}-${s.gamesB}`).join(" · ");
+  return formatSetsText(score.completedSets);
+}
+
+export function computeSetsOutcome(sets: SetResult[]): { result: "VICTORY" | "DEFEAT" | null; scoreText: string } {
+  const setsWonA = sets.filter((s) => s.gamesA > s.gamesB).length;
+  const setsWonB = sets.filter((s) => s.gamesB > s.gamesA).length;
+  const result: "VICTORY" | "DEFEAT" | null = setsWonA === setsWonB ? null : setsWonA > setsWonB ? "VICTORY" : "DEFEAT";
+  return { result, scoreText: formatSetsText(sets) };
 }
 
 export function deriveMatchResult(score: MatchScore): "VICTORY" | "DEFEAT" | null {
