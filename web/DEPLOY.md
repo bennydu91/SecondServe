@@ -17,8 +17,9 @@ cd /root/SecondServe/web
 yarn build
 rsync -avz .next/standalone/ /opt/secondserve-web/
 rsync -avz .next/static/ /opt/secondserve-web/.next/static/
-rsync -avz public/ /opt/secondserve-web/public/
 ```
+
+> Pas de `rsync public/` : le projet n'a pas (ou plus) d'assets statiques dans `web/public/` (scaffold `create-next-app` retiré). Si ce dossier réapparaît un jour, ajouter `rsync -avz public/ /opt/secondserve-web/public/`.
 
 ### 2. Configurer les variables d'environnement sur le VPS
 
