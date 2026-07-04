@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SessionDto } from "@/lib/types";
 import { surfaceLabel } from "@/lib/surfaces";
+import { MatchEditForm } from "./MatchEditForm";
 import styles from "./HistoryView.module.css";
 
 type Props = { matches: SessionDto[] };
@@ -14,7 +16,9 @@ function formatDate(timestampMs: number): string {
 }
 
 export function HistoryView({ matches }: Props) {
+  const router = useRouter();
   const [page, setPage] = useState(0);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const totalPages = Math.ceil(matches.length / PAGE_SIZE);
   const pageMatches = matches.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
@@ -27,25 +31,41 @@ export function HistoryView({ matches }: Props) {
         <>
           <div className={styles.list}>
             {pageMatches.map((match) => (
-              <div key={match.id} className={styles.row}>
-                <span className={styles.dateCol}>{formatDate(match.createdAt)}</span>
-                <span className={styles.opponentCol}>{match.opponent ?? "Adversaire"}</span>
-                <span className={styles.surfaceCol}>
-                  <span className={styles.surfaceChip}>{surfaceLabel(match.surface)}</span>
-                </span>
-                <span className={styles.scoreCol}>{match.scoreText ?? "—"}</span>
-                <span className={styles.resultCol}>
-                  {match.result === "VICTORY" && <span className={`${styles.resultBadge} ${styles.resultVictory}`}>VICTOIRE</span>}
-                  {match.result === "DEFEAT" && <span className={`${styles.resultBadge} ${styles.resultDefeat}`}>DÉFAITE</span>}
-                </span>
-                <span className={styles.actionsCol}>
-                  <button type="button" className={styles.editButton}>
-                    Modifier
-                  </button>
-                  <button type="button" className={styles.deleteButton}>
-                    Supprimer
-                  </button>
-                </span>
+              <div key={match.id}>
+                <div className={styles.row}>
+                  <span className={styles.dateCol}>{formatDate(match.createdAt)}</span>
+                  <span className={styles.opponentCol}>{match.opponent ?? "Adversaire"}</span>
+                  <span className={styles.surfaceCol}>
+                    <span className={styles.surfaceChip}>{surfaceLabel(match.surface)}</span>
+                  </span>
+                  <span className={styles.scoreCol}>{match.scoreText ?? "—"}</span>
+                  <span className={styles.resultCol}>
+                    {match.result === "VICTORY" && <span className={`${styles.resultBadge} ${styles.resultVictory}`}>VICTOIRE</span>}
+                    {match.result === "DEFEAT" && <span className={`${styles.resultBadge} ${styles.resultDefeat}`}>DÉFAITE</span>}
+                  </span>
+                  <span className={styles.actionsCol}>
+                    <button
+                      type="button"
+                      className={styles.editButton}
+                      onClick={() => setEditingId(editingId === match.id ? null : match.id)}
+                    >
+                      Modifier
+                    </button>
+                    <button type="button" className={styles.deleteButton}>
+                      Supprimer
+                    </button>
+                  </span>
+                </div>
+                {editingId === match.id && (
+                  <MatchEditForm
+                    match={match}
+                    onCancel={() => setEditingId(null)}
+                    onSaved={() => {
+                      setEditingId(null);
+                      router.refresh();
+                    }}
+                  />
+                )}
               </div>
             ))}
           </div>

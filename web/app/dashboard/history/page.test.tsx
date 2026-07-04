@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 vi.mock("next/headers", () => ({ cookies: vi.fn() }));
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+  return { ...actual, useRouter: () => ({ refresh: vi.fn() }) };
+});
 vi.mock("@/lib/api", () => ({ getSessions: vi.fn(), UnauthorizedError: class UnauthorizedError extends Error {} }));
 
 import { cookies } from "next/headers";

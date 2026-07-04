@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import { HistoryView } from "./HistoryView";
 import type { SessionDto } from "@/lib/types";
 
@@ -52,5 +53,11 @@ describe("HistoryView", () => {
   it("ne montre pas de bouton page suivante s'il y a moins de 20 matchs", () => {
     render(<HistoryView matches={[buildMatch()]} />);
     expect(screen.queryByRole("button", { name: /page suivante/i })).not.toBeInTheDocument();
+  });
+
+  it("ouvre le formulaire d'édition au clic sur Modifier", () => {
+    render(<HistoryView matches={[buildMatch()]} />);
+    fireEvent.click(screen.getByRole("button", { name: /modifier/i }));
+    expect(screen.getByLabelText("Adversaire")).toHaveValue("Rafael");
   });
 });
