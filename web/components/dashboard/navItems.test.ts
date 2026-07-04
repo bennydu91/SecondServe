@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { NAV_ITEMS, isNavItemActive } from "./navItems";
 
 describe("NAV_ITEMS", () => {
-  it("contient le tableau de bord et la console de saisie", () => {
-    expect(NAV_ITEMS.map((item) => item.href)).toEqual(["/dashboard", "/dashboard/console"]);
+  it("contient le tableau de bord, la console de saisie et l'historique", () => {
+    expect(NAV_ITEMS.map((item) => item.href)).toEqual(["/dashboard", "/dashboard/console", "/dashboard/history"]);
   });
 });
 

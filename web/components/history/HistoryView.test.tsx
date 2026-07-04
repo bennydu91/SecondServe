@@ -1,0 +1,56 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { HistoryView } from "./HistoryView";
+import type { SessionDto } from "@/lib/types";
+
+function buildMatch(overrides: Partial<SessionDto> = {}): SessionDto {
+  return {
+    id: 1,
+    surface: "CLAY",
+    matchFormat: "BEST_OF_3",
+    thirdSetRule: "FULL_ADVANTAGE",
+    opponent: "Rafael",
+    competitionType: null,
+    tournament: null,
+    status: "COMPLETED",
+    sessionType: "MATCH",
+    result: "VICTORY",
+    scoreText: "6-4 · 6-3",
+    scoreSeedJson: null,
+    createdAt: Date.UTC(2026, 0, 15),
+    updatedAt: Date.UTC(2026, 0, 15),
+    ...overrides,
+  };
+}
+
+describe("HistoryView", () => {
+  it("affiche un message quand il n'y a aucun match", () => {
+    render(<HistoryView matches={[]} />);
+    expect(screen.getByText("Pas encore de match")).toBeInTheDocument();
+  });
+
+  it("affiche chaque match avec ses actions Modifier/Supprimer", () => {
+    render(<HistoryView matches={[buildMatch()]} />);
+    expect(screen.getByText("Rafael")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /modifier/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /supprimer/i })).toBeInTheDocument();
+  });
+
+  it("pagine à 20 matchs par page", () => {
+    const matches = Array.from({ length: 25 }, (_, i) =>
+      buildMatch({ id: i + 1, opponent: `Joueur ${i + 1}`, createdAt: Date.UTC(2026, 0, 1) - i * 1000 })
+    );
+    render(<HistoryView matches={matches} />);
+    expect(screen.getByText("Joueur 1")).toBeInTheDocument();
+    expect(screen.queryByText("Joueur 21")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /page suivante/i }));
+    expect(screen.getByText("Joueur 21")).toBeInTheDocument();
+    expect(screen.queryByText("Joueur 1")).not.toBeInTheDocument();
+  });
+
+  it("ne montre pas de bouton page suivante s'il y a moins de 20 matchs", () => {
+    render(<HistoryView matches={[buildMatch()]} />);
+    expect(screen.queryByRole("button", { name: /page suivante/i })).not.toBeInTheDocument();
+  });
+});
