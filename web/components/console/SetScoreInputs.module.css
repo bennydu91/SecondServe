@@ -1,0 +1,59 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setLabel {
+  width: 48px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ss-muted);
+}
+
+.setInput {
+  width: 56px;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--ss-border);
+  background: var(--ss-bg);
+  color: var(--ss-text);
+  padding: 0 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.dash {
+  color: var(--ss-muted);
+}
+
+.removeButton {
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--ss-border);
+  background: transparent;
+  color: var(--ss-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.addButton {
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px dashed var(--ss-border);
+  background: transparent;
+  color: var(--ss-muted);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
