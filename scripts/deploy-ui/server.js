@@ -110,6 +110,7 @@ function serveStaticFile(pathname, res) {
 let currentRun = null; // { id, child, sseClients: Set, awaitingInput: string|null, stdoutCarry, stderrCarry }
 
 function broadcast(run, event, data) {
+  run.history.push({ event, data });
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const client of run.sseClients) {
     client.write(payload);
@@ -134,7 +135,7 @@ function handleChildOutput(run, chunk, streamName) {
 }
 
 async function handlePostDeploy(req, res) {
-  if (currentRun) {
+  if (currentRun && !currentRun.done) {
     res.writeHead(409, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Un déploiement est déjà en cours.' }));
     return;
@@ -174,17 +175,29 @@ async function handlePostDeploy(req, res) {
     awaitingInput: null,
     stdoutCarry: '',
     stderrCarry: '',
+    history: [],
+    done: false,
   };
   currentRun = run;
 
   child.stdout.on('data', (chunk) => handleChildOutput(run, chunk, 'stdout'));
   child.stderr.on('data', (chunk) => handleChildOutput(run, chunk, 'stderr'));
   child.on('close', (code) => {
+    if (run.done) return;
+    run.done = true;
     broadcast(run, 'done', { code });
     for (const client of run.sseClients) {
       client.end();
     }
-    if (currentRun === run) currentRun = null;
+  });
+  child.on('error', (err) => {
+    if (run.done) return;
+    run.done = true;
+    broadcast(run, 'log', { line: `❌ Erreur au lancement du script : ${err.message}`, stream: 'stderr' });
+    broadcast(run, 'done', { code: -1 });
+    for (const client of run.sseClients) {
+      client.end();
+    }
   });
 
   res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -204,8 +217,8 @@ function handleGetDeployStream(req, res, url) {
     Connection: 'keep-alive',
   });
   currentRun.sseClients.add(res);
-  if (currentRun.awaitingInput) {
-    res.write(`event: awaiting-input\ndata: ${JSON.stringify({ device: currentRun.awaitingInput })}\n\n`);
+  for (const { event, data } of currentRun.history) {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   }
   req.on('close', () => {
     if (currentRun) currentRun.sseClients.delete(res);
