@@ -2,6 +2,25 @@
 
 > **Le dépôt de développement et le build Gradle vivent sur le VPS** (`/root/SecondServe`, même machine que le backend). Les appareils physiques (Pixel 9 Pro en USB, Pixel Watch en débogage Wi-Fi) sont branchés en `adb` sur le **poste local** de Benny, pas sur le VPS. Il faut donc systématiquement rapatrier l'APK du VPS vers le poste local via `scp` avant de pouvoir l'installer — ne jamais lancer `./gradlew :app:installDebug` ou `:wear:installDebug` depuis le VPS, ça échoue avec `No connected devices!`.
 
+## Déploiement automatisé (recommandé)
+
+Depuis ton poste local, une fois `scripts/deploy-devices.conf` renseigné (copier
+`scripts/deploy-devices.conf.example`) :
+
+```bash
+./scripts/deploy-devices.sh                # build + install phone et watch (staging/debug)
+./scripts/deploy-devices.sh --phone-only    # uniquement le Pixel 9 Pro
+./scripts/deploy-devices.sh --watch-only    # uniquement la Pixel Watch
+./scripts/deploy-devices.sh --release       # build release (nécessite KEYSTORE_PASSWORD/KEY_PASSWORD)
+```
+
+Le script détecte automatiquement le Pixel 9 Pro branché en USB. Pour la Pixel
+Watch, il réutilise une connexion ADB WiFi déjà active, sinon tente l'IP
+renseignée dans `deploy-devices.conf`, sinon te la demande (et propose de la
+sauvegarder). Les étapes manuelles ci-dessous restent la référence détaillée
+(SHA-1, keystore, premier lancement, logcat) et pour dépanner si le script
+échoue.
+
 ## Prérequis
 
 - JDK 17+ installé sur le VPS (`java -version`)
