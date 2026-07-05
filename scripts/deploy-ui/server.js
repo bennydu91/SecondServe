@@ -218,7 +218,11 @@ function handleGetDeployStream(req, res, url) {
   });
   currentRun.sseClients.add(res);
   for (const { event, data } of currentRun.history) {
+    if (event === 'awaiting-input') continue; // état transitoire : rejoué depuis currentRun.awaitingInput ci-dessous, jamais depuis l'historique (sinon un prompt déjà répondu serait renvoyé après une reconnexion)
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  }
+  if (currentRun.awaitingInput) {
+    res.write(`event: awaiting-input\ndata: ${JSON.stringify({ device: currentRun.awaitingInput })}\n\n`);
   }
   req.on('close', () => {
     if (currentRun) currentRun.sseClients.delete(res);
