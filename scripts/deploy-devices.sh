@@ -107,7 +107,8 @@ while IFS= read -r line; do
   [ -n "$line" ] && SERIALS+=("$line")
 done < <(adb devices | filter_connected_serials)
 
-for s in "${SERIALS[@]}"; do
+for s in "${SERIALS[@]:-}"; do
+  [ -n "$s" ] || continue
   chars="$(adb -s "$s" shell getprop ro.build.characteristics 2>/dev/null)"
   kind="$(classify_by_characteristics "$chars")"
   if [ "$kind" = "watch" ]; then
@@ -118,20 +119,25 @@ for s in "${SERIALS[@]}"; do
 done
 
 INSTALL_FAILED=0
+PHONE_STATUS="non ciblé"
+WATCH_STATUS="non ciblée"
 
 # --- Installation Pixel 9 Pro ---
 if [ "$TARGET_PHONE" = "1" ]; then
   if [ -z "$PHONE_SERIAL" ]; then
     echo "⚠️  Aucun téléphone détecté en USB — installation phone sautée."
     INSTALL_FAILED=1
+    PHONE_STATUS="sauté (non détecté)"
   else
     echo "📱 Installation sur le phone ($PHONE_SERIAL)…"
     if adb -s "$PHONE_SERIAL" install -r "$ARTIFACTS_DIR/$(basename "$APP_APK_PATH")"; then
       adb -s "$PHONE_SERIAL" shell pm grant com.secondserve android.permission.POST_NOTIFICATIONS 2>/dev/null || true
       echo "✅ Phone installé."
+      PHONE_STATUS="installé ($PHONE_SERIAL)"
     else
       echo "⚠️  Échec de l'installation phone."
       INSTALL_FAILED=1
+      PHONE_STATUS="échec ($PHONE_SERIAL)"
     fi
   fi
 fi
@@ -162,13 +168,16 @@ if [ "$TARGET_WATCH" = "1" ]; then
   if [ -z "$WATCH_SERIAL" ]; then
     echo "⚠️  Watch injoignable — installation watch sautée."
     INSTALL_FAILED=1
+    WATCH_STATUS="sautée (non détectée)"
   else
     echo "⌚ Installation sur la watch ($WATCH_SERIAL)…"
     if adb -s "$WATCH_SERIAL" install -r "$ARTIFACTS_DIR/$(basename "$WEAR_APK_PATH")"; then
       echo "✅ Watch installée."
+      WATCH_STATUS="installée ($WATCH_SERIAL)"
     else
       echo "⚠️  Échec de l'installation watch."
       INSTALL_FAILED=1
+      WATCH_STATUS="échec ($WATCH_SERIAL)"
     fi
   fi
 fi
@@ -178,8 +187,8 @@ echo
 echo "================================================================"
 echo " Résumé du déploiement"
 echo "   Variant       : $BUILD_VARIANT"
-[ "$TARGET_PHONE" = "1" ] && echo "   Phone         : ${PHONE_SERIAL:-non installé}"
-[ "$TARGET_WATCH" = "1" ] && echo "   Watch         : ${WATCH_SERIAL:-non installée}"
+[ "$TARGET_PHONE" = "1" ] && echo "   Phone         : $PHONE_STATUS"
+[ "$TARGET_WATCH" = "1" ] && echo "   Watch         : $WATCH_STATUS"
 echo "================================================================"
 
 exit "$INSTALL_FAILED"
