@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, Index
 from app.core.database import Base
 
 
@@ -6,6 +6,7 @@ class SessionModel(Base):
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    client_id = Column(Integer, nullable=True)
     surface = Column(String, nullable=False)
     match_format = Column(String, nullable=False)
     third_set_rule = Column(String, nullable=False)
@@ -26,3 +27,7 @@ class SessionModel(Base):
     first_serve_percent_opponent = Column(Integer, nullable=True)
     winners_self = Column(Integer, nullable=True)
     winners_opponent = Column(Integer, nullable=True)
+
+    __table_args__ = (
+        Index("idx_sessions_client_id", "client_id"),
+    )
