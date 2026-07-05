@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # deploy-devices.sh — Build sur le VPS, rapatrie les APK, installe sur le
-# Pixel 9 Pro (USB) et/ou la Pixel Watch (ADB WiFi).
+# Pixel 9 Pro (USB ou ADB WiFi) et/ou la Pixel Watch (ADB WiFi).
 #
 # Usage :
 #   ./deploy-devices.sh                # build + install phone et watch (staging/debug)
@@ -142,7 +142,7 @@ if [ "$TARGET_PHONE" = "1" ]; then
   fi
 
   if [ -z "$PHONE_SERIAL" ]; then
-    echo "📱 Phone non détecté en USB. Adresse IP du phone en WiFi (vide pour sauter) :"
+    echo "📱 Phone non détecté (ni USB, ni IP configurée). Adresse IP du phone en WiFi (vide pour sauter) :"
     read -r INPUT_PHONE_IP
     if [ -n "$INPUT_PHONE_IP" ]; then
       adb connect "$INPUT_PHONE_IP:5555" >/dev/null 2>&1 || true
