@@ -5,6 +5,8 @@ android/**/build/
 !android/gradle/wrapper/gradle-wrapper.jar
 android/local.properties
 android/captures/
+scripts/deploy-devices.conf
+deploy-artifacts/
 
 # ─── Backend (Python / FastAPI) ───────────────────────────────────────────────
 backend/.venv/

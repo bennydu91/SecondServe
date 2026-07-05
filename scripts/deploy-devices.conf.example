@@ -1,0 +1,11 @@
+# Copier ce fichier en "deploy-devices.conf" (même dossier) et renseigner tes valeurs.
+# deploy-devices.conf est ignoré par git — ne jamais y mettre de secret partagé.
+
+VPS_HOST=1.2.3.4
+VPS_USER=root
+VPS_SSH_PORT=22
+VPS_REPO_PATH=/root/SecondServe
+
+# Optionnel — best-effort : si absent, le script tente d'abord une connexion
+# déjà active, puis te la demande interactivement (et propose de la sauver ici).
+WATCH_IP=

@@ -36,3 +36,33 @@ parse_deploy_args() {
   done
   return 0
 }
+
+# Vérifie que les variables requises de deploy-devices.conf sont bien définies.
+validate_config() {
+  local missing=() var
+  for var in VPS_HOST VPS_USER VPS_SSH_PORT VPS_REPO_PATH; do
+    if [ -z "${!var:-}" ]; then
+      missing+=("$var")
+    fi
+  done
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echo "Config incomplète — variable(s) manquante(s) : ${missing[*]}" >&2
+    echo "Voir scripts/deploy-devices.conf.example" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Met à jour (ou ajoute) la ligne WATCH_IP= dans le fichier de config donné.
+# Portable macOS/Linux : passe par un fichier temporaire plutôt que 'sed -i'
+# (l'option -i de sed diffère entre BSD/macOS et GNU/Linux).
+save_watch_ip_to_config() {
+  local conf_file="$1" ip="$2" tmp
+  tmp="$(mktemp)"
+  if [ -f "$conf_file" ] && grep -q '^WATCH_IP=' "$conf_file"; then
+    awk -v ip="$ip" '{ if ($0 ~ /^WATCH_IP=/) print "WATCH_IP=" ip; else print }' "$conf_file" > "$tmp"
+  else
+    { [ -f "$conf_file" ] && cat "$conf_file"; printf 'WATCH_IP=%s\n' "$ip"; } > "$tmp"
+  fi
+  mv "$tmp" "$conf_file"
+}

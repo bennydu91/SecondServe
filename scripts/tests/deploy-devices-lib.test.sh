@@ -38,5 +38,33 @@ assert_equal "$BUILD_VARIANT" "release" "parse_deploy_args --release bascule le 
 parse_deploy_args --inconnu >/dev/null 2>&1
 assert_status "$?" "1" "parse_deploy_args rejette une option inconnue"
 
+# --- validate_config ---
+(
+  VPS_HOST="1.2.3.4" VPS_USER="root" VPS_SSH_PORT="22" VPS_REPO_PATH="/root/SecondServe"
+  validate_config
+)
+assert_status "$?" "0" "validate_config accepte une config complète"
+
+(
+  VPS_HOST="" VPS_USER="root" VPS_SSH_PORT="22" VPS_REPO_PATH="/root/SecondServe"
+  validate_config >/dev/null 2>&1
+)
+assert_status "$?" "1" "validate_config rejette une config incomplète"
+
+# --- save_watch_ip_to_config ---
+TMP_CONF="$(mktemp)"
+printf 'VPS_HOST=1.2.3.4\nWATCH_IP=10.0.0.1\n' > "$TMP_CONF"
+save_watch_ip_to_config "$TMP_CONF" "10.0.0.99"
+result="$(grep '^WATCH_IP=' "$TMP_CONF")"
+assert_equal "$result" "WATCH_IP=10.0.0.99" "save_watch_ip_to_config met à jour une ligne existante"
+
+TMP_CONF2="$(mktemp)"
+printf 'VPS_HOST=1.2.3.4\n' > "$TMP_CONF2"
+save_watch_ip_to_config "$TMP_CONF2" "10.0.0.42"
+result2="$(grep '^WATCH_IP=' "$TMP_CONF2")"
+assert_equal "$result2" "WATCH_IP=10.0.0.42" "save_watch_ip_to_config ajoute la ligne si absente"
+
+rm -f "$TMP_CONF" "$TMP_CONF2"
+
 test_summary
 exit $?
