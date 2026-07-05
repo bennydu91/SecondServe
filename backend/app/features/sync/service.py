@@ -1,3 +1,9 @@
+"""Session sync push/delete. Single-writer assumption: client_id is only
+meaningful as long as exactly one device (the phone) pushes sessions. If a
+second device ever pushes sessions independently (e.g. a tablet, or a
+reinstalled app with a fresh local DB), its client_id sequence could again
+collide with the phone's. Not handled here — see
+docs/superpowers/plans/2026-07-05-fix-sync-session-id-collision.md."""
 import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
