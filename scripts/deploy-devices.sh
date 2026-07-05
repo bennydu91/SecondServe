@@ -163,6 +163,12 @@ if [ "$TARGET_PHONE" = "1" ]; then
     INSTALL_FAILED=1
     PHONE_STATUS="sauté (non détecté)"
   else
+    # Une connexion WiFi déjà listée par `adb devices` peut s'être dégradée
+    # silencieusement ; un `adb connect` juste avant l'install la rétablit
+    # (idempotent, sans risque si déjà connecté). Sans objet pour l'USB.
+    case "$PHONE_SERIAL" in
+      *:*) adb connect "$PHONE_SERIAL" >/dev/null 2>&1 || true ;;
+    esac
     echo "📱 Installation sur le phone ($PHONE_SERIAL)…"
     if adb -s "$PHONE_SERIAL" install -r "$ARTIFACTS_DIR/$(basename "$APP_APK_PATH")"; then
       adb -s "$PHONE_SERIAL" shell pm grant com.secondserve android.permission.POST_NOTIFICATIONS 2>/dev/null || true
@@ -207,6 +213,10 @@ if [ "$TARGET_WATCH" = "1" ]; then
     INSTALL_FAILED=1
     WATCH_STATUS="sautée (non détectée)"
   else
+    # Toujours reconnecter juste avant l'install, même si la watch était déjà
+    # listée par `adb devices` au scan initial : une connexion WiFi peut se
+    # dégrader silencieusement sans que l'état affiché ne le reflète.
+    adb connect "$WATCH_SERIAL" >/dev/null 2>&1 || true
     echo "⌚ Installation sur la watch ($WATCH_SERIAL)…"
     if adb -s "$WATCH_SERIAL" install -r "$ARTIFACTS_DIR/$(basename "$WEAR_APK_PATH")"; then
       echo "✅ Watch installée."
