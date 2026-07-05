@@ -15,10 +15,11 @@
       <label>VPS_USER <input type="text" name="VPS_USER" /></label>
       <label>VPS_SSH_PORT <input type="text" name="VPS_SSH_PORT" /></label>
       <label>VPS_REPO_PATH <input type="text" name="VPS_REPO_PATH" /></label>
-      <label>PHONE_IP <input type="text" name="PHONE_IP" /></label>
-      <label>WATCH_IP <input type="text" name="WATCH_IP" /></label>
+      <label>PHONE_IP <input type="text" name="PHONE_IP" placeholder="192.168.1.5 ou 192.168.1.5:42107" /></label>
+      <label>WATCH_IP <input type="text" name="WATCH_IP" placeholder="192.168.1.5:42107" /></label>
       <button type="submit">Enregistrer</button>
     </form>
+    <p class="hint">IP seule = port 5555 par défaut. Indique IP:PORT si le "débogage sans fil" affiche un autre port (presque toujours le cas pour la Pixel Watch, qui n'a pas de port USB data).</p>
     <p id="config-status"></p>
   </section>
 

@@ -74,5 +74,9 @@ assert_equal "$result3b" "WATCH_IP=10.0.0.1" "save_ip_to_config ne modifie pas l
 
 rm -f "$TMP_CONF" "$TMP_CONF2" "$TMP_CONF3"
 
+# --- format_adb_address ---
+assert_equal "$(format_adb_address "192.168.1.5")" "192.168.1.5:5555" "format_adb_address ajoute le port par défaut 5555 si absent"
+assert_equal "$(format_adb_address "192.168.1.5:42107")" "192.168.1.5:42107" "format_adb_address garde le port déjà présent (débogage sans fil, port aléatoire)"
+
 test_summary
 exit $?

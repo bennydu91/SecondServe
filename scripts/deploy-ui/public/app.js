@@ -50,7 +50,10 @@ function appendLog(line) {
 }
 
 function showAwaitingInput(device) {
-  const labels = { PHONE_IP: 'IP du phone :', WATCH_IP: 'IP de la watch :' };
+  const labels = {
+    PHONE_IP: 'IP du phone (IP ou IP:PORT si différent de 5555) :',
+    WATCH_IP: 'IP de la watch (IP:PORT, le port du débogage sans fil est presque toujours différent de 5555) :',
+  };
   awaitingInputLabel.textContent = labels[device] || `Valeur attendue (${device}) :`;
   awaitingInputValue.value = '';
   awaitingInputBox.hidden = false;

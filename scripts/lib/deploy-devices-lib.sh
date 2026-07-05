@@ -66,3 +66,16 @@ save_ip_to_config() {
   fi
   mv "$tmp" "$conf_file"
 }
+
+# Complète une adresse ADB WiFi avec le port par défaut (5555) si elle n'en
+# contient pas déjà un. Le "débogage sans fil" (Android 11+, seul mode
+# disponible sur la Pixel Watch, sans port USB data) assigne un port
+# aléatoire affiché à l'écran — contrairement à `adb tcpip 5555` qui fixe
+# toujours le port à 5555.
+format_adb_address() {
+  local value="$1"
+  case "$value" in
+    *:*) echo "$value" ;;
+    *) echo "$value:5555" ;;
+  esac
+}

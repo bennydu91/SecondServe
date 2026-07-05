@@ -235,9 +235,11 @@ Sur la Pixel Watch : `Paramètres → Système → À propos → Numéro de buil
 
 Puis `Paramètres → Options pour les développeurs → Débogage ADB` : activé
 
-### Récupérer l'IP de la montre
+### Récupérer l'adresse IP:PORT de la montre
 
-`Paramètres → Connectivité → WiFi → (réseau connecté) → Adresse IP`
+`Paramètres → Options pour les développeurs → Débogage sans fil` → l'écran affiche l'adresse complète sous la forme `IP:PORT` (ex. `192.168.1.5:42107`).
+
+**Le port n'est presque jamais 5555** : la Pixel Watch n'a pas de port USB data, elle ne peut donc utiliser que le "débogage sans fil" (Android 11+), qui assigne un port aléatoire à chaque activation — contrairement au mode `adb tcpip 5555` (réservé aux appareils avec USB, qui fixe le port à 5555). Toujours relire le port affiché à l'écran plutôt que de supposer 5555.
 
 ### Builder le module wear (sur le VPS)
 
@@ -252,15 +254,16 @@ cd /root/SecondServe/android/
 # Rapatrier l'APK du VPS
 scp user@<vps-ip>:/root/SecondServe/android/wear/build/outputs/apk/debug/wear-debug.apk .
 
-# Connecter la montre en ADB WiFi (port par défaut 5555)
-adb connect <ip-montre>:5555
+# Connecter la montre en ADB WiFi (utiliser l'IP:PORT relevée à l'étape précédente,
+# le port n'est presque jamais 5555 pour la Pixel Watch)
+adb connect <ip-montre>:<port>
 
 # Vérifier la connexion
 adb devices
-# → Liste incluant <ip-montre>:5555
+# → Liste incluant <ip-montre>:<port>
 
-# Installer sur la montre (cibler par IP pour éviter l'ambiguïté)
-adb -s <ip-montre>:5555 install wear-debug.apk
+# Installer sur la montre (cibler par IP:PORT pour éviter l'ambiguïté)
+adb -s <ip-montre>:<port> install wear-debug.apk
 ```
 
 ---
@@ -296,7 +299,7 @@ En cas d'absence, le build `release` bascule automatiquement sur l'`OfflineCoach
 adb logcat -s SecondServe:D DataLayerListener:D CoachingResolver:D
 
 # Logs en temps réel sur la montre
-adb -s <ip-montre>:5555 logcat -s SecondServe:D TennisScoreEngine:D
+adb -s <ip-montre>:<port> logcat -s SecondServe:D TennisScoreEngine:D
 ```
 
 ---
@@ -320,5 +323,5 @@ scp user@<vps-ip>:/root/SecondServe/android/app/build/outputs/apk/staging/app-st
 scp user@<vps-ip>:/root/SecondServe/android/wear/build/outputs/apk/debug/wear-debug.apk .
 
 adb install -r app-staging.apk
-adb -s <ip-montre>:5555 install -r wear-debug.apk
+adb -s <ip-montre>:<port> install -r wear-debug.apk
 ```

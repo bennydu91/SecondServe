@@ -114,8 +114,9 @@ for s in "${SERIALS[@]:-}"; do
   if [ "$kind" = "watch" ]; then
     WATCH_SERIAL="$s"
   else
-    # Un serial WiFi est toujours de la forme ip:5555 ; un serial USB n'a pas
-    # de ':'. L'USB gagne toujours, même si une entrée WiFi a été vue avant.
+    # Un serial WiFi est toujours de la forme ip:port (port variable selon le
+    # mode ADB) ; un serial USB n'a pas de ':'. L'USB gagne toujours, même si
+    # une entrée WiFi a été vue avant.
     case "$s" in
       *:*)
         [ -z "$PHONE_SERIAL" ] && PHONE_SERIAL="$s"
@@ -134,21 +135,23 @@ WATCH_STATUS="non ciblée"
 # --- Installation Pixel 9 Pro ---
 if [ "$TARGET_PHONE" = "1" ]; then
   if [ -z "$PHONE_SERIAL" ] && [ -n "${PHONE_IP:-}" ]; then
-    echo "🔌 Tentative de connexion au phone ($PHONE_IP:5555)…"
-    adb connect "$PHONE_IP:5555" >/dev/null 2>&1 || true
-    if adb -s "$PHONE_IP:5555" get-state >/dev/null 2>&1; then
-      PHONE_SERIAL="$PHONE_IP:5555"
+    PHONE_ADDR="$(format_adb_address "$PHONE_IP")"
+    echo "🔌 Tentative de connexion au phone ($PHONE_ADDR)…"
+    adb connect "$PHONE_ADDR" >/dev/null 2>&1 || true
+    if adb -s "$PHONE_ADDR" get-state >/dev/null 2>&1; then
+      PHONE_SERIAL="$PHONE_ADDR"
     fi
   fi
 
   if [ -z "$PHONE_SERIAL" ]; then
-    echo "📱 Phone non détecté (ni USB, ni IP configurée). Adresse IP du phone en WiFi (vide pour sauter) :"
+    echo "📱 Phone non détecté (ni USB, ni IP configurée). Adresse IP du phone en WiFi — ex. 192.168.1.5 ou 192.168.1.5:42107 si le port de débogage sans fil n'est pas 5555 (vide pour sauter) :"
     echo "AWAITING_INPUT:PHONE_IP" >&2
     read -r INPUT_PHONE_IP
     if [ -n "$INPUT_PHONE_IP" ]; then
-      adb connect "$INPUT_PHONE_IP:5555" >/dev/null 2>&1 || true
-      if adb -s "$INPUT_PHONE_IP:5555" get-state >/dev/null 2>&1; then
-        PHONE_SERIAL="$INPUT_PHONE_IP:5555"
+      INPUT_PHONE_ADDR="$(format_adb_address "$INPUT_PHONE_IP")"
+      adb connect "$INPUT_PHONE_ADDR" >/dev/null 2>&1 || true
+      if adb -s "$INPUT_PHONE_ADDR" get-state >/dev/null 2>&1; then
+        PHONE_SERIAL="$INPUT_PHONE_ADDR"
         save_ip_to_config "$CONF_FILE" "PHONE_IP" "$INPUT_PHONE_IP"
         echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
       fi
@@ -176,21 +179,23 @@ fi
 # --- Installation Pixel Watch ---
 if [ "$TARGET_WATCH" = "1" ]; then
   if [ -z "$WATCH_SERIAL" ] && [ -n "${WATCH_IP:-}" ]; then
-    echo "🔌 Tentative de connexion à la watch ($WATCH_IP:5555)…"
-    adb connect "$WATCH_IP:5555" >/dev/null 2>&1 || true
-    if adb -s "$WATCH_IP:5555" get-state >/dev/null 2>&1; then
-      WATCH_SERIAL="$WATCH_IP:5555"
+    WATCH_ADDR="$(format_adb_address "$WATCH_IP")"
+    echo "🔌 Tentative de connexion à la watch ($WATCH_ADDR)…"
+    adb connect "$WATCH_ADDR" >/dev/null 2>&1 || true
+    if adb -s "$WATCH_ADDR" get-state >/dev/null 2>&1; then
+      WATCH_SERIAL="$WATCH_ADDR"
     fi
   fi
 
   if [ -z "$WATCH_SERIAL" ]; then
-    echo "⌚ Watch non détectée. Adresse IP de la montre (vide pour sauter) :"
+    echo "⌚ Watch non détectée. Adresse IP de la montre — ex. 192.168.1.5:42107 (le port du débogage sans fil affiché sur la montre n'est presque jamais 5555, la Pixel Watch n'ayant pas de port USB data) — vide pour sauter :"
     echo "AWAITING_INPUT:WATCH_IP" >&2
     read -r INPUT_IP
     if [ -n "$INPUT_IP" ]; then
-      adb connect "$INPUT_IP:5555" >/dev/null 2>&1 || true
-      if adb -s "$INPUT_IP:5555" get-state >/dev/null 2>&1; then
-        WATCH_SERIAL="$INPUT_IP:5555"
+      INPUT_WATCH_ADDR="$(format_adb_address "$INPUT_IP")"
+      adb connect "$INPUT_WATCH_ADDR" >/dev/null 2>&1 || true
+      if adb -s "$INPUT_WATCH_ADDR" get-state >/dev/null 2>&1; then
+        WATCH_SERIAL="$INPUT_WATCH_ADDR"
         save_ip_to_config "$CONF_FILE" "WATCH_IP" "$INPUT_IP"
         echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
       fi

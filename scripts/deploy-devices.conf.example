@@ -10,5 +10,10 @@ VPS_REPO_PATH=/root/SecondServe
 # déjà active, puis te la demande interactivement (et propose de la sauver ici).
 # PHONE_IP n'est utilisé que si le Pixel 9 Pro n'est pas détecté en USB
 # (l'USB est toujours prioritaire quand branché).
+#
+# Format : IP seule (port ADB par défaut 5555 ajouté automatiquement) ou
+# IP:PORT si le "débogage sans fil" affiche un port différent — c'est presque
+# toujours le cas pour la Pixel Watch, qui n'a pas de port USB data et ne peut
+# donc utiliser que ce mode (port aléatoire, visible sur l'écran de la montre).
 PHONE_IP=
 WATCH_IP=
