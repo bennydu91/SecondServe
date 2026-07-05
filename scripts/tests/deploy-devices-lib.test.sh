@@ -16,8 +16,7 @@ assert_equal "$result_empty" "" "filter_connected_serials renvoie vide sans appa
 # --- classify_by_characteristics ---
 assert_equal "$(classify_by_characteristics 'nosdcard,watch')" "watch" "classify_by_characteristics détecte une montre"
 assert_equal "$(classify_by_characteristics 'nosdcard')" "phone" "classify_by_characteristics détecte un téléphone par défaut"
-assert_equal "$(classify_by_characteristics 'nosdcard,watch
-')" "watch" "classify_by_characteristics tolère un retour chariot final"
+assert_equal "$(classify_by_characteristics $'nosdcard,watch\r')" "watch" "classify_by_characteristics tolère un retour chariot final"
 
 # --- parse_deploy_args ---
 parse_deploy_args
