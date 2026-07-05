@@ -138,3 +138,53 @@ async def test_sync_push_empty_sessions(client):
     )
     assert response.status_code == 200
     assert response.json()["synced_sessions"] == 0
+
+
+@pytest.mark.asyncio
+async def test_sync_push_does_not_collide_with_web_created_session(client):
+    token = make_token()
+
+    # Une session est créée directement via le web (comme le ferait un vrai utilisateur web),
+    # elle obtient l'id=1 côté serveur en toute logique (première session de la base de test).
+    web_response = await client.post(
+        "/api/v1/sessions",
+        json={
+            "surface": "HARD",
+            "match_format": "BEST_OF_3",
+            "third_set_rule": "FULL_ADVANTAGE",
+            "opponent": "Session créée depuis le web",
+            "created_at": 1_000_000,
+        },
+        headers=auth(token),
+    )
+    assert web_response.status_code == 201
+    web_session_id = web_response.json()["id"]
+
+    # Le téléphone pousse SA session locale n°1 (Room autoincrement recommence à 1,
+    # indépendamment du compteur serveur) — même client_id que l'id serveur ci-dessus.
+    push_response = await client.post(
+        "/api/v1/sync/push",
+        json={"sessions": [session_dto(client_id=1, status="COMPLETED", result="VICTORY", updated_at=9_000_000)]},
+        headers=auth(token),
+    )
+    assert push_response.status_code == 200
+    assert push_response.json()["synced_sessions"] == 1
+
+    # La session créée depuis le web ne doit PAS avoir été écrasée par le push du téléphone.
+    web_session_after = await client.patch(
+        f"/api/v1/sessions/{web_session_id}",
+        json={},
+        headers=auth(token),
+    )
+    assert web_session_after.status_code == 200
+    assert web_session_after.json()["opponent"] == "Session créée depuis le web"
+    assert web_session_after.json()["surface"] == "HARD"
+
+    # La session du téléphone doit exister quelque part, distincte de celle du web.
+    all_sessions = await client.get("/api/v1/sessions", headers=auth(token))
+    assert all_sessions.status_code == 200
+    items = all_sessions.json()["items"]
+    assert len(items) == 2, "le push du téléphone doit créer une 2e session distincte, pas fusionner avec celle du web"
+    phone_session = next(s for s in items if s["id"] != web_session_id)
+    assert phone_session["status"] == "COMPLETED"
+    assert phone_session["result"] == "VICTORY"
