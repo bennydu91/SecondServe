@@ -14,10 +14,12 @@ Depuis ton poste local, une fois `scripts/deploy-devices.conf` renseigné (copie
 ./scripts/deploy-devices.sh --release       # build release (nécessite KEYSTORE_PASSWORD/KEY_PASSWORD)
 ```
 
-Le script détecte automatiquement le Pixel 9 Pro branché en USB. Pour la Pixel
-Watch, il réutilise une connexion ADB WiFi déjà active, sinon tente l'IP
-renseignée dans `deploy-devices.conf`, sinon te la demande (et propose de la
-sauvegarder). Les étapes manuelles ci-dessous restent la référence détaillée
+Le script détecte automatiquement le Pixel 9 Pro branché en USB — l'USB est
+toujours prioritaire quand il est présent. S'il n'est pas branché (ou pour la
+Pixel Watch, qui ne se connecte qu'en WiFi), le script réutilise une connexion
+ADB WiFi déjà active, sinon tente l'IP renseignée dans `deploy-devices.conf`
+(`PHONE_IP`/`WATCH_IP`), sinon te la demande (et sauvegarde automatiquement
+l'IP saisie). Les étapes manuelles ci-dessous restent la référence détaillée
 (SHA-1, keystore, premier lancement, logcat) et pour dépanner si le script
 échoue.
 

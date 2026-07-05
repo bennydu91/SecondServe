@@ -8,4 +8,7 @@ VPS_REPO_PATH=/root/SecondServe
 
 # Optionnel — best-effort : si absent, le script tente d'abord une connexion
 # déjà active, puis te la demande interactivement (et propose de la sauver ici).
+# PHONE_IP n'est utilisé que si le Pixel 9 Pro n'est pas détecté en USB
+# (l'USB est toujours prioritaire quand branché).
+PHONE_IP=
 WATCH_IP=

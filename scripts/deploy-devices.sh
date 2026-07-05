@@ -114,7 +114,16 @@ for s in "${SERIALS[@]:-}"; do
   if [ "$kind" = "watch" ]; then
     WATCH_SERIAL="$s"
   else
-    PHONE_SERIAL="$s"
+    # Un serial WiFi est toujours de la forme ip:5555 ; un serial USB n'a pas
+    # de ':'. L'USB gagne toujours, même si une entrée WiFi a été vue avant.
+    case "$s" in
+      *:*)
+        [ -z "$PHONE_SERIAL" ] && PHONE_SERIAL="$s"
+        ;;
+      *)
+        PHONE_SERIAL="$s"
+        ;;
+    esac
   fi
 done
 
@@ -124,8 +133,29 @@ WATCH_STATUS="non ciblée"
 
 # --- Installation Pixel 9 Pro ---
 if [ "$TARGET_PHONE" = "1" ]; then
+  if [ -z "$PHONE_SERIAL" ] && [ -n "${PHONE_IP:-}" ]; then
+    echo "🔌 Tentative de connexion au phone ($PHONE_IP:5555)…"
+    adb connect "$PHONE_IP:5555" >/dev/null 2>&1 || true
+    if adb -s "$PHONE_IP:5555" get-state >/dev/null 2>&1; then
+      PHONE_SERIAL="$PHONE_IP:5555"
+    fi
+  fi
+
   if [ -z "$PHONE_SERIAL" ]; then
-    echo "⚠️  Aucun téléphone détecté en USB — installation phone sautée."
+    echo "📱 Phone non détecté en USB. Adresse IP du phone en WiFi (vide pour sauter) :"
+    read -r INPUT_PHONE_IP
+    if [ -n "$INPUT_PHONE_IP" ]; then
+      adb connect "$INPUT_PHONE_IP:5555" >/dev/null 2>&1 || true
+      if adb -s "$INPUT_PHONE_IP:5555" get-state >/dev/null 2>&1; then
+        PHONE_SERIAL="$INPUT_PHONE_IP:5555"
+        save_ip_to_config "$CONF_FILE" "PHONE_IP" "$INPUT_PHONE_IP"
+        echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
+      fi
+    fi
+  fi
+
+  if [ -z "$PHONE_SERIAL" ]; then
+    echo "⚠️  Aucun téléphone détecté (USB ni WiFi) — installation phone sautée."
     INSTALL_FAILED=1
     PHONE_STATUS="sauté (non détecté)"
   else
@@ -159,7 +189,7 @@ if [ "$TARGET_WATCH" = "1" ]; then
       adb connect "$INPUT_IP:5555" >/dev/null 2>&1 || true
       if adb -s "$INPUT_IP:5555" get-state >/dev/null 2>&1; then
         WATCH_SERIAL="$INPUT_IP:5555"
-        save_watch_ip_to_config "$CONF_FILE" "$INPUT_IP"
+        save_ip_to_config "$CONF_FILE" "WATCH_IP" "$INPUT_IP"
         echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
       fi
     fi
