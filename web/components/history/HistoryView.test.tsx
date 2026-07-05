@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import { HistoryView } from "./HistoryView";
 import type { SessionDto } from "@/lib/types";
@@ -59,5 +59,17 @@ describe("HistoryView", () => {
     render(<HistoryView matches={[buildMatch()]} />);
     fireEvent.click(screen.getByRole("button", { name: /modifier/i }));
     expect(screen.getByLabelText("Adversaire")).toHaveValue("Rafael");
+  });
+
+  it("supprime le match et rafraîchit la liste au clic sur Confirmer", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<HistoryView matches={[buildMatch()]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    fireEvent.click(screen.getByRole("button", { name: /confirmer/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/console/sessions/1", { method: "DELETE" }));
+    vi.unstubAllGlobals();
   });
 });

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { SessionDto } from "@/lib/types";
 import { surfaceLabel } from "@/lib/surfaces";
 import { MatchEditForm } from "./MatchEditForm";
+import { DeleteMatchButton } from "./DeleteMatchButton";
 import styles from "./HistoryView.module.css";
 
 type Props = { matches: SessionDto[] };
@@ -51,9 +52,7 @@ export function HistoryView({ matches }: Props) {
                     >
                       Modifier
                     </button>
-                    <button type="button" className={styles.deleteButton}>
-                      Supprimer
-                    </button>
+                    <DeleteMatchButton sessionId={match.id} onDeleted={() => router.refresh()} />
                   </span>
                 </div>
                 {editingId === match.id && (

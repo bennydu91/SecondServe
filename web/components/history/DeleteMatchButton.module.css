@@ -1,0 +1,52 @@
+.deleteButton {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ss-hot);
+  background: transparent;
+  color: var(--ss-hot);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.confirmText {
+  font-size: 12px;
+  color: var(--ss-hot);
+  font-weight: 600;
+}
+
+.confirmButton,
+.cancelButton {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmButton {
+  border: none;
+  background: var(--ss-hot);
+  color: #ffffff;
+}
+
+.cancelButton {
+  border: 1px solid var(--ss-border);
+  background: transparent;
+  color: var(--ss-muted);
+}
+
+.error {
+  width: 100%;
+  font-size: 11px;
+  color: var(--ss-hot);
+}
