@@ -18,30 +18,30 @@ class SyncService:
         for session_dto in request.sessions:
             await self._upsert_session(session_dto)
             synced += 1
-        for session_id in request.deleted_session_ids:
-            await self._delete_session(session_id)
+        for client_id in request.deleted_session_ids:
+            await self._delete_session(client_id)
         await self.db.flush()
         logger.info("SyncService: %d sessions upserted, %d deleted", synced, len(request.deleted_session_ids))
         return SyncPushResponse(synced_sessions=synced)
 
-    async def _delete_session(self, session_id: int) -> None:
+    async def _get_by_client_id(self, client_id: int) -> SessionModel | None:
         result = await self.db.execute(
-            select(SessionModel).where(SessionModel.id == session_id)
+            select(SessionModel).where(SessionModel.client_id == client_id)
         )
-        existing = result.scalar_one_or_none()
+        return result.scalar_one_or_none()
+
+    async def _delete_session(self, client_id: int) -> None:
+        existing = await self._get_by_client_id(client_id)
         if existing is not None:
-            emit_event("match.ended", {"session_id": session_id})
+            emit_event("match.ended", {"session_id": existing.id})
             await self.db.delete(existing)
-            logger.info("SyncService: session %d supprimée (cascade: pending_notifications)", session_id)
+            logger.info("SyncService: session client_id=%d (server id=%d) supprimée", client_id, existing.id)
 
     async def _upsert_session(self, dto) -> None:
-        result = await self.db.execute(
-            select(SessionModel).where(SessionModel.id == dto.client_id)
-        )
-        existing = result.scalar_one_or_none()
+        existing = await self._get_by_client_id(dto.client_id)
         if existing is None:
             model = SessionModel(
-                id=dto.client_id,
+                client_id=dto.client_id,
                 surface=dto.surface,
                 match_format=dto.match_format,
                 third_set_rule=dto.third_set_rule,
