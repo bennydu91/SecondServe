@@ -3,13 +3,23 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseConfLines, updateConfLines } = require('./lib.js');
+const {
+  parseConfLines,
+  updateConfLines,
+  buildDeployArgs,
+  buildReleaseEnv,
+  parseAwaitingInputMarker,
+  splitCompleteLines,
+} = require('./lib.js');
+const { spawn } = require('node:child_process');
+const crypto = require('node:crypto');
 
 const SCRIPTS_DIR = path.join(__dirname, '..');
 const CONF_FILE = path.join(SCRIPTS_DIR, 'deploy-devices.conf');
 const CONF_EXAMPLE_FILE = path.join(SCRIPTS_DIR, 'deploy-devices.conf.example');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const PORT = 4400;
+const DEPLOY_SCRIPT_PATH = path.join(SCRIPTS_DIR, 'deploy-devices.sh');
 
 const CONFIG_FIELDS = ['VPS_HOST', 'VPS_USER', 'VPS_SSH_PORT', 'VPS_REPO_PATH', 'PHONE_IP', 'WATCH_IP'];
 
@@ -97,6 +107,131 @@ function serveStaticFile(pathname, res) {
   });
 }
 
+let currentRun = null; // { id, child, sseClients: Set, awaitingInput: string|null, stdoutCarry, stderrCarry }
+
+function broadcast(run, event, data) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const client of run.sseClients) {
+    client.write(payload);
+  }
+}
+
+function handleChildOutput(run, chunk, streamName) {
+  const carryKey = streamName === 'stdout' ? 'stdoutCarry' : 'stderrCarry';
+  const { lines, carry } = splitCompleteLines(run[carryKey], chunk.toString('utf8'));
+  run[carryKey] = carry;
+  for (const line of lines) {
+    if (streamName === 'stderr') {
+      const marker = parseAwaitingInputMarker(line);
+      if (marker) {
+        run.awaitingInput = marker;
+        broadcast(run, 'awaiting-input', { device: marker });
+        continue;
+      }
+    }
+    broadcast(run, 'log', { line, stream: streamName });
+  }
+}
+
+async function handlePostDeploy(req, res) {
+  if (currentRun) {
+    res.writeHead(409, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Un déploiement est déjà en cours.' }));
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'JSON invalide' }));
+    return;
+  }
+  let args;
+  try {
+    args = buildDeployArgs({ phone: !!body.phone, watch: !!body.watch, release: !!body.release });
+  } catch (err) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: err.message }));
+    return;
+  }
+  const releaseEnv = buildReleaseEnv({
+    release: !!body.release,
+    keystorePassword: body.keystorePassword || '',
+    keyPassword: body.keyPassword || '',
+  });
+
+  const child = spawn(DEPLOY_SCRIPT_PATH, args, {
+    cwd: SCRIPTS_DIR,
+    env: { ...process.env, ...releaseEnv },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+
+  const run = {
+    id: crypto.randomUUID(),
+    child,
+    sseClients: new Set(),
+    awaitingInput: null,
+    stdoutCarry: '',
+    stderrCarry: '',
+  };
+  currentRun = run;
+
+  child.stdout.on('data', (chunk) => handleChildOutput(run, chunk, 'stdout'));
+  child.stderr.on('data', (chunk) => handleChildOutput(run, chunk, 'stderr'));
+  child.on('close', (code) => {
+    broadcast(run, 'done', { code });
+    for (const client of run.sseClients) {
+      client.end();
+    }
+    if (currentRun === run) currentRun = null;
+  });
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ runId: run.id }));
+}
+
+function handleGetDeployStream(req, res, url) {
+  const runId = url.searchParams.get('runId');
+  if (!currentRun || currentRun.id !== runId) {
+    res.writeHead(404);
+    res.end('Aucun déploiement en cours avec cet identifiant.');
+    return;
+  }
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  currentRun.sseClients.add(res);
+  if (currentRun.awaitingInput) {
+    res.write(`event: awaiting-input\ndata: ${JSON.stringify({ device: currentRun.awaitingInput })}\n\n`);
+  }
+  req.on('close', () => {
+    if (currentRun) currentRun.sseClients.delete(res);
+  });
+}
+
+async function handlePostDeployInput(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'JSON invalide' }));
+    return;
+  }
+  if (!currentRun || currentRun.id !== body.runId || !currentRun.awaitingInput) {
+    res.writeHead(409, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Aucune saisie attendue pour le moment.' }));
+    return;
+  }
+  currentRun.child.stdin.write(`${body.value || ''}\n`);
+  currentRun.awaitingInput = null;
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ ok: true }));
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
@@ -110,6 +245,18 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === 'GET' && Object.prototype.hasOwnProperty.call(STATIC_FILES, url.pathname)) {
     serveStaticFile(url.pathname, res);
+    return;
+  }
+  if (req.method === 'POST' && url.pathname === '/api/deploy') {
+    handlePostDeploy(req, res);
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/api/deploy/stream') {
+    handleGetDeployStream(req, res, url);
+    return;
+  }
+  if (req.method === 'POST' && url.pathname === '/api/deploy/input') {
+    handlePostDeployInput(req, res);
     return;
   }
 

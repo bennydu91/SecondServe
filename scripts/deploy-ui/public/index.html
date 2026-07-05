@@ -22,6 +22,28 @@
     <p id="config-status"></p>
   </section>
 
+  <section id="deploy-section">
+    <h2>Lancer un déploiement</h2>
+    <form id="deploy-form">
+      <label><input type="checkbox" name="phone" checked /> Phone</label>
+      <label><input type="checkbox" name="watch" checked /> Watch</label>
+      <label><input type="checkbox" name="release" id="release-toggle" /> Release</label>
+      <div id="release-fields" hidden>
+        <label>Mot de passe keystore <input type="password" name="keystorePassword" /></label>
+        <label>Mot de passe clé <input type="password" name="keyPassword" /></label>
+      </div>
+      <button type="submit" id="deploy-button">Lancer</button>
+    </form>
+
+    <div id="awaiting-input-box" hidden>
+      <label id="awaiting-input-label"></label>
+      <input type="text" id="awaiting-input-value" />
+      <button type="button" id="awaiting-input-submit">Envoyer</button>
+    </div>
+
+    <pre id="log-panel"></pre>
+  </section>
+
   <script src="/app.js"></script>
 </body>
 </html>
