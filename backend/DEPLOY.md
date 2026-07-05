@@ -15,11 +15,15 @@
 
 ### 1. Copier les fichiers du backend vers le répertoire de déploiement
 
-Copie locale (même machine) depuis le dépôt de dev vers `/opt/secondserve-backend`, à l'écart du `.venv` de dev :
+Copie locale (même machine) depuis le dépôt de dev vers `/opt/secondserve-backend`, à l'écart du `.venv` de dev et de la base de monitoring de prod :
 
 ```bash
-rsync -avz --exclude='.venv' /root/SecondServe/backend/ /opt/secondserve-backend/
+rsync -avz --exclude='.venv' --exclude='monitor.db' /root/SecondServe/backend/ /opt/secondserve-backend/
 ```
+
+> **`--exclude='monitor.db'` est indispensable** : sans lui, le `monitor.db` du dépôt de dev (vide) écrase la base de monitoring de prod (perte de l'historique d'événements métier — pas les matchs/sessions, qui vivent dans `secondserve.db`, non versionné et donc jamais touché par ce rsync).
+>
+> **Permissions du répertoire `/opt/secondserve-backend`** : ce répertoire doit rester accessible en écriture au groupe `www-data` (`chgrp www-data /opt/secondserve-backend && chmod 775 /opt/secondserve-backend`, à faire une seule fois). SQLite a besoin de créer des fichiers journal/WAL dans le même répertoire que le `.db` qu'il modifie — si le répertoire appartient à `root:root` en `755`, le service `www-data` ne peut pas écrire dedans et échoue au démarrage avec `attempt to write a readonly database` dès qu'un fichier `.db` doit être (re)créé ou modifié en profondeur (ex. `CREATE TABLE` sur un `monitor.db` fraîchement écrasé).
 
 ### 2. Installer les dépendances
 
@@ -151,10 +155,12 @@ L'authentification repose sur Google OAuth2 — aucune dépendance Firebase. Le 
 Toujours en local sur le VPS, depuis le dépôt de dev :
 
 ```bash
-rsync -avz --exclude='.venv' /root/SecondServe/backend/ /opt/secondserve-backend/
+rsync -avz --exclude='.venv' --exclude='monitor.db' /root/SecondServe/backend/ /opt/secondserve-backend/
 cd /opt/secondserve-backend && UV_PYTHON_INSTALL_DIR=/opt/uv-python UV_PYTHON=3.12 uv sync --no-dev && uv run alembic upgrade head && sudo systemctl restart secondserve-backend
 ```
 
 > **`--exclude='.venv'`** est indispensable : sans lui, le `.venv` local (dont les shebangs pointent vers le chemin de développement) écrase celui construit sur le VPS et le service refuse de démarrer avec `Permission denied`.
+>
+> **`--exclude='monitor.db'`** est tout aussi indispensable : sans lui, le `monitor.db` vide du dépôt de dev écrase la base de monitoring de prod (voir l'avertissement de l'étape 1) — incident vécu le 2026-07-05.
 >
 > Ne jamais oublier `UV_PYTHON_INSTALL_DIR=/opt/uv-python` lors des mises à jour — si `uv` recrée le `.venv` sans cette variable, Python est installé sous `/root/.local/` (inaccessible à `www-data`) et le service ne démarrera plus.
