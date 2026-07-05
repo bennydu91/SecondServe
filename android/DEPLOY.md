@@ -241,6 +241,15 @@ Puis `Paramètres → Options pour les développeurs → Débogage ADB` : activ�
 
 **Le port n'est presque jamais 5555** : la Pixel Watch n'a pas de port USB data, elle ne peut donc utiliser que le "débogage sans fil" (Android 11+), qui assigne un port aléatoire à chaque activation — contrairement au mode `adb tcpip 5555` (réservé aux appareils avec USB, qui fixe le port à 5555). Toujours relire le port affiché à l'écran plutôt que de supposer 5555.
 
+### Associer la montre (une seule fois par ordinateur)
+
+Le "débogage sans fil" sépare deux étapes distinctes :
+
+1. **Association** — écran `Débogage sans fil → Associer un appareil` : affiche une IP:port *différente* de celle de l'écran principal, plus un code à 6 chiffres, à usage unique (`adb pair <ip>:<port> <code>`). Établit une confiance persistante entre cet ordinateur et la montre.
+2. **Connexion** — écran principal, celui utilisé ci-dessus (`adb connect <ip>:<port>`) : ne fonctionne qu'*après* une association réussie depuis cette machine.
+
+Sans association préalable, toute tentative de connexion échoue silencieusement, quels que soient l'IP et le port renseignés. `scripts/deploy-devices.sh` gère maintenant ce cas automatiquement : si la connexion échoue, il propose de saisir l'adresse d'association et le code (une seule fois par ordinateur en pratique), puis retente la connexion. Ça fonctionne aussi bien en ligne de commande que depuis l'interface web (`scripts/deploy-ui/`).
+
 ### Builder le module wear (sur le VPS)
 
 ```bash

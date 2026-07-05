@@ -53,6 +53,8 @@ function showAwaitingInput(device) {
   const labels = {
     PHONE_IP: 'IP du phone (IP ou IP:PORT si différent de 5555) :',
     WATCH_IP: 'IP de la watch (IP:PORT, le port du débogage sans fil est presque toujours différent de 5555) :',
+    PHONE_PAIR: 'Association requise — tape l\'IP:port ET le code à 6 chiffres depuis "Associer un appareil" sur le phone, séparés par un espace (ex. 192.168.1.5:41235 123456) :',
+    WATCH_PAIR: 'Association requise — tape l\'IP:port ET le code à 6 chiffres depuis "Associer un appareil" sur la montre, séparés par un espace (ex. 192.168.1.5:41235 123456) :',
   };
   awaitingInputLabel.textContent = labels[device] || `Valeur attendue (${device}) :`;
   awaitingInputValue.value = '';
