@@ -134,6 +134,7 @@ WATCH_STATUS="non ciblée"
 
 # --- Installation Pixel 9 Pro ---
 if [ "$TARGET_PHONE" = "1" ]; then
+  PHONE_ADDR=""
   if [ -z "$PHONE_SERIAL" ] && [ -n "${PHONE_IP:-}" ]; then
     PHONE_ADDR="$(format_adb_address "$PHONE_IP")"
     echo "🔌 Tentative de connexion au phone ($PHONE_ADDR)…"
@@ -148,12 +149,33 @@ if [ "$TARGET_PHONE" = "1" ]; then
     echo "AWAITING_INPUT:PHONE_IP" >&2
     read -r INPUT_PHONE_IP
     if [ -n "$INPUT_PHONE_IP" ]; then
-      INPUT_PHONE_ADDR="$(format_adb_address "$INPUT_PHONE_IP")"
-      adb connect "$INPUT_PHONE_ADDR" >/dev/null 2>&1 || true
-      if adb -s "$INPUT_PHONE_ADDR" get-state >/dev/null 2>&1; then
-        PHONE_SERIAL="$INPUT_PHONE_ADDR"
+      PHONE_ADDR="$(format_adb_address "$INPUT_PHONE_IP")"
+      adb connect "$PHONE_ADDR" >/dev/null 2>&1 || true
+      if adb -s "$PHONE_ADDR" get-state >/dev/null 2>&1; then
+        PHONE_SERIAL="$PHONE_ADDR"
         save_ip_to_config "$CONF_FILE" "PHONE_IP" "$INPUT_PHONE_IP"
         echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
+      fi
+    fi
+  fi
+
+  if [ -z "$PHONE_SERIAL" ] && [ -n "$PHONE_ADDR" ]; then
+    echo "📱 Connexion à $PHONE_ADDR impossible — le phone n'est peut-être pas associé à cet ordinateur."
+    echo "   Sur le phone : Options développeur → Débogage sans fil → Associer un appareil."
+    echo "   Tape l'IP:port d'association ET le code à 6 chiffres, séparés par un espace (vide pour sauter) :"
+    echo "AWAITING_INPUT:PHONE_PAIR" >&2
+    read -r PAIR_ADDR PAIR_CODE
+    if [ -n "$PAIR_ADDR" ] && [ -n "$PAIR_CODE" ]; then
+      if adb pair "$PAIR_ADDR" "$PAIR_CODE" >/dev/null 2>&1; then
+        echo "🔗 Association réussie, nouvelle tentative de connexion à $PHONE_ADDR…"
+        adb connect "$PHONE_ADDR" >/dev/null 2>&1 || true
+        if adb -s "$PHONE_ADDR" get-state >/dev/null 2>&1; then
+          PHONE_SERIAL="$PHONE_ADDR"
+          save_ip_to_config "$CONF_FILE" "PHONE_IP" "$PHONE_ADDR"
+          echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
+        fi
+      else
+        echo "⚠️  Échec de l'association (code incorrect ou expiré ?)."
       fi
     fi
   fi
@@ -184,6 +206,7 @@ fi
 
 # --- Installation Pixel Watch ---
 if [ "$TARGET_WATCH" = "1" ]; then
+  WATCH_ADDR=""
   if [ -z "$WATCH_SERIAL" ] && [ -n "${WATCH_IP:-}" ]; then
     WATCH_ADDR="$(format_adb_address "$WATCH_IP")"
     echo "🔌 Tentative de connexion à la watch ($WATCH_ADDR)…"
@@ -198,12 +221,33 @@ if [ "$TARGET_WATCH" = "1" ]; then
     echo "AWAITING_INPUT:WATCH_IP" >&2
     read -r INPUT_IP
     if [ -n "$INPUT_IP" ]; then
-      INPUT_WATCH_ADDR="$(format_adb_address "$INPUT_IP")"
-      adb connect "$INPUT_WATCH_ADDR" >/dev/null 2>&1 || true
-      if adb -s "$INPUT_WATCH_ADDR" get-state >/dev/null 2>&1; then
-        WATCH_SERIAL="$INPUT_WATCH_ADDR"
+      WATCH_ADDR="$(format_adb_address "$INPUT_IP")"
+      adb connect "$WATCH_ADDR" >/dev/null 2>&1 || true
+      if adb -s "$WATCH_ADDR" get-state >/dev/null 2>&1; then
+        WATCH_SERIAL="$WATCH_ADDR"
         save_ip_to_config "$CONF_FILE" "WATCH_IP" "$INPUT_IP"
         echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
+      fi
+    fi
+  fi
+
+  if [ -z "$WATCH_SERIAL" ] && [ -n "$WATCH_ADDR" ]; then
+    echo "⌚ Connexion à $WATCH_ADDR impossible — la watch n'est peut-être pas associée à cet ordinateur."
+    echo "   Sur la montre : Options développeur → Débogage sans fil → Associer un appareil."
+    echo "   Tape l'IP:port d'association ET le code à 6 chiffres, séparés par un espace (vide pour sauter) :"
+    echo "AWAITING_INPUT:WATCH_PAIR" >&2
+    read -r PAIR_ADDR PAIR_CODE
+    if [ -n "$PAIR_ADDR" ] && [ -n "$PAIR_CODE" ]; then
+      if adb pair "$PAIR_ADDR" "$PAIR_CODE" >/dev/null 2>&1; then
+        echo "🔗 Association réussie, nouvelle tentative de connexion à $WATCH_ADDR…"
+        adb connect "$WATCH_ADDR" >/dev/null 2>&1 || true
+        if adb -s "$WATCH_ADDR" get-state >/dev/null 2>&1; then
+          WATCH_SERIAL="$WATCH_ADDR"
+          save_ip_to_config "$CONF_FILE" "WATCH_IP" "$WATCH_ADDR"
+          echo "💾 IP sauvegardée dans $(basename "$CONF_FILE")."
+        fi
+      else
+        echo "⚠️  Échec de l'association (code incorrect ou expiré ?)."
       fi
     fi
   fi
