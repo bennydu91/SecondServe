@@ -53,16 +53,16 @@ validate_config() {
   return 0
 }
 
-# Met à jour (ou ajoute) la ligne WATCH_IP= dans le fichier de config donné.
+# Met à jour (ou ajoute) la ligne ${var_name}= dans le fichier de config donné.
 # Portable macOS/Linux : passe par un fichier temporaire plutôt que 'sed -i'
 # (l'option -i de sed diffère entre BSD/macOS et GNU/Linux).
-save_watch_ip_to_config() {
-  local conf_file="$1" ip="$2" tmp
+save_ip_to_config() {
+  local conf_file="$1" var_name="$2" ip="$3" tmp
   tmp="$(mktemp)"
-  if [ -f "$conf_file" ] && grep -q '^WATCH_IP=' "$conf_file"; then
-    awk -v ip="$ip" '{ if ($0 ~ /^WATCH_IP=/) print "WATCH_IP=" ip; else print }' "$conf_file" > "$tmp"
+  if [ -f "$conf_file" ] && grep -q "^${var_name}=" "$conf_file"; then
+    awk -v var_name="$var_name" -v ip="$ip" '{ if ($0 ~ ("^" var_name "=")) print var_name "=" ip; else print }' "$conf_file" > "$tmp"
   else
-    { [ -f "$conf_file" ] && cat "$conf_file"; printf 'WATCH_IP=%s\n' "$ip"; } > "$tmp"
+    { [ -f "$conf_file" ] && cat "$conf_file"; printf '%s=%s\n' "$var_name" "$ip"; } > "$tmp"
   fi
   mv "$tmp" "$conf_file"
 }

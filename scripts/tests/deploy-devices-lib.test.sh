@@ -51,20 +51,28 @@ assert_status "$?" "0" "validate_config accepte une config complète"
 )
 assert_status "$?" "1" "validate_config rejette une config incomplète"
 
-# --- save_watch_ip_to_config ---
+# --- save_ip_to_config ---
 TMP_CONF="$(mktemp)"
 printf 'VPS_HOST=1.2.3.4\nWATCH_IP=10.0.0.1\n' > "$TMP_CONF"
-save_watch_ip_to_config "$TMP_CONF" "10.0.0.99"
+save_ip_to_config "$TMP_CONF" "WATCH_IP" "10.0.0.99"
 result="$(grep '^WATCH_IP=' "$TMP_CONF")"
-assert_equal "$result" "WATCH_IP=10.0.0.99" "save_watch_ip_to_config met à jour une ligne existante"
+assert_equal "$result" "WATCH_IP=10.0.0.99" "save_ip_to_config met à jour une ligne WATCH_IP existante"
 
 TMP_CONF2="$(mktemp)"
 printf 'VPS_HOST=1.2.3.4\n' > "$TMP_CONF2"
-save_watch_ip_to_config "$TMP_CONF2" "10.0.0.42"
+save_ip_to_config "$TMP_CONF2" "WATCH_IP" "10.0.0.42"
 result2="$(grep '^WATCH_IP=' "$TMP_CONF2")"
-assert_equal "$result2" "WATCH_IP=10.0.0.42" "save_watch_ip_to_config ajoute la ligne si absente"
+assert_equal "$result2" "WATCH_IP=10.0.0.42" "save_ip_to_config ajoute la ligne WATCH_IP si absente"
 
-rm -f "$TMP_CONF" "$TMP_CONF2"
+TMP_CONF3="$(mktemp)"
+printf 'VPS_HOST=1.2.3.4\nPHONE_IP=10.0.0.5\nWATCH_IP=10.0.0.1\n' > "$TMP_CONF3"
+save_ip_to_config "$TMP_CONF3" "PHONE_IP" "10.0.0.77"
+result3="$(grep '^PHONE_IP=' "$TMP_CONF3")"
+assert_equal "$result3" "PHONE_IP=10.0.0.77" "save_ip_to_config met à jour PHONE_IP sans toucher WATCH_IP"
+result3b="$(grep '^WATCH_IP=' "$TMP_CONF3")"
+assert_equal "$result3b" "WATCH_IP=10.0.0.1" "save_ip_to_config ne modifie pas les autres variables du fichier"
+
+rm -f "$TMP_CONF" "$TMP_CONF2" "$TMP_CONF3"
 
 test_summary
 exit $?
