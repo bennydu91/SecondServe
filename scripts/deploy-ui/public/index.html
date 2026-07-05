@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Deploy SecondServe</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <h1>Déploiement SecondServe</h1>
+
+  <section id="config-section">
+    <h2>Configuration</h2>
+    <form id="config-form">
+      <label>VPS_HOST <input type="text" name="VPS_HOST" /></label>
+      <label>VPS_USER <input type="text" name="VPS_USER" /></label>
+      <label>VPS_SSH_PORT <input type="text" name="VPS_SSH_PORT" /></label>
+      <label>VPS_REPO_PATH <input type="text" name="VPS_REPO_PATH" /></label>
+      <label>PHONE_IP <input type="text" name="PHONE_IP" /></label>
+      <label>WATCH_IP <input type="text" name="WATCH_IP" /></label>
+      <button type="submit">Enregistrer</button>
+    </form>
+    <p id="config-status"></p>
+  </section>
+
+  <script src="/app.js"></script>
+</body>
+</html>
