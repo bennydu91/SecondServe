@@ -20,7 +20,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(_request: Request, { params }: RouteParams) {
   const token = await getSessionToken();
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 

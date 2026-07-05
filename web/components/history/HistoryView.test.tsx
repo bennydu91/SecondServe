@@ -50,6 +50,24 @@ describe("HistoryView", () => {
     expect(screen.queryByText("Joueur 1")).not.toBeInTheDocument();
   });
 
+  it("revient sur la dernière page valide si les matchs restants tiennent sur une page après suppression", () => {
+    const matches = Array.from({ length: 21 }, (_, i) =>
+      buildMatch({ id: i + 1, opponent: `Joueur ${i + 1}`, createdAt: Date.UTC(2026, 0, 1) - i * 1000 })
+    );
+    const { rerender } = render(<HistoryView matches={matches} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /page suivante/i }));
+    expect(screen.getByText("Joueur 21")).toBeInTheDocument();
+
+    // Simule le router.refresh() après suppression du dernier match de la page 2 :
+    // le composant est re-rendu avec moins de matchs, mais son état `page` interne persiste.
+    rerender(<HistoryView matches={matches.slice(0, 20)} />);
+
+    expect(screen.getByText("Joueur 1")).toBeInTheDocument();
+    expect(screen.queryByText("Joueur 21")).not.toBeInTheDocument();
+    expect(screen.queryByText(/pas encore de match/i)).not.toBeInTheDocument();
+  });
+
   it("ne montre pas de bouton page suivante s'il y a moins de 20 matchs", () => {
     render(<HistoryView matches={[buildMatch()]} />);
     expect(screen.queryByRole("button", { name: /page suivante/i })).not.toBeInTheDocument();

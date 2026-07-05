@@ -86,26 +86,16 @@
   justify-content: flex-end;
 }
 
-.editButton,
-.deleteButton {
+.editButton {
   min-height: 36px;
   padding: 0 12px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-}
-
-.editButton {
   background: transparent;
   border: 1px solid var(--ss-border);
   color: var(--ss-text);
-}
-
-.deleteButton {
-  background: transparent;
-  border: 1px solid var(--ss-hot);
-  color: var(--ss-hot);
 }
 
 .empty {

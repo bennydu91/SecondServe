@@ -21,7 +21,8 @@ export function HistoryView({ matches }: Props) {
   const [page, setPage] = useState(0);
   const [editingId, setEditingId] = useState<number | null>(null);
   const totalPages = Math.ceil(matches.length / PAGE_SIZE);
-  const pageMatches = matches.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const safePage = totalPages === 0 ? 0 : Math.max(0, Math.min(page, totalPages - 1));
+  const pageMatches = matches.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   return (
     <div className={styles.card}>
@@ -74,14 +75,14 @@ export function HistoryView({ matches }: Props) {
                 type="button"
                 className={styles.pageButton}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
+                disabled={safePage === 0}
               >
                 Page précédente
               </button>
               <span className={styles.pageIndicator}>
-                Page {page + 1} / {totalPages}
+                Page {safePage + 1} / {totalPages}
               </span>
-              {page < totalPages - 1 && (
+              {safePage < totalPages - 1 && (
                 <button type="button" className={styles.pageButton} onClick={() => setPage((p) => p + 1)}>
                   Page suivante
                 </button>
