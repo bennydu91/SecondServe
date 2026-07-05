@@ -41,7 +41,15 @@ export function DeleteMatchButton({ sessionId, onDeleted }: Props) {
       <button type="button" className={styles.confirmButton} onClick={handleConfirm} disabled={pending}>
         {pending ? "Suppression..." : "Confirmer"}
       </button>
-      <button type="button" className={styles.cancelButton} onClick={() => setConfirming(false)} disabled={pending}>
+      <button
+        type="button"
+        className={styles.cancelButton}
+        onClick={() => {
+          setConfirming(false);
+          setError(null);
+        }}
+        disabled={pending}
+      >
         Annuler
       </button>
       {error && <span className={styles.error}>{error}</span>}

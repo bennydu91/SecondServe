@@ -49,4 +49,18 @@ describe("DeleteMatchButton", () => {
     fireEvent.click(screen.getByRole("button", { name: /confirmer/i }));
     await waitFor(() => expect(screen.getByText(/échec de la suppression/i)).toBeInTheDocument());
   });
+
+  it("efface l'erreur au clic sur Annuler, sans la réafficher au clic suivant sur Supprimer", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+    render(<DeleteMatchButton sessionId={5} onDeleted={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    fireEvent.click(screen.getByRole("button", { name: /confirmer/i }));
+    await waitFor(() => expect(screen.getByText(/échec de la suppression/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: /annuler/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+
+    expect(screen.queryByText(/échec de la suppression/i)).not.toBeInTheDocument();
+  });
 });
