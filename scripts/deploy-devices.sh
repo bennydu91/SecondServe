@@ -143,6 +143,7 @@ if [ "$TARGET_PHONE" = "1" ]; then
 
   if [ -z "$PHONE_SERIAL" ]; then
     echo "📱 Phone non détecté (ni USB, ni IP configurée). Adresse IP du phone en WiFi (vide pour sauter) :"
+    echo "AWAITING_INPUT:PHONE_IP" >&2
     read -r INPUT_PHONE_IP
     if [ -n "$INPUT_PHONE_IP" ]; then
       adb connect "$INPUT_PHONE_IP:5555" >/dev/null 2>&1 || true
@@ -184,6 +185,7 @@ if [ "$TARGET_WATCH" = "1" ]; then
 
   if [ -z "$WATCH_SERIAL" ]; then
     echo "⌚ Watch non détectée. Adresse IP de la montre (vide pour sauter) :"
+    echo "AWAITING_INPUT:WATCH_IP" >&2
     read -r INPUT_IP
     if [ -n "$INPUT_IP" ]; then
       adb connect "$INPUT_IP:5555" >/dev/null 2>&1 || true
