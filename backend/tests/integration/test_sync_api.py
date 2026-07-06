@@ -188,3 +188,40 @@ async def test_sync_push_does_not_collide_with_web_created_session(client):
     phone_session = next(s for s in items if s["id"] != web_session_id)
     assert phone_session["status"] == "COMPLETED"
     assert phone_session["result"] == "VICTORY"
+
+
+@pytest.mark.asyncio
+async def test_sync_delete_does_not_collide_with_web_created_session(client):
+    token = make_token()
+
+    # Session créée directement via le web, obtient l'id=1 côté serveur.
+    web_response = await client.post(
+        "/api/v1/sessions",
+        json={
+            "surface": "HARD",
+            "match_format": "BEST_OF_3",
+            "third_set_rule": "FULL_ADVANTAGE",
+            "opponent": "Session créée depuis le web",
+            "created_at": 1_000_000,
+        },
+        headers=auth(token),
+    )
+    assert web_response.status_code == 201
+    web_session_id = web_response.json()["id"]
+
+    # Le téléphone supprime SA session locale n°1 (même valeur que l'id serveur du web,
+    # par collision de compteurs indépendants) — ne doit PAS supprimer la session web.
+    delete_response = await client.post(
+        "/api/v1/sync/push",
+        json={"sessions": [], "deleted_session_ids": [1]},
+        headers=auth(token),
+    )
+    assert delete_response.status_code == 200
+
+    # La session web doit toujours exister.
+    all_sessions = await client.get("/api/v1/sessions", headers=auth(token))
+    assert all_sessions.status_code == 200
+    items = all_sessions.json()["items"]
+    assert len(items) == 1
+    assert items[0]["id"] == web_session_id
+    assert items[0]["opponent"] == "Session créée depuis le web"

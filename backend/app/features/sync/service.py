@@ -3,7 +3,16 @@ meaningful as long as exactly one device (the phone) pushes sessions. If a
 second device ever pushes sessions independently (e.g. a tablet, or a
 reinstalled app with a fresh local DB), its client_id sequence could again
 collide with the phone's. Not handled here — see
-docs/superpowers/plans/2026-07-05-fix-sync-session-id-collision.md."""
+docs/superpowers/plans/2026-07-05-fix-sync-session-id-collision.md.
+
+Migration note: sessions synced from the phone BEFORE this client_id column
+existed have client_id=NULL after the migration (indistinguishable from a
+web-created session). If such a pre-existing session is edited on the phone
+again after this fix is deployed, the next push will not find a client_id
+match and will insert a NEW row instead of updating the original — the
+original is not deleted, just orphaned. No automated backfill is done here:
+a blanket `client_id = id` backfill would incorrectly tag genuine
+web-created sessions too, risking exactly the collision this fix closes."""
 import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
