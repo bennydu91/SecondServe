@@ -1,5 +1,6 @@
 package com.secondserve.wear.presentation.start
 
+import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.model.MatchFormat
@@ -9,11 +10,13 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
@@ -28,6 +31,7 @@ class StartMatchViewModelTest {
 
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var dataLayerClient: DataLayerClient
+    private val createdViewModels = mutableListOf<StartMatchViewModel>()
 
     @BeforeEach
     fun setup() {
@@ -38,14 +42,21 @@ class StartMatchViewModelTest {
 
     @AfterEach
     fun tearDown() {
-        // viewModelScope.launch{} (timeout job) runs on Main/testDispatcher but the nested
-        // intent{} inside posts to Dispatchers.Default — same race as ScoreViewModelTest.
-        Thread.sleep(50)
-        testDispatcher.scheduler.advanceUntilIdle()
+        // Cancel every ViewModel scope created by the test BEFORE resetMain().
+        // Orbit's event loop runs on Dispatchers.Default (real thread pool, not
+        // controllable by the test scheduler); nested viewModelScope.launch{} jobs
+        // (e.g. the phone-response timeout) survive the test body. Cancelling the
+        // scope kills the whole job tree deterministically. Thread.sleep() was a
+        // flaky wall-clock race; advanceUntilIdle() was insufficient because it can
+        // only drain what is already queued on the test scheduler.
+        createdViewModels.forEach { it.viewModelScope.cancel() }
+        createdViewModels.clear()
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel() = StartMatchViewModel(dataLayerClient)
+    private fun createViewModel() = StartMatchViewModel(dataLayerClient).also {
+        createdViewModels.add(it)
+    }
 
     @Test
     fun `initial state has BEST_OF_3 format and FULL_ADVANTAGE rule`() = runTest {
@@ -95,11 +106,13 @@ class StartMatchViewModelTest {
     fun `confirmStart with phone available keeps isLoading true and calls DataLayerClient with surface`() = runTest {
         coEvery { dataLayerClient.sendStartSessionRequest(any(), any(), any()) } returns AppResult.Success(Unit)
         val vm = createViewModel()
-        vm.selectSurface("CLAY")
-        vm.container.stateFlow.first { it.surface == "CLAY" }
+        vm.selectSurface("CLAY").join()
 
-        vm.confirmStart()
-        vm.container.stateFlow.first { it.isLoading }
+        vm.confirmStart().join()
+        // intent() returns the Job Orbit dispatched to its event loop (Dispatchers.Default,
+        // a real thread pool). join() waits for the WHOLE intent body — including the state
+        // reductions and the mock call — instead of racing a StateFlow predicate against the
+        // Default thread (conflation can drop the transient isLoading=true value).
 
         assertTrue(vm.container.stateFlow.value.isLoading)
         coVerify {
@@ -116,12 +129,12 @@ class StartMatchViewModelTest {
         coEvery { dataLayerClient.sendStartSessionRequest(any(), any(), any()) } returns
             AppResult.Error(Exception("No connected phone node"))
         val vm = createViewModel()
-        vm.selectSurface("HARD")
-        vm.container.stateFlow.first { it.surface == "HARD" }
+        vm.selectSurface("HARD").join()
 
-        vm.confirmStart()
-        vm.container.stateFlow.first { it.isLoading }
-        vm.container.stateFlow.first { !it.isLoading }
+        vm.confirmStart().join()
+        // Same: join() makes the transient isLoading=true->false sequence deterministic;
+        // stateFlow.first{ it.isLoading } could hang forever if the intent already finished
+        // before the collector subscribed (StateFlow conflation drops the intermediate true).
 
         assertFalse(vm.container.stateFlow.value.isLoading)
         coVerify {
@@ -137,17 +150,20 @@ class StartMatchViewModelTest {
     fun `confirmStart times out after PHONE_RESPONSE_TIMEOUT_MS and falls back to local`() = runTest {
         coEvery { dataLayerClient.sendStartSessionRequest(any(), any(), any()) } returns AppResult.Success(Unit)
         val vm = createViewModel()
-        vm.selectSurface("CLAY")
-        vm.container.stateFlow.first { it.surface == "CLAY" }
+        vm.selectSurface("CLAY").join()
 
-        vm.confirmStart()
-        vm.container.stateFlow.first { it.isLoading }
+        vm.confirmStart().join()
+        // The intent body completed: isLoading=true was reduced and the timeout job
+        // (viewModelScope.launch { delay(TIMEOUT) … }) is pending on the test scheduler.
+        assertTrue(vm.container.stateFlow.value.isLoading)
 
         advanceTimeBy(StartMatchViewModel.PHONE_RESPONSE_TIMEOUT_MS + 1)
+        runCurrent()
+        // After the timeout fires, the nested intent{} is dispatched onto Orbit's event
+        // loop (Dispatchers.Default). Side effects are channel-based (not conflated), so
+        // first{} cannot miss the StartLocal emission even if it happened before subscribe.
+        vm.container.sideEffectFlow.first { it is StartMatchSideEffect.StartLocal }
 
-        // Orbit dispatches intent{} on Dispatchers.Default (real thread pool). Suspending on
-        // stateFlow.first{} idles the test scheduler and lets that thread emit the state change.
-        val finalState = vm.container.stateFlow.first { !it.isLoading }
-        assertFalse(finalState.isLoading)
+        assertFalse(vm.container.stateFlow.value.isLoading)
     }
 }

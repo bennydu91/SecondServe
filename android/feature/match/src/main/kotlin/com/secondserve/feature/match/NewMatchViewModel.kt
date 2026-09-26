@@ -1,7 +1,6 @@
 package com.secondserve.feature.match
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.secondserve.data.monitoring.MonitoringEventQueue
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
@@ -13,7 +12,6 @@ import com.secondserve.domain.model.ThirdSetRule
 import com.secondserve.domain.notification.NotificationScheduler
 import com.secondserve.domain.repository.SessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
@@ -103,24 +101,20 @@ class NewMatchViewModel @Inject constructor(
                 if (isPlanned) {
                     postSideEffect(NewMatchSideEffect.SessionPlanned(createdSession.id))
                 } else {
-                    viewModelScope.launch {
-                        dataLayerClient.sendStartSession(
-                            sessionId = createdSession.id,
-                            matchFormat = matchFormat,
-                            thirdSetRule = thirdSetRule,
-                            opponent = createdSession.opponent
-                        ).also { r ->
-                            if (r is AppResult.Error)
-                                Timber.d("NewMatchViewModel: sendStartSession to watch failed — %s", r.exception.message)
-                        }
+                    dataLayerClient.sendStartSession(
+                        sessionId = createdSession.id,
+                        matchFormat = matchFormat,
+                        thirdSetRule = thirdSetRule,
+                        opponent = createdSession.opponent
+                    ).also { r ->
+                        if (r is AppResult.Error)
+                            Timber.d("NewMatchViewModel: sendStartSession to watch failed — %s", r.exception.message)
                     }
                     postSideEffect(NewMatchSideEffect.SessionStarted(createdSession.id))
-                    viewModelScope.launch {
-                        monitoringEventQueue.enqueue(
-                            "android.match.started",
-                            mapOf("session_id" to createdSession.id, "format" to matchFormat.name),
-                        )
-                    }
+                    monitoringEventQueue.enqueue(
+                        "android.match.started",
+                        mapOf("session_id" to createdSession.id, "format" to matchFormat.name),
+                    )
                 }
             }
             is AppResult.Error -> {

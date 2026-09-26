@@ -139,20 +139,18 @@ class MatchViewModel @Inject constructor(
 
                 val currentState = container.stateFlow.value
                 currentState.shareInfo?.let {
-                    viewModelScope.launch {
-                        liveShareRepository.pushScore(
-                            sessionId = sessionId,
-                            score = score,
-                            context = LiveShareContext(
-                                playerAName = currentState.playerDisplayName,
-                                playerBName = currentState.opponentName ?: "Adversaire",
-                                surface = currentState.surface ?: "HARD",
-                                tournament = currentState.tournament,
-                                competitionType = currentState.competitionType,
-                                startedAt = currentState.sessionStartedAt
-                            )
+                    liveShareRepository.pushScore(
+                        sessionId = sessionId,
+                        score = score,
+                        context = LiveShareContext(
+                            playerAName = currentState.playerDisplayName,
+                            playerBName = currentState.opponentName ?: "Adversaire",
+                            surface = currentState.surface ?: "HARD",
+                            tournament = currentState.tournament,
+                            competitionType = currentState.competitionType,
+                            startedAt = currentState.sessionStartedAt
                         )
-                    }
+                    )
                 }
             }
         }
@@ -180,20 +178,18 @@ class MatchViewModel @Inject constructor(
                 reduce { state.copy(shareInfo = result.data) }
                 postSideEffect(MatchSideEffect.ShareMatch(result.data.url))
                 val currentState = state
-                viewModelScope.launch {
-                    liveShareRepository.pushScore(
-                        sessionId = sessionId,
-                        score = scoreRepository.latestScore.value ?: MatchScore(),
-                        context = LiveShareContext(
-                            playerAName = currentState.playerDisplayName,
-                            playerBName = currentState.opponentName ?: "Adversaire",
-                            surface = currentState.surface ?: "HARD",
-                            tournament = currentState.tournament,
-                            competitionType = currentState.competitionType,
-                            startedAt = currentState.sessionStartedAt
-                        )
+                liveShareRepository.pushScore(
+                    sessionId = sessionId,
+                    score = scoreRepository.latestScore.value ?: MatchScore(),
+                    context = LiveShareContext(
+                        playerAName = currentState.playerDisplayName,
+                        playerBName = currentState.opponentName ?: "Adversaire",
+                        surface = currentState.surface ?: "HARD",
+                        tournament = currentState.tournament,
+                        competitionType = currentState.competitionType,
+                        startedAt = currentState.sessionStartedAt
                     )
-                }
+                )
             }
             is AppResult.Error -> {
                 Timber.e(result.exception, "MatchViewModel: création du lien de partage échouée")

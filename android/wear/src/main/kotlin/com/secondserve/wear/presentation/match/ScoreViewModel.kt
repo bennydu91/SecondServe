@@ -2,7 +2,6 @@ package com.secondserve.wear.presentation.match
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.domain.AppResult
 import com.secondserve.wear.monitoring.WearMonitoringQueue
@@ -14,7 +13,6 @@ import com.secondserve.domain.model.Player
 import com.secondserve.domain.model.SessionFormat
 import com.secondserve.domain.model.ThirdSetRule
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 import timber.log.Timber
@@ -77,8 +75,8 @@ class ScoreViewModel @Inject constructor(
                 canUndo = pointCount > 0
             )
         }
-        viewModelScope.launch { sendScoreEvent(snapshot) }
-        if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
+        sendScoreEvent(snapshot)
+        if (changeover) sendGameOver(snapshot)
         monitoringQueue.enqueueEvent("wear.score.updated", mapOf("points" to pointCount.toString()))
     }
 
@@ -96,7 +94,7 @@ class ScoreViewModel @Inject constructor(
                     canUndo = pointCount > 0
                 )
             }
-            viewModelScope.launch { sendScoreEvent(snapshot) }
+            sendScoreEvent(snapshot)
         }
     }
 
@@ -123,8 +121,8 @@ class ScoreViewModel @Inject constructor(
                 canUndo = pointCount > 0
             )
         }
-        viewModelScope.launch { sendScoreEvent(snapshot) }
-        if (changeover) viewModelScope.launch { sendGameOver(snapshot) }
+        sendScoreEvent(snapshot)
+        if (changeover) sendGameOver(snapshot)
         monitoringQueue.enqueueEvent("wear.score.swapped", mapOf("points" to pointCount.toString()))
     }
 
@@ -151,7 +149,7 @@ class ScoreViewModel @Inject constructor(
                     canUndo = pointCount > 0
                 )
             }
-            viewModelScope.launch { sendScoreEvent(snapshot) }
+            sendScoreEvent(snapshot)
         }
     }
 

@@ -1,6 +1,7 @@
 package com.secondserve.feature.match
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import com.secondserve.domain.AppResult
 import com.secondserve.domain.analysis.AnalysisScheduler
 import com.secondserve.domain.event.DataLayerEventBus
@@ -27,6 +28,7 @@ import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -113,8 +115,12 @@ class MatchViewModelTest {
 
     @AfterEach
     fun tearDown() {
-        Thread.sleep(50)
-        testDispatcher.scheduler.advanceUntilIdle()
+        // Cancel the ViewModel scope before resetMain() so Orbit's event loop (running
+        // on Dispatchers.Default, a real thread pool not controlled by the test
+        // scheduler) and any viewModelScope.launch{} jobs are killed deterministically.
+        // Thread.sleep(50) was a wall-clock race; advanceUntilIdle() only drains what
+        // is already queued on the test scheduler.
+        viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
     }
 
@@ -324,9 +330,13 @@ class MatchViewModelTest {
             LiveShareInfo(token = "abc", url = "https://secondserve.app/live/abc")
         )
 
-        viewModel.onShareRequested()
-        viewModel.container.stateFlow.first { it.shareInfo != null }
-        testDispatcher.scheduler.advanceUntilIdle()
+        // intent() returns the Job Orbit dispatched to its event loop (Dispatchers.Default,
+        // a real thread pool). join() waits for the WHOLE intent body — reduce, side effect
+        // AND the inline pushScore call — instead of racing coVerify against the Default
+        // thread. stateFlow.first{ shareInfo != null } resumed as soon as the reduce landed,
+        // before pushScore had necessarily executed on the event-loop thread: that was the
+        // flaky failure of this test in full-suite runs.
+        viewModel.onShareRequested().join()
 
         coVerify(exactly = 1) {
             liveShareRepository.pushScore(
@@ -349,7 +359,7 @@ class MatchViewModelTest {
         coEvery { shareMatchUseCase(10L) } returns AppResult.Success(
             LiveShareInfo(token = "abc", url = "https://secondserve.app/live/abc")
         )
-        viewModel.onShareRequested()
+        viewModel.onShareRequested().join()
         viewModel.container.stateFlow.first { it.shareInfo != null }
 
         scoreFlow.value = MatchScore(currentSetGamesA = 0, currentSetGamesB = 0)

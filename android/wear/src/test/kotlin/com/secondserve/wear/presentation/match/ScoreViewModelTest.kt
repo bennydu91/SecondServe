@@ -1,6 +1,7 @@
 package com.secondserve.wear.presentation.match
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import com.secondserve.data.wearable.DataLayerClient
 import com.secondserve.wear.monitoring.WearMonitoringQueue
 import com.secondserve.domain.AppResult
@@ -14,6 +15,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -33,6 +35,7 @@ class ScoreViewModelTest {
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var dataLayerClient: DataLayerClient
     private lateinit var monitoringQueue: WearMonitoringQueue
+    private val createdViewModels = mutableListOf<ScoreViewModel>()
 
     @BeforeEach
     fun setup() {
@@ -46,19 +49,21 @@ class ScoreViewModelTest {
 
     @AfterEach
     fun tearDown() {
-        // Orbit runs intent blocks on Dispatchers.Default (real thread); viewModelScope.launch{}
-        // inside them posts to Main (testDispatcher) asynchronously — not yet queued when the
-        // test body's advanceUntilIdle() finishes. Without this wait, resetMain() fires while
-        // those launches are still in-flight, crashing with "no Looper" on Default-pool threads.
-        // Dispatchers.setDefault/resetDefault do not exist in this test setup (API unavailable).
-        Thread.sleep(50)
-        testDispatcher.scheduler.advanceUntilIdle()
+        // Cancel every ViewModel scope created by the test BEFORE resetMain().
+        // Orbit's event loop runs on Dispatchers.Default (real thread pool, not
+        // controllable by the test scheduler). Cancelling the scope kills the whole
+        // job tree deterministically; the old Thread.sleep(50) was a wall-clock race
+        // that lost whenever the Default pool was slow to post back to Main.
+        createdViewModels.forEach { it.viewModelScope.cancel() }
+        createdViewModels.clear()
         Dispatchers.resetMain()
     }
 
     private fun createViewModel(
         savedStateHandle: SavedStateHandle = SavedStateHandle()
-    ) = ScoreViewModel(dataLayerClient, monitoringQueue, savedStateHandle)
+    ) = ScoreViewModel(dataLayerClient, monitoringQueue, savedStateHandle).also {
+        createdViewModels.add(it)
+    }
 
     @Test
     fun `initial state has empty score and canUndo false`() = runTest {
@@ -100,7 +105,7 @@ class ScoreViewModelTest {
     @Test
     fun `recordPoint updates score to FIFTEEN`() = runTest {
         val vm = createViewModel()
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         val state = vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
         assertTrue(state.canUndo)
     }
@@ -108,9 +113,9 @@ class ScoreViewModelTest {
     @Test
     fun `undo after recordPoint restores ZERO`() = runTest {
         val vm = createViewModel()
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
-        vm.undo()
+        vm.undo().join()
         val state = vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.ZERO && !it.canUndo }
         assertFalse(state.canUndo)
     }
@@ -118,7 +123,7 @@ class ScoreViewModelTest {
     @Test
     fun `undo when no points does nothing`() = runTest {
         val vm = createViewModel()
-        vm.undo()
+        vm.undo().join()
         // undo is a no-op: state never changes, stateFlow value stays at initial
         assertEquals(MatchScore(), vm.container.stateFlow.value.score)
         assertFalse(vm.container.stateFlow.value.canUndo)
@@ -132,13 +137,13 @@ class ScoreViewModelTest {
             )
         )
         // 24 = 6 games × 4 points at love (only A scores → no deuce possible)
-        repeat(24) { vm.recordPoint(Player.A) }
+        repeat(24) { vm.recordPoint(Player.A).join() }
         // Suspend until Orbit has processed all intents and emitted the match-over state
         val matchOverState = vm.container.stateFlow.first { it.score.isMatchOver }
         assertTrue(matchOverState.score.isMatchOver)
 
         val scoreBeforeGuard = matchOverState.score
-        vm.recordPoint(Player.A)  // guard: engine.isMatchOver → no-op, no state emission
+        vm.recordPoint(Player.A).join()  // guard: engine.isMatchOver → no-op, no state emission
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(scoreBeforeGuard, vm.container.stateFlow.value.score)
     }
@@ -148,8 +153,8 @@ class ScoreViewModelTest {
         val vm = createViewModel()
         // Alternate game wins: A and B each win 6 games → 6-6 → tie-break
         repeat(6) {
-            repeat(4) { vm.recordPoint(Player.A) }
-            repeat(4) { vm.recordPoint(Player.B) }
+            repeat(4) { vm.recordPoint(Player.A).join() }
+            repeat(4) { vm.recordPoint(Player.B).join() }
         }
         // Suspend until Orbit has processed all intents and emitted the tie-break state
         val tieBrState = vm.container.stateFlow.first { it.score.isTieBreak }
@@ -165,10 +170,10 @@ class ScoreViewModelTest {
             )
         )
         // 24 = 6 games × 4 points at love (only A scores → no deuce possible)
-        repeat(24) { vm.recordPoint(Player.A) }
+        repeat(24) { vm.recordPoint(Player.A).join() }
         vm.container.stateFlow.first { it.score.isMatchOver }
 
-        vm.cancelMatchOver()
+        vm.cancelMatchOver().join()
 
         val state = vm.container.stateFlow.first { !it.score.isMatchOver }
         testDispatcher.scheduler.advanceUntilIdle()
@@ -185,8 +190,8 @@ class ScoreViewModelTest {
             ))
         )
         // 24 = 6 games × 4 points at love per set (single scorer per block → no deuce)
-        repeat(24) { vm.recordPoint(Player.A) } // set 1 → A wins 6-0
-        repeat(24) { vm.recordPoint(Player.B) } // set 2 → B wins 6-0 → super tie-break
+        repeat(24) { vm.recordPoint(Player.A).join() } // set 1 → A wins 6-0
+        repeat(24) { vm.recordPoint(Player.B).join() } // set 2 → B wins 6-0 → super tie-break
 
         val state = vm.container.stateFlow.first { it.score.isSuperTieBreak }
         testDispatcher.scheduler.advanceUntilIdle()
@@ -196,14 +201,11 @@ class ScoreViewModelTest {
     @Test
     fun `undo sends corrected score_event to DataLayer (AC 5)`() = runTest {
         val vm = createViewModel()
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
 
-        vm.undo()
+        vm.undo().join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.ZERO && !it.canUndo }
-        // Same race as SetWon test: Orbit's Default thread may not have posted
-        // viewModelScope.launch{sendScoreEvent} to Main yet when advanceUntilIdle() runs.
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // sendScoreEvent must be called twice: once after recordPoint, once after undo
@@ -215,10 +217,10 @@ class ScoreViewModelTest {
     @Test
     fun `swapLast moves the last point to the other player without losing it`() = runTest {
         val vm = createViewModel()
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
 
-        vm.swapLast()
+        vm.swapLast().join()
 
         val state = vm.container.stateFlow.first { it.score.currentGamePointsB == GamePoint.FIFTEEN }
         assertEquals(GamePoint.ZERO, state.score.currentGamePointsA)
@@ -228,12 +230,12 @@ class ScoreViewModelTest {
     @Test
     fun `swapLast twice returns the point to the original scorer`() = runTest {
         val vm = createViewModel()
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
 
-        vm.swapLast()
+        vm.swapLast().join()
         vm.container.stateFlow.first { it.score.currentGamePointsB == GamePoint.FIFTEEN }
-        vm.swapLast()
+        vm.swapLast().join()
 
         val state = vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
         assertEquals(GamePoint.ZERO, state.score.currentGamePointsB)
@@ -242,7 +244,7 @@ class ScoreViewModelTest {
     @Test
     fun `swapLast when no points does nothing`() = runTest {
         val vm = createViewModel()
-        vm.swapLast()
+        vm.swapLast().join()
         assertEquals(MatchScore(), vm.container.stateFlow.value.score)
         assertFalse(vm.container.stateFlow.value.canUndo)
     }
@@ -250,12 +252,11 @@ class ScoreViewModelTest {
     @Test
     fun `swapLast sends corrected score_event to DataLayer`() = runTest {
         val vm = createViewModel()
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
 
-        vm.swapLast()
+        vm.swapLast().join()
         vm.container.stateFlow.first { it.score.currentGamePointsB == GamePoint.FIFTEEN }
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // sendScoreEvent must be called twice: once after recordPoint, once after swapLast
@@ -270,10 +271,10 @@ class ScoreViewModelTest {
                 mapOf(ScoreViewModel.ARG_MATCH_FORMAT to MatchFormat.BEST_OF_1.name)
             )
         )
-        repeat(24) { vm.recordPoint(Player.A) }
+        repeat(24) { vm.recordPoint(Player.A).join() }
         val matchOverState = vm.container.stateFlow.first { it.score.isMatchOver }
 
-        vm.swapLast()
+        vm.swapLast().join()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(matchOverState.score, vm.container.stateFlow.value.score)
@@ -282,10 +283,10 @@ class ScoreViewModelTest {
     @Test
     fun `cancelMatchOver is no-op when match is not over`() = runTest {
         val vm = createViewModel()
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
 
-        vm.cancelMatchOver()
+        vm.cancelMatchOver().join()
 
         // State unchanged — match not over, cancelMatchOver is a no-op
         assertEquals(GamePoint.FIFTEEN, vm.container.stateFlow.value.score.currentGamePointsA)
@@ -295,7 +296,7 @@ class ScoreViewModelTest {
     fun `game_over sent automatically when first game ends (odd total = changeover)`() = runTest {
         val vm = createViewModel()
         // A wins game 1 (love game: 4 points A at love → game 1-0, total=1, odd → changeover)
-        repeat(4) { vm.recordPoint(Player.A) }
+        repeat(4) { vm.recordPoint(Player.A).join() }
         vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -306,8 +307,8 @@ class ScoreViewModelTest {
     fun `game_over NOT sent when second game ends (even total = no changeover)`() = runTest {
         val vm = createViewModel()
         // A wins game 1 (1-0, total=1, odd → changeover) then game 2 (2-0, total=2, even → no changeover)
-        repeat(4) { vm.recordPoint(Player.A) } // game 1 → changeover
-        repeat(4) { vm.recordPoint(Player.A) } // game 2 → no changeover
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 1 → changeover
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 2 → no changeover
         vm.container.stateFlow.first { it.score.currentSetGamesA == 2 }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -319,7 +320,7 @@ class ScoreViewModelTest {
     fun `game_over carries correct score snapshot (AC 1 — score_snapshot complet)`() = runTest {
         val vm = createViewModel()
         // A wins game 1 at love → changeover → sendGameOver avec score 1-0
-        repeat(4) { vm.recordPoint(Player.A) }
+        repeat(4) { vm.recordPoint(Player.A).join() }
         vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -334,7 +335,7 @@ class ScoreViewModelTest {
     fun `UI state updates before game_over is sent (AC 2 — no UI block)`() = runTest {
         val vm = createViewModel()
         // A wins game 1 — l'état UI doit refléter 1-0 immédiatement sans attendre DataLayer
-        repeat(4) { vm.recordPoint(Player.A) }
+        repeat(4) { vm.recordPoint(Player.A).join() }
         val state = vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
         assertEquals(1, state.score.currentSetGamesA)
         assertEquals(0, state.score.currentSetGamesB)
@@ -344,18 +345,16 @@ class ScoreViewModelTest {
     fun `sendGameOver NOT called when undo is performed`() = runTest {
         val vm = createViewModel()
         // A wins game 1 (changeover → sendGameOver called once)
-        repeat(4) { vm.recordPoint(Player.A) }
+        repeat(4) { vm.recordPoint(Player.A).join() }
         vm.container.stateFlow.first { it.score.currentSetGamesA == 1 }
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
         coVerify(exactly = 1) { dataLayerClient.sendGameOver(any()) }
 
         // Undo a point in the next game (no game over)
-        vm.recordPoint(Player.A)
+        vm.recordPoint(Player.A).join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.FIFTEEN }
-        vm.undo()
+        vm.undo().join()
         vm.container.stateFlow.first { it.score.currentGamePointsA == GamePoint.ZERO }
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // sendGameOver must stay at 1 (no additional call during undo)
@@ -370,12 +369,11 @@ class ScoreViewModelTest {
             )
         )
         // Set 1: A wins 6-0 (changeovers at games 1,3,5 = 3)
-        repeat(6 * 4) { vm.recordPoint(Player.A) }
+        repeat(6 * 4) { vm.recordPoint(Player.A).join() }
         vm.container.stateFlow.first { it.score.completedSets.size == 1 }
         // Set 2: A wins 6-0 (changeovers at games 7,9,11 = 3); game 12 → MatchOver (no changeover)
-        repeat(6 * 4) { vm.recordPoint(Player.A) }
+        repeat(6 * 4) { vm.recordPoint(Player.A).join() }
         vm.container.stateFlow.first { it.score.isMatchOver }
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(vm.container.stateFlow.value.score.isMatchOver)
@@ -388,22 +386,21 @@ class ScoreViewModelTest {
     fun `game_over sent when set ends with tie-break 7-6 (SetWon via awardTieBreakGame)`() = runTest {
         val vm = createViewModel()
         // Bring score to 6-6 by alternating games (A wins odd totals, B wins even totals)
-        repeat(4) { vm.recordPoint(Player.A) } // 1-0, total=1 (odd → changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 1-1, total=2 (even)
-        repeat(4) { vm.recordPoint(Player.A) } // 2-1, total=3 (odd → changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 2-2, total=4 (even)
-        repeat(4) { vm.recordPoint(Player.A) } // 3-2, total=5 (odd → changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 3-3, total=6 (even)
-        repeat(4) { vm.recordPoint(Player.A) } // 4-3, total=7 (odd → changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 4-4, total=8 (even)
-        repeat(4) { vm.recordPoint(Player.A) } // 5-4, total=9 (odd → changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 5-5, total=10 (even)
-        repeat(4) { vm.recordPoint(Player.A) } // 6-5, total=11 (odd → changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 6-6 → tie-break, total=12 (even, no changeover)
+        repeat(4) { vm.recordPoint(Player.A).join() } // 1-0, total=1 (odd → changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 1-1, total=2 (even)
+        repeat(4) { vm.recordPoint(Player.A).join() } // 2-1, total=3 (odd → changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 2-2, total=4 (even)
+        repeat(4) { vm.recordPoint(Player.A).join() } // 3-2, total=5 (odd → changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 3-3, total=6 (even)
+        repeat(4) { vm.recordPoint(Player.A).join() } // 4-3, total=7 (odd → changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 4-4, total=8 (even)
+        repeat(4) { vm.recordPoint(Player.A).join() } // 5-4, total=9 (odd → changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 5-5, total=10 (even)
+        repeat(4) { vm.recordPoint(Player.A).join() } // 6-5, total=11 (odd → changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 6-6 → tie-break, total=12 (even, no changeover)
         // Tie-break: A wins 7-0 → awardSet → SetWon(changeover=true, totalGamesInSet=13 odd)
-        repeat(7) { vm.recordPoint(Player.A) }
+        repeat(7) { vm.recordPoint(Player.A).join() }
         vm.container.stateFlow.first { it.score.completedSets.size == 1 }
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // 6 changeovers on regular games (totals 1,3,5,7,9,11) + 1 on tie-break = 7
@@ -414,27 +411,26 @@ class ScoreViewModelTest {
     fun `game_over sent when set ends with contested tie-break (A wins 7-5 in tie-break points)`() = runTest {
         val vm = createViewModel()
         // Bring score to 6-6 by alternating games (6 changeovers at odd totals 1,3,5,7,9,11)
-        repeat(4) { vm.recordPoint(Player.A) } // 1-0, total=1 (changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 1-1, total=2
-        repeat(4) { vm.recordPoint(Player.A) } // 2-1, total=3 (changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 2-2, total=4
-        repeat(4) { vm.recordPoint(Player.A) } // 3-2, total=5 (changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 3-3, total=6
-        repeat(4) { vm.recordPoint(Player.A) } // 4-3, total=7 (changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 4-4, total=8
-        repeat(4) { vm.recordPoint(Player.A) } // 5-4, total=9 (changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 5-5, total=10
-        repeat(4) { vm.recordPoint(Player.A) } // 6-5, total=11 (changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // 6-6 → tie-break, total=12
+        repeat(4) { vm.recordPoint(Player.A).join() } // 1-0, total=1 (changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 1-1, total=2
+        repeat(4) { vm.recordPoint(Player.A).join() } // 2-1, total=3 (changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 2-2, total=4
+        repeat(4) { vm.recordPoint(Player.A).join() } // 3-2, total=5 (changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 3-3, total=6
+        repeat(4) { vm.recordPoint(Player.A).join() } // 4-3, total=7 (changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 4-4, total=8
+        repeat(4) { vm.recordPoint(Player.A).join() } // 5-4, total=9 (changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 5-5, total=10
+        repeat(4) { vm.recordPoint(Player.A).join() } // 6-5, total=11 (changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // 6-6 → tie-break, total=12
         // Contested tie-break: A and B alternate 5 rounds (5-5), then A wins 2 more → 7-5
         repeat(5) {
-            vm.recordPoint(Player.A)
-            vm.recordPoint(Player.B)
+            vm.recordPoint(Player.A).join()
+            vm.recordPoint(Player.B).join()
         }
-        vm.recordPoint(Player.A) // A=6, B=5
-        vm.recordPoint(Player.A) // A=7, B=5 → 2-point lead → awardTieBreakGame → SetWon(changeover=true)
+        vm.recordPoint(Player.A).join() // A=6, B=5
+        vm.recordPoint(Player.A).join() // A=7, B=5 → 2-point lead → awardTieBreakGame → SetWon(changeover=true)
         vm.container.stateFlow.first { it.score.completedSets.size == 1 }
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Same count as uncontested: 6 (regular games) + 1 (tie-break) = 7
@@ -445,18 +441,16 @@ class ScoreViewModelTest {
     fun `game_over sent when set ends with odd total games (SetWon changeover)`() = runTest {
         val vm = createViewModel()
         // A wins 6-1: jeux 1,3,5,7 (total impair) → changeover → 4 game_over
-        repeat(4) { vm.recordPoint(Player.A) } // game 1 (1-0, total=1 → changeover)
-        repeat(4) { vm.recordPoint(Player.A) } // game 2 (2-0, total=2 → no changeover)
-        repeat(4) { vm.recordPoint(Player.A) } // game 3 (3-0, total=3 → changeover)
-        repeat(4) { vm.recordPoint(Player.A) } // game 4 (4-0, total=4 → no changeover)
-        repeat(4) { vm.recordPoint(Player.B) } // game 5 (4-1, total=5 → changeover)
-        repeat(4) { vm.recordPoint(Player.A) } // game 6 (5-1, total=6 → no changeover)
-        repeat(4) { vm.recordPoint(Player.A) } // game 7 → A wins 6-1, SetWon (total=7 → changeover)
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 1 (1-0, total=1 → changeover)
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 2 (2-0, total=2 → no changeover)
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 3 (3-0, total=3 → changeover)
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 4 (4-0, total=4 → no changeover)
+        repeat(4) { vm.recordPoint(Player.B).join() } // game 5 (4-1, total=5 → changeover)
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 6 (5-1, total=6 → no changeover)
+        repeat(4) { vm.recordPoint(Player.A).join() } // game 7 → A wins 6-1, SetWon (total=7 → changeover)
         vm.container.stateFlow.first { it.score.completedSets.isNotEmpty() }
         // stateFlow.first{} resumes when reduce{} completes, but Orbit's Default thread may not
         // have yet dispatched viewModelScope.launch{sendGameOver} for the set-winning game.
-        // Same root cause as tearDown — give the thread time to post before draining.
-        Thread.sleep(50)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Jeux avec changeover (total impair): 1, 3, 5, 7 → 4 game_over
